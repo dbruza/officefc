@@ -1,0 +1,113 @@
+rules_version = '2';
+
+// OfficeFC — Firestore security rules.
+//
+// Model: a single office league ("office" in v1). Clients READ league data directly
+// when they are members; all TRUSTED writes (ELO, standings, match status, season
+// results, invite consumption) go through Cloud Functions via the Admin SDK, which
+// bypasses these rules. So most collections are read-for-members / write-denied here.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    // Single-league v1: membership doc at leagues/office/members/{uid}.
+    function isMember() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/leagues/office/members/$(uid()));
+    }
+    function memberRole() {
+      return get(/databases/$(database)/documents/leagues/office/members/$(uid())).data.role;
+    }
+    function isAdmin() {
+      return isMember() && memberRole() == 'admin';
+    }
+
+    // Profiles: any member can read. You may write your own profile but never set your
+    // own role (role is authoritative on the membership doc). Admins may write any.
+    match /profiles/{userId} {
+      allow read: if isMember();
+      allow create, update: if isAdmin()
+        || (signedIn() && userId == uid() && !('role' in request.resource.data));
+      allow delete: if isAdmin();
+    }
+
+    // League + membership: members read; membership is granted by a Cloud Function
+    // (invite redemption) or an admin — not by arbitrary client writes.
+    match /leagues/{leagueId} {
+      allow read: if isMember();
+      allow write: if false; // function/admin-only
+      match /members/{memberId} {
+        allow read: if isMember();
+        allow write: if false; // function/admin-only
+      }
+    }
+
+    // Invites are validated/consumed server-side; never exposed to clients.
+    match /invites/{code} {
+      allow read, write: if false;
+    }
+
+    // Admin-curated reference data: members read, admins (via console/functions) write.
+    match /seasons/{seasonId} {
+      allow read: if isMember();
+      allow write: if false;
+      match /{sub=**} {
+        allow read: if isMember();   // standings, snapshots, eloHistory
+        allow write: if false;       // function-only
+      }
+    }
+    match /teams/{teamId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
+    // Matches: members read. A member may CREATE a pending match they participate in;
+    // all status/ELO mutations happen in Cloud Functions (confirm/recalc/dispute).
+    match /matches/{matchId} {
+      allow read: if isMember();
+      allow create: if isMember()
+        && request.resource.data.submittedBy == uid()
+        && (request.resource.data.aId == uid() || request.resource.data.bId == uid())
+        && request.resource.data.status == 'pending_confirmation'
+        && request.resource.data.source in ['manual', 'ai_assisted'];
+      allow update, delete: if false; // function/admin-only
+      match /{sub=**} {
+        allow read: if isMember();
+        allow write: if false;
+      }
+    }
+
+    // Read-optimized aggregates, all maintained by functions.
+    match /playerStats/{userId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+    match /h2h/{pairKey} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+    match /seasonResults/{seasonId} {
+      allow read: if isMember();
+      allow write: if false;
+      match /{sub=**} {
+        allow read: if isMember();
+        allow write: if false;
+      }
+    }
+
+    // Push tokens: a user manages only their own.
+    match /deviceTokens/{userId}/{tokenId} {
+      allow read, write: if signedIn() && userId == uid();
+    }
+
+    // Default deny.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

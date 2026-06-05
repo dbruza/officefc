@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "officefc-static",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["build/serve.js"],
+      "port": 8756
+    },
+    {
+      "name": "officefc-mobile-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["mobile/serve-web.js"],
+      "port": 8757
+    }
+  ]
+}

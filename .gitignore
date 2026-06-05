@@ -1,0 +1,25 @@
+# Dependencies (matches node_modules at any depth: root + mobile/ + functions/)
+node_modules/
+
+# Build outputs
+dist/
+web-build/
+
+# Expo / React Native
+.expo/
+*.orig.*
+# Generated native projects (expo prebuild / EAS)
+mobile/ios/
+mobile/android/
+
+# Env & secrets (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+
+# Logs & OS cruft
+*.log
+.DS_Store
+
+# Claude: share launch.json, keep local settings out
+.claude/settings.local.json

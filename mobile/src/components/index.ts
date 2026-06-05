@@ -1,0 +1,20 @@
+/** Barrel export for the OfficeFC UI primitives. */
+export { Txt } from "./Txt";
+export type { TxtProps } from "./Txt";
+export { Icon } from "./Icon";
+export type { IconName, IconProps } from "./Icon";
+export { Avatar } from "./Avatar";
+export type { AvatarProps } from "./Avatar";
+export { FormChips, EloDelta, Movement } from "./chips";
+export { StatCard } from "./StatCard";
+export type { StatCardProps } from "./StatCard";
+export { Button } from "./Button";
+export type { ButtonProps } from "./Button";
+export { SectionLabel } from "./SectionLabel";
+export { RankBadge } from "./RankBadge";
+export { PlayerRow } from "./PlayerRow";
+export type { PlayerRowProps } from "./PlayerRow";
+export { LineChart } from "./LineChart";
+export type { ChartPoint } from "./LineChart";
+export { Card } from "./Card";
+export type { CardProps } from "./Card";

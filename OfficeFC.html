@@ -1,0 +1,3633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>OfficeFC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Saira+Condensed:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070a0e; --surface:#10141b; --surface-2:#1a212b; --line:rgba(255,255,255,.08);
+    --text:#eef2f6; --text-dim:#8b95a4; --text-faint:#4c5563;
+    --accent:#00ff87; --win:#22e06a; --draw:#9aa6b4; --loss:#ff4d6d;
+    --font-head:'Archivo',system-ui,sans-serif; --font-body:'Archivo',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:radial-gradient(ellipse at 50% -10%, #121a24, #05070a 60%);
+    font-family:var(--font-body); color:var(--text); overflow:hidden;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+  button{font-family:inherit;color:inherit;border:none;background:none;}
+  .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum";}
+  input{font-family:inherit;}
+
+  /* ---------- stage / phone frame ---------- */
+  .stage{position:fixed;inset:0;display:grid;place-items:center;}
+  .phone-scaler{transform-origin:center;}
+  .phone{
+    width:390px;height:844px;background:var(--bg);border-radius:46px;overflow:hidden;
+    display:flex;flex-direction:column;position:relative;
+    box-shadow:0 0 0 10px #1c2128, 0 0 0 12px #2a323d, 0 40px 90px -20px rgba(0,0,0,.8);
+  }
+  .phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);
+    width:118px;height:30px;background:#000;border-radius:18px;z-index:30;}
+  .status-bar{height:50px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+    padding:0 30px 0 32px;font-size:14px;color:var(--text);padding-top:6px;}
+  .phone-scroll{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;}
+  .phone-scroll::-webkit-scrollbar{display:none;}
+  .screen-pad{padding:8px 18px 28px;}
+
+  /* ---------- tab bar ---------- */
+  .tab-bar{flex:0 0 auto;height:84px;display:flex;align-items:flex-start;justify-content:space-around;
+    padding:12px 14px 0;background:linear-gradient(0deg,var(--bg) 60%,transparent);
+    border-top:1px solid var(--line);position:relative;}
+  .tab-btn{display:flex;flex-direction:column;align-items:center;gap:3px;width:62px;padding-top:6px;
+    color:var(--text-faint);font-size:10px;font-weight:600;cursor:pointer;transition:color .15s;}
+  .tab-btn span{font-family:var(--font-head);letter-spacing:.02em;}
+  .tab-btn.active{color:var(--accent);}
+  .fab{width:60px;height:60px;border-radius:50%;background:var(--accent);color:#06080c;
+    display:grid;place-items:center;margin-top:-22px;cursor:pointer;flex:0 0 auto;
+    box-shadow:0 8px 24px -4px color-mix(in srgb,var(--accent) 60%,transparent),0 0 0 6px var(--bg);
+    transition:transform .15s;}
+  .fab:active{transform:scale(.92);}
+
+  /* ---------- generic atoms ---------- */
+  .kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);font-weight:700;font-family:var(--font-head);line-height:1.4;}
+  .ofc-btn{transition:transform .12s, filter .15s;}
+  .ofc-btn:active{transform:scale(.97);}
+  .ofc-iconbtn{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    background:var(--surface);border:1px solid var(--line);color:var(--text);cursor:pointer;flex:0 0 auto;}
+  .ofc-row{transition:border-color .15s,transform .1s;}
+  .ofc-row:active{transform:scale(.99);}
+  .tag-you{font-family:var(--font-mono);font-size:8.5px;font-weight:800;letter-spacing:.1em;
+    background:var(--accent);color:#06080c;padding:2px 5px;border-radius:5px;}
+  .link-btn{font-size:12px;color:var(--accent);font-weight:700;cursor:pointer;font-family:var(--font-head);}
+  .empty{color:var(--text-dim);font-size:13px;text-align:center;padding:8px;}
+
+  /* ---------- home ---------- */
+  .ofc-pill{padding:7px 12px;background:var(--surface);border:1px solid var(--line);border-radius:99px;cursor:pointer;}
+  .hero-card{background:
+      radial-gradient(120% 100% at 100% 0%, color-mix(in srgb,var(--accent) 16%,transparent), transparent 55%),
+      linear-gradient(160deg,#141b24,#0c1016);
+    border:1px solid var(--line);border-radius:22px;padding:18px;cursor:pointer;width:100%;text-align:left;
+    position:relative;overflow:hidden;}
+  .hero-rank{font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--text);display:inline-block;margin-top:2px;}
+  .hero-elo{font-size:34px;font-weight:800;letter-spacing:-.03em;color:var(--accent);line-height:1;}
+  .log-cta{margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;
+    padding:17px 20px;background:var(--accent);color:#06080c;border-radius:16px;cursor:pointer;
+    font-family:var(--font-head);font-weight:800;font-size:17px;letter-spacing:.01em;
+    box-shadow:0 10px 30px -8px color-mix(in srgb,var(--accent) 55%,transparent);transition:transform .12s;}
+  .log-cta:active{transform:scale(.98);}
+  .nemesis-card{width:100%;display:flex;align-items:center;gap:14px;padding:14px;
+    background:linear-gradient(120deg,color-mix(in srgb,var(--loss) 12%,var(--surface)),var(--surface));
+    border:1px solid color-mix(in srgb,var(--loss) 28%,transparent);border-radius:18px;cursor:pointer;text-align:left;}
+
+  /* ---------- leaderboard ---------- */
+  .chip-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 12px;padding:0 18px 2px;}
+  .chip-scroll::-webkit-scrollbar{display:none;}
+  .season-chip{flex:0 0 auto;padding:8px 14px;border-radius:99px;background:var(--surface);
+    border:1px solid var(--line);color:var(--text-dim);font-weight:700;font-size:12.5px;cursor:pointer;
+    display:flex;align-items:center;gap:6px;font-family:var(--font-head);}
+  .season-chip.active{background:var(--text);color:#06080c;border-color:var(--text);}
+  .live-dot{width:6px;height:6px;border-radius:9px;background:var(--accent);box-shadow:0 0 6px var(--accent);}
+  .season-chip.active .live-dot{background:var(--win);box-shadow:none;}
+  .search-box{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--surface);
+    border:1px solid var(--line);border-radius:13px;color:var(--text-dim);margin-bottom:12px;}
+  .search-box input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;}
+  .search-box input::placeholder{color:var(--text-faint);}
+  .table-head{display:flex;align-items:center;gap:12px;padding:2px 14px 8px;font-size:10px;
+    text-transform:uppercase;letter-spacing:.1em;color:var(--text-faint);font-weight:700;}
+  .table-head>span:nth-child(3){width:52px;text-align:right;}
+  .board-row{display:flex;align-items:center;gap:11px;padding:9px 12px;width:100%;text-align:left;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;cursor:pointer;}
+
+  /* ---------- seasons ---------- */
+  .current-season{background:
+      radial-gradient(120% 120% at 0% 0%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 50%),
+      linear-gradient(160deg,#141b24,#0c1016);
+    border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);border-radius:22px;padding:18px;margin-bottom:22px;}
+  .progress{height:7px;border-radius:99px;background:var(--surface-2);margin-top:16px;overflow:hidden;}
+  .progress>div{height:100%;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 60%,#fff));border-radius:99px;}
+  .past-season{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;}
+
+  /* ---------- profile ---------- */
+  .profile-hero{display:flex;align-items:center;gap:16px;padding:6px 2px 18px;}
+  .chart-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 12px 8px;margin-bottom:14px;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .h2h-row{display:flex;align-items:center;gap:11px;padding:10px 12px;width:100%;text-align:left;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;cursor:pointer;}
+  .nemesis-tag{font-family:var(--font-mono);font-size:8px;font-weight:800;letter-spacing:.12em;
+    color:var(--loss);border:1px solid color-mix(in srgb,var(--loss) 45%,transparent);
+    background:color-mix(in srgb,var(--loss) 12%,transparent);padding:3px 6px;border-radius:6px;display:inline-block;}
+
+  /* ---------- match detail ---------- */
+  .match-hero{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(160deg,#141b24,#0c1016);
+    border:1px solid var(--line);border-radius:22px;padding:22px 16px;}
+  .vs-banner{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:linear-gradient(160deg,#141b24,#0c1016);border:1px solid var(--line);border-radius:22px;padding:20px 14px;}
+
+  /* ---------- h2h ---------- */
+  .pick-chip{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:6px 12px 6px 7px;border-radius:99px;
+    background:var(--surface);border:1px solid var(--line);color:var(--text-dim);font-weight:700;font-size:12.5px;cursor:pointer;}
+  .pick-chip.active{background:color-mix(in srgb,var(--accent) 14%,var(--surface));border-color:var(--accent);color:var(--text);}
+  .res-dot{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-family:var(--font-mono);
+    font-weight:800;font-size:12px;flex:0 0 auto;}
+  .res-W{background:var(--win);color:#06080c;} .res-L{background:var(--loss);color:#fff;} .res-D{background:var(--draw);color:#06080c;}
+  .meeting-row{display:flex;align-items:center;gap:10px;padding:10px 12px;width:100%;
+    background:var(--surface);border:1px solid var(--line);border-radius:13px;cursor:pointer;}
+
+  /* ---------- archive ---------- */
+  .archive-champ{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;margin-bottom:16px;
+    background:linear-gradient(120deg,rgba(255,210,74,.14),var(--surface));border:1px solid rgba(255,210,74,.3);}
+
+  /* ---------- log flow ---------- */
+  .step-track{display:flex;gap:5px;padding:0 2px;}
+  .step-seg{flex:1;height:4px;border-radius:99px;background:var(--surface-2);transition:background .25s;}
+  .step-seg.on{background:var(--accent);}
+  .step-q{font-family:var(--font-head);font-weight:800;font-size:21px;letter-spacing:-.02em;margin-bottom:14px;}
+  .step-hint{font-size:13px;color:var(--text-dim);margin:-8px 0 16px;}
+  .opp-pick{display:flex;align-items:center;gap:13px;padding:11px 13px;width:100%;text-align:left;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:border-color .15s;}
+  .opp-pick.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface));}
+  .check-circle{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#06080c;display:grid;place-items:center;flex:0 0 auto;}
+  .field-label{display:flex;align-items:center;gap:7px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text-dim);font-weight:700;margin-bottom:9px;}
+  .team-field{display:flex;align-items:center;gap:10px;width:100%;padding:14px;background:var(--surface);
+    border:1px solid var(--line);border-radius:13px;cursor:pointer;font-size:14.5px;}
+  .team-field.filled{border-color:color-mix(in srgb,var(--accent) 35%,transparent);}
+  .team-pop{margin-top:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;}
+  .team-list{display:flex;flex-direction:column;gap:2px;max-height:220px;overflow-y:auto;scrollbar-width:thin;}
+  .team-opt{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:10px;width:100%;text-align:left;
+    color:var(--text);font-size:14px;cursor:pointer;}
+  .team-opt:hover{background:var(--surface-2);}
+  .team-opt.active{background:color-mix(in srgb,var(--accent) 12%,var(--surface));}
+  .score-entry{display:flex;align-items:center;justify-content:center;gap:14px;padding:18px 0;
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;}
+  .stepper{display:flex;align-items:center;justify-content:center;gap:10px;}
+  .stepper button{width:34px;height:34px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);
+    color:var(--text);font-size:22px;font-weight:700;cursor:pointer;display:grid;place-items:center;line-height:1;}
+  .stepper button:disabled{opacity:.3;}
+  .elo-preview-mini{display:flex;align-items:center;gap:8px;margin-top:14px;padding:13px 15px;border-radius:13px;
+    background:color-mix(in srgb,var(--accent) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);
+    font-size:13px;color:var(--text-dim);font-weight:600;}
+  .photo-drop{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;
+    background:var(--surface);border:2px dashed var(--line);border-radius:18px;color:var(--text-dim);cursor:pointer;transition:border-color .15s;}
+  .photo-drop:active{border-color:var(--accent);}
+  .photo-remove{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px);}
+  .attached-note{display:flex;align-items:center;gap:7px;margin-top:12px;color:var(--win);font-size:13px;font-weight:700;}
+  .skip-link{display:block;margin:18px auto 0;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;}
+  .review-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;}
+  .review-divider{height:1px;background:var(--line);margin:14px 0;}
+  .result-burst{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;
+    background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent);}
+  .result-burst.loss{background:color-mix(in srgb,var(--loss) 14%,transparent);color:var(--loss);box-shadow:0 0 0 1px color-mix(in srgb,var(--loss) 30%,transparent);}
+  .result-burst.draw{background:var(--surface-2);color:var(--draw);box-shadow:0 0 0 1px var(--line);}
+
+  /* ---------- setup ---------- */
+  .palette-row{display:flex;gap:10px;}
+  .swatch{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s;}
+  .swatch.active{border-color:var(--text);transform:scale(1.12);box-shadow:0 0 0 3px var(--bg),0 0 0 4px currentColor;}
+  .text-input{width:100%;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:13px;
+    color:var(--text);font-size:15px;outline:none;transition:border-color .15s;}
+  .text-input:focus,.text-input:focus-within{border-color:var(--accent);}
+  .text-input.prefix{display:flex;align-items:center;gap:4px;}
+  .text-input.prefix input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:15px;}
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+
+  <!-- OfficeFC data engine (deterministic mock league) -->
+  <script>
+/* OfficeFC — mock data + derived-stat engine.
+   Everything (records, form, H2H, ELO history) is computed from one match list
+   so the prototype is internally consistent. Deterministic via a seeded PRNG. */
+(function () {
+  "use strict";
+
+  // ---- seeded PRNG (mulberry32) ----
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rnd = mulberry32(20260603);
+  const ri = (lo, hi) => lo + Math.floor(rnd() * (hi - lo + 1));
+  const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+
+  // ---- players ----  (you = p1)
+  const players = [
+    { id: "p1", name: "Marcus Bell", handle: "marcus", jersey: 10, color: "#00ff87", isYou: true },
+    { id: "p2", name: "Dave Okafor", handle: "big_dave", jersey: 9, color: "#ff5470" },
+    { id: "p3", name: "Priya Shah", handle: "priya", jersey: 7, color: "#5b9dff" },
+    { id: "p4", name: "Tom Nguyen", handle: "tommy", jersey: 4, color: "#ffb020" },
+    { id: "p5", name: "Aisha Khan", handle: "aisha", jersey: 11, color: "#c06bff" },
+    { id: "p6", name: "Jordan Lee", handle: "jlee", jersey: 6, color: "#36e0c8" },
+    { id: "p7", name: "Nina Costa", handle: "nina", jersey: 8, color: "#ff8a3d" },
+    { id: "p8", name: "Leo Martins", handle: "leo", jersey: 3, color: "#9aa7ff" },
+  ];
+  players.forEach((p) => {
+    p.initials = p.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  });
+  const byId = Object.fromEntries(players.map((p) => [p.id, p]));
+
+  // ---- generic team names (NO real clubs) ----
+  const teams = [
+    "Crimson Albion", "Northgate United", "Royal Vega", "Azzurri Select",
+    "Bavaria XI", "La Costa CF", "Harbour City", "Verde Nacional",
+    "Iron Foundry", "Capital Athletic", "Sierra Rovers", "Black Forest SV",
+    "Oranje Stars", "Maple Wanderers", "Delta Galácticos", "Phoenix Borough",
+  ];
+
+  // ---- seasons ----
+  const seasons = [
+    { id: "s3", name: "Summer Showdown", year: 2026, start: "2026-04-01", end: "2026-06-30", active: true },
+    { id: "s2", name: "Spring Cup", year: 2026, start: "2026-01-06", end: "2026-03-31", active: false,
+      championId: "p2", runnerUpId: "p3", potm: [{ m: "Jan", playerId: "p2" }, { m: "Feb", playerId: "p6" }, { m: "Mar", playerId: "p2" }] },
+    { id: "s1", name: "Winter League", year: 2025, start: "2025-10-01", end: "2025-12-20", active: false,
+      championId: "p3", runnerUpId: "p1", potm: [{ m: "Oct", playerId: "p1" }, { m: "Nov", playerId: "p3" }, { m: "Dec", playerId: "p3" }] },
+  ];
+  const activeSeason = seasons[0];
+
+  // ---- ELO engine ----
+  const K = 32, BASE = 1500;
+  const expected = (a, b) => 1 / (1 + Math.pow(10, (b - a) / 400));
+
+  // ---- match generation for the active season ----
+  // Engineer Marcus(p1) vs Dave(p2) all-time to be a painful 2–9.
+  const matches = [];
+  let mid = 1;
+  const dayMs = 86400000;
+  const seasonStart = new Date(activeSeason.start).getTime();
+
+  function score(winnerStronger) {
+    // returns [wScore, lScore] for a decisive game, biased to realistic football scores
+    const margin = pick([1, 1, 1, 2, 2, 3]);
+    const loser = pick([0, 0, 1, 1, 2]);
+    return [loser + margin, loser];
+  }
+
+  function addMatch(dayOffset, aId, bId, aGoals, bGoals, hasPhoto) {
+    const date = new Date(seasonStart + dayOffset * dayMs).toISOString().slice(0, 10);
+    matches.push({ id: "m" + mid++, seasonId: activeSeason.id, date, aId, bId, aGoals, bGoals, hasPhoto });
+  }
+
+  // Scripted nemesis thread: Marcus vs Dave this season — Dave dominates.
+  const mdResults = [ // [marcusGoals, daveGoals] — engineered to a brutal 2–9
+    [1, 3], [0, 2], [2, 4], [0, 1], [2, 5],
+    [3, 2] /* Marcus W */, [1, 2], [0, 3], [1, 4],
+    [2, 1] /* Marcus W */, [2, 3],
+  ];
+  let d = 1;
+  mdResults.forEach((r, i) => { addMatch(d, "p1", "p2", r[0], r[1], i % 2 === 0); d += ri(2, 5); });
+
+  // Other random matches among everyone (incl. Marcus vs others)
+  const others = players.map((p) => p.id);
+  for (let i = 0; i < 54; i++) {
+    let aId = pick(others), bId = pick(others);
+    while (bId === aId) bId = pick(others);
+    // skip extra Marcus-Dave (already scripted)
+    if ((aId === "p1" && bId === "p2") || (aId === "p2" && bId === "p1")) { i--; continue; }
+    const aWin = rnd() > 0.5;
+    const [w, l] = score(true);
+    let ag, bg;
+    if (rnd() < 0.16) { const t = pick([0, 1, 1, 2]); ag = t; bg = t; } // draw
+    else if (aWin) { ag = w; bg = l; } else { ag = l; bg = w; }
+    addMatch(d, aId, bId, ag, bg, rnd() < 0.55);
+    d += ri(0, 3);
+  }
+
+  // sort chronologically, then process ELO
+  matches.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : 0));
+  const ratings = Object.fromEntries(players.map((p) => [p.id, BASE]));
+  const history = Object.fromEntries(players.map((p) => [p.id, [{ date: activeSeason.start, rating: BASE }]]));
+  matches.forEach((m) => {
+    const Ra = ratings[m.aId], Rb = ratings[m.bId];
+    const Sa = m.aGoals > m.bGoals ? 1 : m.aGoals < m.bGoals ? 0 : 0.5;
+    const Sb = 1 - Sa;
+    const da = Math.round(K * (Sa - expected(Ra, Rb)));
+    const db = Math.round(K * (Sb - expected(Rb, Ra)));
+    m.aEloBefore = Ra; m.aEloAfter = Ra + da; m.aDelta = da;
+    m.bEloBefore = Rb; m.bEloAfter = Rb + db; m.bDelta = db;
+    ratings[m.aId] += da; ratings[m.bId] += db;
+    history[m.aId].push({ date: m.date, rating: ratings[m.aId] });
+    history[m.bId].push({ date: m.date, rating: ratings[m.bId] });
+  });
+
+  // ---- derived helpers ----
+  function playerMatches(pid) {
+    return matches.filter((m) => m.aId === pid || m.bId === pid)
+      .sort((a, b) => (a.date < b.date ? 1 : -1)); // newest first
+  }
+  // normalize a match to the perspective of pid -> {opp, gf, ga, res, delta, eloAfter}
+  function persp(m, pid) {
+    const me = m.aId === pid;
+    const gf = me ? m.aGoals : m.bGoals;
+    const ga = me ? m.bGoals : m.aGoals;
+    return {
+      id: m.id, date: m.date, oppId: me ? m.bId : m.aId,
+      myTeam: me ? m.aTeam : m.bTeam, oppTeam: me ? m.bTeam : m.aTeam,
+      gf, ga, res: gf > ga ? "W" : gf < ga ? "L" : "D",
+      delta: me ? m.aDelta : m.bDelta, eloAfter: me ? m.aEloAfter : m.bEloAfter,
+      raw: m,
+    };
+  }
+  function record(pid) {
+    let w = 0, dr = 0, l = 0, gf = 0, ga = 0;
+    playerMatches(pid).forEach((m) => {
+      const p = persp(m, pid);
+      gf += p.gf; ga += p.ga;
+      if (p.res === "W") w++; else if (p.res === "D") dr++; else l++;
+    });
+    const games = w + dr + l;
+    return { w, d: dr, l, games, gf, ga, winRate: games ? Math.round((w / games) * 100) : 0 };
+  }
+  function formChips(pid, n = 5) {
+    return playerMatches(pid).slice(0, n).map((m) => persp(m, pid).res).reverse();
+  }
+  function streaks(pid) {
+    const seq = playerMatches(pid).map((m) => persp(m, pid).res); // newest first
+    // current streak (newest run)
+    let cur = 0, curType = null;
+    for (const r of seq) {
+      if (curType === null) { curType = r === "W" ? "W" : r === "D" ? "D" : "L"; cur = 1; }
+      else if (r === curType) cur++;
+      else break;
+    }
+    // longest win + unbeaten over chronological order
+    const chrono = seq.slice().reverse();
+    let lw = 0, bestW = 0, ub = 0, bestUb = 0;
+    chrono.forEach((r) => {
+      if (r === "W") { lw++; ub++; } else if (r === "D") { lw = 0; ub++; } else { lw = 0; ub = 0; }
+      bestW = Math.max(bestW, lw); bestUb = Math.max(bestUb, ub);
+    });
+    return { current: cur, currentType: curType, longestWin: bestW, longestUnbeaten: bestUb };
+  }
+  function biggestWin(pid) {
+    let best = null, bestMargin = -1;
+    playerMatches(pid).forEach((m) => {
+      const p = persp(m, pid);
+      if (p.res === "W" && p.gf - p.ga > bestMargin) { bestMargin = p.gf - p.ga; best = p; }
+    });
+    return best;
+  }
+  function h2h(aId, bId) {
+    const list = matches.filter((m) =>
+      (m.aId === aId && m.bId === bId) || (m.aId === bId && m.bId === aId))
+      .sort((x, y) => (x.date < y.date ? 1 : -1));
+    let aw = 0, bw = 0, dr = 0, agf = 0, aga = 0;
+    list.forEach((m) => {
+      const p = persp(m, aId);
+      agf += p.gf; aga += p.ga;
+      if (p.res === "W") aw++; else if (p.res === "L") bw++; else dr++;
+    });
+    return { aId, bId, aWins: aw, bWins: bw, draws: dr, aGF: agf, aGA: aga, meetings: list.map((m) => persp(m, aId)) };
+  }
+  function standings(seasonId) {
+    const inSeason = matches.filter((m) => m.seasonId === seasonId);
+    const tbl = {};
+    players.forEach((p) => (tbl[p.id] = { id: p.id, w: 0, d: 0, l: 0, gf: 0, ga: 0, elo: ratings[p.id] }));
+    inSeason.forEach((m) => {
+      const A = tbl[m.aId], B = tbl[m.bId];
+      A.gf += m.aGoals; A.ga += m.bGoals; B.gf += m.bGoals; B.ga += m.aGoals;
+      if (m.aGoals > m.bGoals) { A.w++; B.l++; } else if (m.aGoals < m.bGoals) { A.l++; B.w++; } else { A.d++; B.d++; }
+    });
+    const rows = Object.values(tbl).filter((r) => r.w + r.d + r.l > 0)
+      .sort((a, b) => b.elo - a.elo);
+    rows.forEach((r, i) => {
+      r.rank = i + 1;
+      r.form = formChips(r.id, 5);
+      // fake movement from "last week"
+      r.move = [0, 1, -1, 2, -2, 0, 1, -1][i % 8];
+    });
+    return rows;
+  }
+  function nemesis(pid) {
+    // opponent with worst win-share for pid and >=3 games
+    let worst = null, worstShare = 2;
+    players.forEach((o) => {
+      if (o.id === pid) return;
+      const h = h2h(pid, o.id);
+      const g = h.aWins + h.bWins + h.draws;
+      if (g < 3) return;
+      const share = (h.aWins + 0.5 * h.draws) / g;
+      if (share < worstShare) { worstShare = share; worst = h; }
+    });
+    return worst;
+  }
+
+  // assign teams to matches (deterministic, after sort)
+  matches.forEach((m) => { m.aTeam = pick(teams); let b = pick(teams); m.bTeam = b; });
+
+  // archived final standings for past seasons (hand-shaped, plausible)
+  const archives = {
+    s2: [
+      { id: "p2", elo: 1631, w: 14, d: 3, l: 4 }, { id: "p3", elo: 1598, w: 12, d: 4, l: 5 },
+      { id: "p6", elo: 1572, w: 11, d: 3, l: 6 }, { id: "p1", elo: 1549, w: 10, d: 4, l: 7 },
+      { id: "p5", elo: 1521, w: 9, d: 3, l: 8 }, { id: "p7", elo: 1498, w: 8, d: 2, l: 10 },
+      { id: "p4", elo: 1466, w: 6, d: 4, l: 11 }, { id: "p8", elo: 1441, w: 5, d: 3, l: 12 },
+    ],
+    s1: [
+      { id: "p3", elo: 1644, w: 15, d: 2, l: 3 }, { id: "p1", elo: 1612, w: 13, d: 3, l: 4 },
+      { id: "p2", elo: 1583, w: 12, d: 2, l: 6 }, { id: "p7", elo: 1540, w: 10, d: 3, l: 7 },
+      { id: "p6", elo: 1509, w: 9, d: 2, l: 9 }, { id: "p4", elo: 1487, w: 7, d: 4, l: 9 },
+      { id: "p8", elo: 1455, w: 6, d: 2, l: 12 }, { id: "p5", elo: 1438, w: 5, d: 3, l: 12 },
+    ],
+  };
+  archives.s2.forEach((r, i) => (r.rank = i + 1));
+  archives.s1.forEach((r, i) => (r.rank = i + 1));
+
+  window.OFC = {
+    players, byId, teams, seasons, activeSeason, matches, ratings, history, archives,
+    you: byId.p1,
+    fns: { playerMatches, persp, record, formChips, streaks, biggestWin, h2h, standings, nemesis },
+  };
+})();
+
+  </script>
+
+  <!-- OfficeFC UI + screens + app shell (JSX precompiled at build time) -->
+  <script>
+/* OfficeFC — shared UI atoms. Exported to window for cross-file use. */
+const {
+  useState,
+  useEffect,
+  useRef,
+  useMemo
+} = React;
+
+/* ---------------- generic football iconography (no branding) ---------------- */
+const Icon = ({
+  name,
+  size = 20,
+  stroke = 2,
+  style
+}) => {
+  const c = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: stroke,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style
+  };
+  const P = {
+    home: /*#__PURE__*/React.createElement("path", {
+      d: "M3 11.5 12 4l9 7.5M5 10v9h14v-9"
+    }),
+    board: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 19V7M10 19V4M16 19v-8M22 19H2"
+    })),
+    seasons: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "9",
+      r: "5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M8 13.5 6.5 21l5.5-3 5.5 3-1.5-7.5"
+    })),
+    profile: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "8",
+      r: "4"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M4 20c1.5-4 5-5 8-5s6.5 1 8 5"
+    })),
+    plus: /*#__PURE__*/React.createElement("path", {
+      d: "M12 5v14M5 12h14"
+    }),
+    search: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "11",
+      cy: "11",
+      r: "7"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m20 20-3.2-3.2"
+    })),
+    x: /*#__PURE__*/React.createElement("path", {
+      d: "M6 6l12 12M18 6 6 18"
+    }),
+    back: /*#__PURE__*/React.createElement("path", {
+      d: "M15 5l-7 7 7 7"
+    }),
+    chevron: /*#__PURE__*/React.createElement("path", {
+      d: "M9 6l6 6-6 6"
+    }),
+    up: /*#__PURE__*/React.createElement("path", {
+      d: "M12 19V5M6 11l6-6 6 6"
+    }),
+    down: /*#__PURE__*/React.createElement("path", {
+      d: "M12 5v14M18 13l-6 6-6-6"
+    }),
+    camera: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M3 8h3l1.5-2h9L18 8h3v11H3z"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "13",
+      r: "3.5"
+    })),
+    flame: /*#__PURE__*/React.createElement("path", {
+      d: "M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3 3 6a5 5 0 0 1-10 0c0-4 5-6 5-13Z"
+    }),
+    trophy: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M7 4h10v4a5 5 0 0 1-10 0V4Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 19h6M10 15.5V19M14 15.5V19"
+    })),
+    crown: /*#__PURE__*/React.createElement("path", {
+      d: "M4 8l3 8h10l3-8-4.5 3.5L12 5 8.5 11.5 4 8Z"
+    }),
+    medal: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "14",
+      r: "5"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M9 9 7 3h10l-2 6"
+    })),
+    swords: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+      d: "M4 4h3l9 9-3 3-9-9V4Z"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m14 14 6 6M20 4h-3l-4 4M15 9l5 5"
+    })),
+    ball: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m12 7 3 2.2-1.1 3.6h-3.8L9 9.2 12 7Z"
+    })),
+    jersey: /*#__PURE__*/React.createElement("path", {
+      d: "M8 4 4 7l1.5 3L8 9v11h8V9l2.5 1L20 7l-4-3-2 1.5h-4L8 4Z"
+    }),
+    calendar: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "3",
+      y: "5",
+      width: "18",
+      height: "16",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M3 9h18M8 3v4M16 3v4"
+    })),
+    check: /*#__PURE__*/React.createElement("path", {
+      d: "M5 12.5 10 17 19 7"
+    }),
+    photo: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+      x: "3",
+      y: "4",
+      width: "18",
+      height: "16",
+      rx: "2"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: "9",
+      cy: "10",
+      r: "2"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "m4 18 5-4 4 3 3-2 4 3"
+    })),
+    edit: /*#__PURE__*/React.createElement("path", {
+      d: "M4 20h4L18 10l-4-4L4 16v4ZM13 7l4 4"
+    }),
+    clock: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 7v5l3 2"
+    })),
+    bolt: /*#__PURE__*/React.createElement("path", {
+      d: "M13 3 5 13h6l-1 8 8-10h-6l1-8Z"
+    }),
+    info: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+      cx: "12",
+      cy: "12",
+      r: "9"
+    }), /*#__PURE__*/React.createElement("path", {
+      d: "M12 11v5M12 8h.01"
+    }))
+  };
+  return /*#__PURE__*/React.createElement("svg", c, P[name] || null);
+};
+
+/* ---------------- avatar ---------------- */
+const Avatar = ({
+  player,
+  size = 40,
+  ring = false,
+  jersey = false
+}) => {
+  if (!player) return null;
+  const fs = Math.round(size * 0.38);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative",
+      width: size,
+      height: size,
+      flex: "0 0 auto"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: size,
+      height: size,
+      borderRadius: "50%",
+      background: `linear-gradient(150deg, ${player.color}, ${shade(player.color, -28)})`,
+      display: "grid",
+      placeItems: "center",
+      color: "#06080c",
+      fontWeight: 800,
+      fontFamily: "var(--font-head)",
+      fontSize: fs,
+      letterSpacing: "-.02em",
+      boxShadow: ring ? `0 0 0 2px var(--bg), 0 0 0 4px ${player.color}` : "none"
+    }
+  }, player.initials), jersey && /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      position: "absolute",
+      bottom: -3,
+      right: -3,
+      minWidth: 16,
+      height: 16,
+      padding: "0 3px",
+      borderRadius: 8,
+      background: "var(--surface-2)",
+      border: "1px solid var(--line)",
+      color: "var(--text-dim)",
+      fontSize: 9,
+      fontWeight: 700,
+      display: "grid",
+      placeItems: "center"
+    }
+  }, player.jersey));
+};
+
+/* ---------------- form chips (W/D/L) ---------------- */
+const resColor = {
+  W: "var(--win)",
+  D: "var(--draw)",
+  L: "var(--loss)"
+};
+const FormChips = ({
+  results = [],
+  size = 22,
+  gap = 4
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    gap
+  }
+}, results.length === 0 && /*#__PURE__*/React.createElement("span", {
+  style: {
+    color: "var(--text-faint)",
+    fontSize: 12
+  }
+}, "No games yet"), results.map((r, i) => /*#__PURE__*/React.createElement("div", {
+  key: i,
+  className: "mono",
+  style: {
+    width: size,
+    height: size,
+    borderRadius: 6,
+    display: "grid",
+    placeItems: "center",
+    fontSize: Math.round(size * 0.5),
+    fontWeight: 800,
+    color: r === "D" ? "#0a0c10" : "#06080c",
+    background: resColor[r],
+    opacity: 0.45 + (i + 1) / (results.length * 1.8)
+  }
+}, r)));
+
+/* ---------------- ELO delta pill ---------------- */
+const EloDelta = ({
+  delta,
+  size = 13
+}) => {
+  const pos = delta >= 0;
+  return /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 2,
+      fontSize: size,
+      fontWeight: 700,
+      color: pos ? "var(--win)" : "var(--loss)"
+    }
+  }, pos ? "▲" : "▼", pos ? "+" : "", delta);
+};
+
+/* ---------------- movement arrow ---------------- */
+const Movement = ({
+  move
+}) => {
+  if (!move) return /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)",
+      fontFamily: "var(--font-mono)",
+      fontSize: 12
+    }
+  }, "\u2014");
+  const up = move > 0;
+  return /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 1,
+      fontSize: 12,
+      fontWeight: 700,
+      color: up ? "var(--win)" : "var(--loss)"
+    }
+  }, up ? "▲" : "▼", Math.abs(move));
+};
+
+/* ---------------- stat card ---------------- */
+const StatCard = ({
+  label,
+  value,
+  sub,
+  accent,
+  mono = true,
+  children
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    background: "var(--surface)",
+    border: "1px solid var(--line)",
+    borderRadius: 16,
+    padding: "14px 14px 12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontSize: 10.5,
+    letterSpacing: ".12em",
+    textTransform: "uppercase",
+    color: "var(--text-dim)",
+    fontWeight: 700
+  }
+}, label), value !== undefined && /*#__PURE__*/React.createElement("div", {
+  className: mono ? "mono" : "",
+  style: {
+    fontSize: 30,
+    fontWeight: 800,
+    lineHeight: 1.02,
+    color: accent ? "var(--accent)" : "var(--text)",
+    fontFamily: mono ? "var(--font-mono)" : "var(--font-head)",
+    letterSpacing: "-.02em"
+  }
+}, value), sub && /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontSize: 11.5,
+    color: "var(--text-dim)"
+  }
+}, sub), children);
+
+/* ---------------- button ---------------- */
+const Button = ({
+  children,
+  variant = "primary",
+  icon,
+  full,
+  onClick,
+  size = "md",
+  style
+}) => {
+  const sz = size === "lg" ? {
+    padding: "16px 20px",
+    fontSize: 16
+  } : size === "sm" ? {
+    padding: "8px 12px",
+    fontSize: 13
+  } : {
+    padding: "12px 16px",
+    fontSize: 14.5
+  };
+  const variants = {
+    primary: {
+      background: "var(--accent)",
+      color: "#06080c",
+      border: "1px solid var(--accent)"
+    },
+    dark: {
+      background: "var(--surface-2)",
+      color: "var(--text)",
+      border: "1px solid var(--line)"
+    },
+    ghost: {
+      background: "transparent",
+      color: "var(--text)",
+      border: "1px solid var(--line)"
+    },
+    danger: {
+      background: "transparent",
+      color: "var(--loss)",
+      border: "1px solid color-mix(in srgb, var(--loss) 40%, transparent)"
+    }
+  };
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onClick,
+    className: "ofc-btn",
+    style: {
+      ...sz,
+      ...variants[variant],
+      width: full ? "100%" : "auto",
+      borderRadius: 13,
+      fontWeight: 700,
+      fontFamily: "var(--font-head)",
+      letterSpacing: ".01em",
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      cursor: "pointer",
+      ...style
+    }
+  }, icon && /*#__PURE__*/React.createElement(Icon, {
+    name: icon,
+    size: size === "lg" ? 20 : 17,
+    stroke: 2.4
+  }), children);
+};
+
+/* ---------------- section label ---------------- */
+const SectionLabel = ({
+  children,
+  action
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    margin: "2px 2px 10px"
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontSize: 12,
+    letterSpacing: ".14em",
+    textTransform: "uppercase",
+    color: "var(--text-dim)",
+    fontWeight: 800,
+    fontFamily: "var(--font-head)"
+  }
+}, children), action);
+
+/* ---------------- rank badge ---------------- */
+const RankBadge = ({
+  rank,
+  size = 26
+}) => {
+  const medal = rank <= 3;
+  const colors = {
+    1: "#ffd24a",
+    2: "#cdd6e0",
+    3: "#e0935b"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      width: size,
+      height: size,
+      borderRadius: 8,
+      display: "grid",
+      placeItems: "center",
+      fontSize: size * 0.48,
+      fontWeight: 800,
+      background: medal ? colors[rank] : "var(--surface-2)",
+      color: medal ? "#06080c" : "var(--text-dim)",
+      border: medal ? "none" : "1px solid var(--line)"
+    }
+  }, rank);
+};
+
+/* ---------------- player row (reusable) ---------------- */
+const PlayerRow = ({
+  player,
+  rank,
+  elo,
+  move,
+  record,
+  form,
+  you,
+  onClick,
+  compact
+}) => /*#__PURE__*/React.createElement("button", {
+  onClick: onClick,
+  className: "ofc-row",
+  style: {
+    display: "grid",
+    gridTemplateColumns: rank ? "auto auto 1fr auto" : "auto 1fr auto",
+    alignItems: "center",
+    gap: 12,
+    width: "100%",
+    textAlign: "left",
+    padding: "10px 12px",
+    background: you ? "color-mix(in srgb, var(--accent) 9%, var(--surface))" : "var(--surface)",
+    border: `1px solid ${you ? "color-mix(in srgb, var(--accent) 35%, transparent)" : "var(--line)"}`,
+    borderRadius: 14,
+    cursor: "pointer"
+  }
+}, rank && /*#__PURE__*/React.createElement(RankBadge, {
+  rank: rank
+}), /*#__PURE__*/React.createElement(Avatar, {
+  player: player,
+  size: 38,
+  jersey: true
+}), /*#__PURE__*/React.createElement("div", {
+  style: {
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    fontWeight: 700,
+    fontSize: 14.5,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  }
+}, player.name), you && /*#__PURE__*/React.createElement("span", {
+  className: "tag-you"
+}, "YOU")), !compact && /*#__PURE__*/React.createElement("div", {
+  style: {
+    marginTop: 4
+  }
+}, form ? /*#__PURE__*/React.createElement(FormChips, {
+  results: form,
+  size: 16,
+  gap: 3
+}) : record && /*#__PURE__*/React.createElement("span", {
+  className: "mono",
+  style: {
+    fontSize: 11.5,
+    color: "var(--text-dim)"
+  }
+}, record.w, "W ", record.d, "D ", record.l, "L"))), /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: 2
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  className: "mono",
+  style: {
+    fontSize: 18,
+    fontWeight: 800,
+    letterSpacing: "-.02em"
+  }
+}, elo), move !== undefined && /*#__PURE__*/React.createElement(Movement, {
+  move: move
+})));
+
+/* ---------------- ELO line chart (SVG) ---------------- */
+const LineChart = ({
+  data,
+  w = 326,
+  h = 150,
+  color = "var(--accent)"
+}) => {
+  if (!data || data.length < 2) return null;
+  const pad = {
+    t: 14,
+    r: 8,
+    b: 16,
+    l: 8
+  };
+  const xs = data.map((_, i) => i);
+  const ys = data.map(d => d.rating);
+  const minY = Math.min(...ys) - 12,
+    maxY = Math.max(...ys) + 12;
+  const X = i => pad.l + i / (data.length - 1) * (w - pad.l - pad.r);
+  const Y = v => pad.t + (1 - (v - minY) / (maxY - minY)) * (h - pad.t - pad.b);
+  const line = data.map((d, i) => `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(d.rating).toFixed(1)}`).join(" ");
+  const area = `${line} L${X(data.length - 1).toFixed(1)},${h - pad.b} L${X(0).toFixed(1)},${h - pad.b} Z`;
+  const last = data[data.length - 1];
+  const gridY = [minY, (minY + maxY) / 2, maxY];
+  return /*#__PURE__*/React.createElement("svg", {
+    viewBox: `0 0 ${w} ${h}`,
+    style: {
+      width: "100%",
+      height: "auto",
+      display: "block"
+    }
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "eloFill",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: color,
+    stopOpacity: "0.28"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: color,
+    stopOpacity: "0"
+  }))), gridY.map((g, i) => /*#__PURE__*/React.createElement("line", {
+    key: i,
+    x1: pad.l,
+    x2: w - pad.r,
+    y1: Y(g),
+    y2: Y(g),
+    stroke: "var(--line)",
+    strokeWidth: "1",
+    strokeDasharray: "2 4"
+  })), /*#__PURE__*/React.createElement("path", {
+    d: area,
+    fill: "url(#eloFill)"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: line,
+    fill: "none",
+    stroke: color,
+    strokeWidth: "2.5",
+    strokeLinejoin: "round",
+    strokeLinecap: "round"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: X(data.length - 1),
+    cy: Y(last.rating),
+    r: "4.5",
+    fill: color,
+    stroke: "var(--bg)",
+    strokeWidth: "2"
+  }));
+};
+
+/* helpers */
+function shade(hex, amt) {
+  const c = hex.replace("#", "");
+  const n = parseInt(c.length === 3 ? c.split("").map(x => x + x).join("") : c, 16);
+  let r = (n >> 16) + amt,
+    g = (n >> 8 & 255) + amt,
+    b = (n & 255) + amt;
+  r = Math.max(0, Math.min(255, r));
+  g = Math.max(0, Math.min(255, g));
+  b = Math.max(0, Math.min(255, b));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+function fmtDate(iso) {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short"
+  });
+}
+function daysUntil(iso) {
+  const end = new Date(iso + "T23:59:59").getTime();
+  return Math.max(0, Math.ceil((end - new Date("2026-06-03").getTime()) / 86400000));
+}
+Object.assign(window, {
+  Icon,
+  Avatar,
+  FormChips,
+  EloDelta,
+  Movement,
+  StatCard,
+  Button,
+  SectionLabel,
+  RankBadge,
+  PlayerRow,
+  LineChart,
+  shade,
+  fmtDate,
+  daysUntil
+});
+
+/* ───────────────────────────────────────────────────────── */
+
+/* OfficeFC — main tab screens + shared layout. */
+const O = window.OFC,
+  F = window.OFC.fns;
+
+/* shared: pushed-screen header */
+const ScreenHeader = ({
+  title,
+  sub,
+  onBack,
+  right
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "6px 4px 14px"
+  }
+}, onBack && /*#__PURE__*/React.createElement("button", {
+  onClick: onBack,
+  className: "ofc-iconbtn",
+  "aria-label": "Back"
+}, /*#__PURE__*/React.createElement(Icon, {
+  name: "back",
+  size: 22,
+  stroke: 2.4
+})), /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1,
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontFamily: "var(--font-head)",
+    fontWeight: 800,
+    fontSize: 20,
+    letterSpacing: "-.02em",
+    lineHeight: 1.05
+  }
+}, title), sub && /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontSize: 12,
+    color: "var(--text-dim)",
+    marginTop: 2
+  }
+}, sub)), right);
+
+/* season pill with live countdown */
+const SeasonPill = ({
+  onClick
+}) => {
+  const left = daysUntil(O.activeSeason.end);
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onClick,
+    className: "ofc-pill",
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 7,
+      height: 7,
+      borderRadius: 9,
+      background: "var(--accent)",
+      boxShadow: "0 0 8px var(--accent)"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      fontSize: 12.5
+    }
+  }, O.activeSeason.name), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      color: "var(--accent)",
+      fontWeight: 700
+    }
+  }, left, "d left"));
+};
+
+/* ============================= HOME ============================= */
+function HomeScreen({
+  nav,
+  cheeky
+}) {
+  const me = O.you;
+  const rows = F.standings(O.activeSeason.id);
+  const myRow = rows.find(r => r.id === me.id);
+  const rec = F.record(me.id);
+  const form = F.formChips(me.id, 5);
+  const st = F.streaks(me.id);
+  const nem = F.nemesis(me.id);
+  const nemId = nem ? nem.aId === me.id ? nem.bId : nem.aId : null;
+  const top3 = rows.slice(0, 3);
+  const streakLine = st.currentType === "W" ? `${st.current}-game win streak 🔥` : st.currentType === "L" ? `${st.current}-game skid` : `${st.current} unbeaten`;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "4px 2px 14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12.5,
+      color: "var(--text-dim)"
+    }
+  }, cheeky ? "Back for more punishment," : "Welcome back,"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "var(--font-head)",
+      fontWeight: 800,
+      fontSize: 22,
+      letterSpacing: "-.02em"
+    }
+  }, me.name.split(" ")[0])), /*#__PURE__*/React.createElement(SeasonPill, {
+    onClick: () => nav.tab("seasons")
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "hero-card",
+    onClick: () => nav.push("player", {
+      id: me.id
+    })
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, "Rank"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "baseline",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono hero-rank"
+  }, "#", myRow ? myRow.rank : "–"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-dim)",
+      fontSize: 13
+    }
+  }, "of ", rows.length))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, "ELO"), /*#__PURE__*/React.createElement("div", {
+    className: "mono hero-elo"
+  }, O.ratings[me.id]))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      marginTop: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kicker",
+    style: {
+      marginBottom: 6
+    }
+  }, "Last 5"), /*#__PURE__*/React.createElement(FormChips, {
+    results: form,
+    size: 26
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 5,
+      color: st.currentType === "W" ? "var(--accent)" : "var(--text-dim)",
+      fontSize: 12.5,
+      fontWeight: 700
+    }
+  }, st.currentType === "W" && /*#__PURE__*/React.createElement(Icon, {
+    name: "flame",
+    size: 15
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "mono"
+  }, streakLine)))), /*#__PURE__*/React.createElement("button", {
+    className: "log-cta",
+    onClick: () => nav.push("log")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "plus",
+    size: 22,
+    stroke: 2.6
+  }), " Log a match"), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12,
+      opacity: 0.7
+    }
+  }, "+ELO \u2191")), nem && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement(SectionLabel, null, "Current nemesis"), /*#__PURE__*/React.createElement("button", {
+    className: "nemesis-card",
+    onClick: () => nav.push("h2h", {
+      a: me.id,
+      b: nemId
+    })
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: O.byId[nemId],
+    size: 48,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 15
+    }
+  }, O.byId[nemId].name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)"
+    }
+  }, cheeky ? "owns you all-time" : "your worst matchup")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 26,
+      fontWeight: 800,
+      letterSpacing: "-.02em"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--loss)"
+    }
+  }, nem.aWins), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)"
+    }
+  }, "\u2013"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text)"
+    }
+  }, nem.bWins)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      letterSpacing: ".1em",
+      textTransform: "uppercase",
+      color: "var(--loss)",
+      fontWeight: 700
+    }
+  }, "down all-time")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement(SectionLabel, {
+    action: /*#__PURE__*/React.createElement("button", {
+      className: "link-btn",
+      onClick: () => nav.tab("board")
+    }, "Full table \u2192")
+  }, "Top of the table"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, top3.map(r => /*#__PURE__*/React.createElement(PlayerRow, {
+    key: r.id,
+    player: O.byId[r.id],
+    rank: r.rank,
+    elo: r.elo,
+    move: r.move,
+    form: r.form,
+    you: r.id === me.id,
+    onClick: () => nav.push("player", {
+      id: r.id
+    })
+  })))));
+}
+
+/* ============================= LEADERBOARD ============================= */
+function LeaderboardScreen({
+  nav
+}) {
+  const [seasonId, setSeasonId] = useState(O.activeSeason.id);
+  const [q, setQ] = useState("");
+  const isActive = seasonId === O.activeSeason.id;
+  let rows = isActive ? F.standings(seasonId) : O.archives[seasonId].map(r => ({
+    ...r,
+    form: null,
+    move: undefined
+  }));
+  if (q.trim()) rows = rows.filter(r => O.byId[r.id].name.toLowerCase().includes(q.toLowerCase()));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: "Leaderboard",
+    sub: `${rows.length} contenders`
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "chip-scroll"
+  }, O.seasons.map(s => /*#__PURE__*/React.createElement("button", {
+    key: s.id,
+    onClick: () => setSeasonId(s.id),
+    className: "season-chip" + (seasonId === s.id ? " active" : "")
+  }, s.name, s.active && /*#__PURE__*/React.createElement("span", {
+    className: "live-dot"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "search-box"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    size: 16,
+    stroke: 2.2
+  }), /*#__PURE__*/React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "Search players"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "table-head"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 26
+    }
+  }, "#"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, "Player"), /*#__PURE__*/React.createElement("span", null, "W-D-L"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 52,
+      textAlign: "right"
+    }
+  }, "ELO")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 7
+    }
+  }, rows.map(r => /*#__PURE__*/React.createElement("button", {
+    key: r.id,
+    className: "ofc-row board-row",
+    onClick: () => nav.push("player", {
+      id: r.id
+    })
+  }, /*#__PURE__*/React.createElement(RankBadge, {
+    rank: r.rank
+  }), /*#__PURE__*/React.createElement(Avatar, {
+    player: O.byId[r.id],
+    size: 36
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      minWidth: 0,
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14,
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, O.byId[r.id].name), r.id === O.you.id && /*#__PURE__*/React.createElement("span", {
+    className: "tag-you"
+  }, "YOU")), r.form ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement(FormChips, {
+    results: r.form,
+    size: 15,
+    gap: 3
+  })) : /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, "champion era")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)"
+    }
+  }, r.w, "-", r.d, "-", r.l), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 17,
+      fontWeight: 800
+    }
+  }, r.elo), r.move !== undefined && /*#__PURE__*/React.createElement(Movement, {
+    move: r.move
+  })))))));
+}
+
+/* ============================= SEASONS & HALL OF FAME ============================= */
+function SeasonsScreen({
+  nav
+}) {
+  const left = daysUntil(O.activeSeason.end);
+  const total = Math.ceil((new Date(O.activeSeason.end) - new Date(O.activeSeason.start)) / 86400000);
+  const pct = Math.min(100, Math.round((total - left) / total * 100));
+  const past = O.seasons.filter(s => !s.active);
+  const rows = F.standings(O.activeSeason.id);
+  const leader = rows[0];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: "Seasons",
+    sub: "Hall of Fame & silverware"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "current-season"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kicker",
+    style: {
+      color: "var(--accent)"
+    }
+  }, "\u25CF Live season"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "var(--font-head)",
+      fontWeight: 800,
+      fontSize: 26,
+      letterSpacing: "-.02em",
+      marginTop: 2
+    }
+  }, O.activeSeason.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)",
+      marginTop: 2
+    }
+  }, fmtDate(O.activeSeason.start), " \u2013 ", fmtDate(O.activeSeason.end), " \xB7 2026")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 34,
+      fontWeight: 800,
+      color: "var(--accent)",
+      lineHeight: 1
+    }
+  }, left), /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, "days left"))), /*#__PURE__*/React.createElement("div", {
+    className: "progress"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: pct + "%"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginTop: 10,
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: O.byId[leader.id],
+    size: 30
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      color: "var(--text-dim)",
+      textTransform: "uppercase",
+      letterSpacing: ".1em",
+      fontWeight: 700
+    }
+  }, "Leading"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, O.byId[leader.id].name))), /*#__PURE__*/React.createElement(Icon, {
+    name: "trophy",
+    size: 26,
+    style: {
+      color: "var(--accent)"
+    }
+  }))), /*#__PURE__*/React.createElement(SectionLabel, null, "Past seasons"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 10
+    }
+  }, past.map(s => /*#__PURE__*/React.createElement("button", {
+    key: s.id,
+    className: "past-season",
+    onClick: () => nav.push("archive", {
+      id: s.id
+    })
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "var(--font-head)",
+      fontWeight: 800,
+      fontSize: 16
+    }
+  }, s.name), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)"
+    }
+  }, s.year)), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron",
+    size: 18,
+    style: {
+      color: "var(--text-dim)"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement(PodiumChip, {
+    place: "Champion",
+    player: O.byId[s.championId],
+    icon: "trophy",
+    gold: true
+  }), /*#__PURE__*/React.createElement(PodiumChip, {
+    place: "Runner-up",
+    player: O.byId[s.runnerUpId],
+    icon: "medal"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 12,
+      paddingTop: 12,
+      borderTop: "1px solid var(--line)"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10.5,
+      color: "var(--text-dim)",
+      textTransform: "uppercase",
+      letterSpacing: ".1em",
+      fontWeight: 700,
+      marginRight: 2
+    }
+  }, "POTM"), s.potm.map(p => /*#__PURE__*/React.createElement("div", {
+    key: p.m,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 5
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: O.byId[p.playerId],
+    size: 20
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, p.m))))))));
+}
+const PodiumChip = ({
+  place,
+  player,
+  icon,
+  gold
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    flex: 1,
+    background: "var(--surface-2)",
+    border: "1px solid var(--line)",
+    borderRadius: 12,
+    padding: "10px 12px",
+    display: "flex",
+    alignItems: "center",
+    gap: 10
+  }
+}, /*#__PURE__*/React.createElement(Avatar, {
+  player: player,
+  size: 34
+}), /*#__PURE__*/React.createElement("div", {
+  style: {
+    minWidth: 0
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4
+  }
+}, /*#__PURE__*/React.createElement(Icon, {
+  name: icon,
+  size: 13,
+  style: {
+    color: gold ? "#ffd24a" : "#cdd6e0"
+  }
+}), /*#__PURE__*/React.createElement("span", {
+  style: {
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: ".08em",
+    color: "var(--text-dim)",
+    fontWeight: 700
+  }
+}, place)), /*#__PURE__*/React.createElement("div", {
+  style: {
+    fontSize: 13,
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  }
+}, player.name)));
+Object.assign(window, {
+  ScreenHeader,
+  SeasonPill,
+  HomeScreen,
+  LeaderboardScreen,
+  SeasonsScreen,
+  PodiumChip
+});
+
+/* ───────────────────────────────────────────────────────── */
+
+/* OfficeFC — detail screens: player profile, match detail, H2H, archive, setup. */
+
+/* faux "end-of-match stats screen" (stands in for an uploaded photo) */
+const StatsShot = ({
+  m,
+  compact
+}) => {
+  // deterministic-ish fake stats from the score
+  const poss = 38 + (m.aGoals * 7 + m.bGoals * 3) % 24;
+  const shots = [6 + m.aGoals * 2, 6 + m.bGoals * 2];
+  const sot = [Math.max(m.aGoals, 1) + 1, Math.max(m.bGoals, 1) + 1];
+  const Row = ({
+    label,
+    a,
+    b
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "32px 1fr 32px",
+      alignItems: "center",
+      gap: 8,
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      textAlign: "left",
+      fontWeight: 700
+    }
+  }, a), /*#__PURE__*/React.createElement("span", {
+    style: {
+      textAlign: "center",
+      color: "var(--text-dim)",
+      fontSize: 10,
+      textTransform: "uppercase",
+      letterSpacing: ".1em"
+    }
+  }, label), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      textAlign: "right",
+      fontWeight: 700
+    }
+  }, b));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "linear-gradient(160deg,#0c1622,#0a0f17)",
+      border: "1px solid var(--line)",
+      borderRadius: 14,
+      padding: compact ? "12px 14px" : "16px 16px",
+      position: "relative",
+      overflow: "hidden"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "absolute",
+      inset: 0,
+      backgroundImage: "radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%)"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 9.5,
+      letterSpacing: ".18em",
+      textTransform: "uppercase",
+      color: "var(--text-dim)",
+      fontWeight: 700
+    }
+  }, "Full time \xB7 stats"), /*#__PURE__*/React.createElement(Icon, {
+    name: "photo",
+    size: 14,
+    style: {
+      color: "var(--text-dim)"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 11,
+      marginBottom: 5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontWeight: 700
+    }
+  }, poss, "%"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-dim)",
+      fontSize: 10,
+      textTransform: "uppercase",
+      letterSpacing: ".1em"
+    }
+  }, "Possession"), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontWeight: 700
+    }
+  }, 100 - poss, "%")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      height: 6,
+      borderRadius: 4,
+      overflow: "hidden",
+      gap: 2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: poss + "%",
+      background: "var(--accent)"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      background: "var(--surface-2)"
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(Row, {
+    label: "Shots",
+    a: shots[0],
+    b: shots[1]
+  }), /*#__PURE__*/React.createElement(Row, {
+    label: "On target",
+    a: sot[0],
+    b: sot[1]
+  }), /*#__PURE__*/React.createElement(Row, {
+    label: "Goals",
+    a: m.aGoals,
+    b: m.bGoals
+  }))));
+};
+
+/* ============================= PLAYER PROFILE ============================= */
+function PlayerScreen({
+  nav,
+  params
+}) {
+  const O = window.OFC,
+    F = O.fns;
+  const id = params.id;
+  const p = O.byId[id];
+  const rec = F.record(id);
+  const st = F.streaks(id);
+  const big = F.biggestWin(id);
+  const form = F.formChips(id, 5);
+  const hist = O.history[id];
+  const rows = F.standings(O.activeSeason.id);
+  const rank = (rows.find(r => r.id === id) || {}).rank;
+  const isYou = id === O.you.id;
+
+  // h2h vs everyone
+  const opps = O.players.filter(o => o.id !== id).map(o => {
+    const h = F.h2h(id, o.id);
+    return {
+      o,
+      h,
+      games: h.aWins + h.bWins + h.draws
+    };
+  }).filter(x => x.games > 0).sort((a, b) => b.games - a.games);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: isYou ? "Your profile" : p.name,
+    sub: "@" + p.handle + " · #" + p.jersey,
+    onBack: nav.canPop ? () => nav.pop() : null,
+    right: isYou ? /*#__PURE__*/React.createElement("button", {
+      className: "ofc-iconbtn",
+      onClick: () => nav.push("setup", {
+        edit: true
+      })
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "edit",
+      size: 18
+    })) : null
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "profile-hero"
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: p,
+    size: 64,
+    ring: true,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, "Current ELO"), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 46,
+      fontWeight: 800,
+      lineHeight: 0.95,
+      letterSpacing: "-.03em",
+      color: "var(--accent)"
+    }
+  }, O.ratings[id]), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 4
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 12.5,
+      color: "var(--text-dim)"
+    }
+  }, "Rank #", rank, " \xB7 ", O.activeSeason.name)))), /*#__PURE__*/React.createElement("div", {
+    className: "chart-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "kicker"
+  }, "ELO over time"), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, hist.length - 1, " games")), /*#__PURE__*/React.createElement(LineChart, {
+    data: hist
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "stat-grid"
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "Record",
+    value: `${rec.w}-${rec.d}-${rec.l}`,
+    sub: `${rec.games} games`
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Win rate",
+    value: rec.winRate + "%",
+    accent: true,
+    sub: `${rec.gf} for · ${rec.ga} against`
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Current",
+    value: st.current,
+    sub: st.currentType === "W" ? "win streak" : st.currentType === "L" ? "losses in a row" : "drawn run",
+    accent: st.currentType === "W"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Best streak",
+    value: st.longestWin,
+    sub: `${st.longestUnbeaten} unbeaten`
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10,
+      marginTop: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      background: "var(--surface)",
+      border: "1px solid var(--line)",
+      borderRadius: 16,
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kicker",
+    style: {
+      marginBottom: 8
+    }
+  }, "Last 5"), /*#__PURE__*/React.createElement(FormChips, {
+    results: form,
+    size: 24
+  })), big && /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      background: "var(--surface)",
+      border: "1px solid var(--line)",
+      borderRadius: 16,
+      padding: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kicker",
+    style: {
+      marginBottom: 6
+    }
+  }, "Biggest win"), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 22,
+      fontWeight: 800
+    }
+  }, big.gf, "\u2013", big.ga), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, "vs ", O.byId[big.oppId].name.split(" ")[0]))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement(SectionLabel, null, "Head-to-head record"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 7
+    }
+  }, opps.map(({
+    o,
+    h,
+    games
+  }) => {
+    const winning = h.aWins > h.bWins,
+      losing = h.aWins < h.bWins;
+    return /*#__PURE__*/React.createElement("button", {
+      key: o.id,
+      className: "ofc-row h2h-row",
+      onClick: () => nav.push("h2h", {
+        a: id,
+        b: o.id
+      })
+    }, /*#__PURE__*/React.createElement(Avatar, {
+      player: o,
+      size: 34
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontWeight: 700,
+        fontSize: 13.5
+      }
+    }, o.name), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 11,
+        color: "var(--text-dim)"
+      }
+    }, games, " meetings")), losing && games >= 3 && /*#__PURE__*/React.createElement("span", {
+      className: "nemesis-tag"
+    }, "NEMESIS"), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 18,
+        fontWeight: 800,
+        letterSpacing: "-.01em"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: winning ? "var(--win)" : losing ? "var(--loss)" : "var(--text)"
+      }
+    }, h.aWins), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "var(--text-faint)"
+      }
+    }, "\u2013"), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "var(--text-dim)"
+      }
+    }, h.bWins)), /*#__PURE__*/React.createElement(Icon, {
+      name: "chevron",
+      size: 16,
+      style: {
+        color: "var(--text-faint)"
+      }
+    }));
+  }))));
+}
+
+/* ============================= MATCH DETAIL ============================= */
+function MatchScreen({
+  nav,
+  params
+}) {
+  const O = window.OFC;
+  const m = O.matches.find(x => x.id === params.id) || O.matches[0];
+  const A = O.byId[m.aId],
+    B = O.byId[m.bId];
+  const season = O.seasons.find(s => s.id === m.seasonId);
+  const TeamLine = ({
+    p,
+    team,
+    goals,
+    delta,
+    win
+  }) => /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: p,
+    size: 56,
+    ring: win,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14,
+      marginTop: 8
+    }
+  }, p.name.split(" ")[0]), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      marginTop: 2
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "jersey",
+    size: 11
+  }), team), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6
+    }
+  }, /*#__PURE__*/React.createElement(EloDelta, {
+    delta: delta,
+    size: 13
+  })));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: "Match detail",
+    sub: `${fmtDate(m.date)} · ${season ? season.name : ""}`,
+    onBack: () => nav.pop()
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "match-hero"
+  }, /*#__PURE__*/React.createElement(TeamLine, {
+    p: A,
+    team: m.aTeam,
+    goals: m.aGoals,
+    delta: m.aDelta,
+    win: m.aGoals > m.bGoals
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "0 4px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 52,
+      fontWeight: 800,
+      lineHeight: 0.9,
+      letterSpacing: "-.03em"
+    }
+  }, m.aGoals, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)",
+      margin: "0 4px"
+    }
+  }, ":"), m.bGoals), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      letterSpacing: ".16em",
+      textTransform: "uppercase",
+      color: "var(--text-dim)",
+      marginTop: 6,
+      fontWeight: 700
+    }
+  }, "Full time")), /*#__PURE__*/React.createElement(TeamLine, {
+    p: B,
+    team: m.bTeam,
+    goals: m.bGoals,
+    delta: m.bDelta,
+    win: m.bGoals > m.aGoals
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "stat-grid",
+    style: {
+      marginTop: 12
+    }
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: A.name.split(" ")[0] + " ELO",
+    value: m.aEloAfter,
+    sub: `${m.aEloBefore} → ${m.aEloAfter}`,
+    accent: m.aDelta >= 0
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: B.name.split(" ")[0] + " ELO",
+    value: m.bEloAfter,
+    sub: `${m.bEloBefore} → ${m.bEloAfter}`,
+    accent: m.bDelta >= 0
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement(SectionLabel, null, "Stats screen"), /*#__PURE__*/React.createElement(StatsShot, {
+    m: m
+  })));
+}
+
+/* ============================= HEAD-TO-HEAD DETAIL ============================= */
+function H2HScreen({
+  nav,
+  params
+}) {
+  const O = window.OFC,
+    F = O.fns;
+  const [a, setA] = useState(params.a || O.you.id);
+  const [b, setB] = useState(params.b || O.players.find(p => p.id !== (params.a || O.you.id)).id);
+  const A = O.byId[a],
+    B = O.byId[b];
+  const h = F.h2h(a, b);
+  const total = h.aWins + h.bWins + h.draws;
+  const aDom = h.aWins > h.bWins,
+    bDom = h.bWins > h.aWins;
+  const Picker = ({
+    value,
+    onChange,
+    exclude
+  }) => /*#__PURE__*/React.createElement("div", {
+    className: "chip-scroll",
+    style: {
+      margin: 0
+    }
+  }, O.players.filter(p => p.id !== exclude).map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => onChange(p.id),
+    className: "pick-chip" + (value === p.id ? " active" : "")
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: p,
+    size: 22
+  }), " ", p.name.split(" ")[0])));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: "Head-to-head",
+    onBack: () => nav.pop()
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "vs-banner"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: A,
+    size: 56,
+    ring: aDom,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 13,
+      marginTop: 6
+    }
+  }, A.name.split(" ")[0]), aDom && total >= 3 && /*#__PURE__*/React.createElement("span", {
+    className: "nemesis-tag",
+    style: {
+      marginTop: 4
+    }
+  }, "NEMESIS")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 44,
+      fontWeight: 800,
+      letterSpacing: "-.03em",
+      lineHeight: 1
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: aDom ? "var(--accent)" : "var(--text)"
+    }
+  }, h.aWins), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)",
+      margin: "0 6px"
+    }
+  }, "\u2013"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: bDom ? "var(--accent)" : "var(--text)"
+    }
+  }, h.bWins)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      letterSpacing: ".14em",
+      textTransform: "uppercase",
+      color: "var(--text-dim)",
+      fontWeight: 700,
+      marginTop: 4
+    }
+  }, h.draws, " drawn \xB7 ", total, " played")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: B,
+    size: 56,
+    ring: bDom,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 13,
+      marginTop: 6
+    }
+  }, B.name.split(" ")[0]), bDom && total >= 3 && /*#__PURE__*/React.createElement("span", {
+    className: "nemesis-tag",
+    style: {
+      marginTop: 4
+    }
+  }, "NEMESIS"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      marginTop: 14
+    }
+  }, /*#__PURE__*/React.createElement(Picker, {
+    value: a,
+    onChange: setA,
+    exclude: b
+  }), /*#__PURE__*/React.createElement(Picker, {
+    value: b,
+    onChange: setB,
+    exclude: a
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "stat-grid",
+    style: {
+      marginTop: 14
+    }
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "Goals for",
+    value: h.aGF,
+    sub: `${A.name.split(" ")[0]}`,
+    accent: true
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Goals against",
+    value: h.aGA,
+    sub: `${B.name.split(" ")[0]}`
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement(SectionLabel, null, "Recent meetings"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 7
+    }
+  }, h.meetings.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "empty"
+  }, "No meetings yet \u2014 get them on the sticks."), h.meetings.slice(0, 8).map(mt => /*#__PURE__*/React.createElement("button", {
+    key: mt.id,
+    className: "ofc-row meeting-row",
+    onClick: () => nav.push("match", {
+      id: mt.id
+    })
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "res-dot res-" + mt.res
+  }, mt.res), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 12,
+      color: "var(--text-dim)",
+      width: 52
+    }
+  }, fmtDate(mt.date)), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      flex: 1,
+      textAlign: "center",
+      fontSize: 18,
+      fontWeight: 800
+    }
+  }, mt.gf, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)"
+    }
+  }, ":"), mt.ga), /*#__PURE__*/React.createElement(EloDelta, {
+    delta: mt.delta,
+    size: 12
+  }), /*#__PURE__*/React.createElement(Icon, {
+    name: "chevron",
+    size: 15,
+    style: {
+      color: "var(--text-faint)"
+    }
+  }))))));
+}
+
+/* ============================= SEASON ARCHIVE ============================= */
+function ArchiveScreen({
+  nav,
+  params
+}) {
+  const O = window.OFC;
+  const s = O.seasons.find(x => x.id === params.id);
+  const rows = O.archives[params.id];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad"
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: s.name,
+    sub: `${s.year} · final standings`,
+    onBack: () => nav.pop()
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "archive-champ"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "crown",
+    size: 20,
+    style: {
+      color: "#ffd24a"
+    }
+  }), /*#__PURE__*/React.createElement(Avatar, {
+    player: O.byId[s.championId],
+    size: 40,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10.5,
+      textTransform: "uppercase",
+      letterSpacing: ".12em",
+      color: "#ffd24a",
+      fontWeight: 700
+    }
+  }, "Champion"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 800,
+      fontSize: 17,
+      fontFamily: "var(--font-head)"
+    }
+  }, O.byId[s.championId].name)), /*#__PURE__*/React.createElement(Icon, {
+    name: "trophy",
+    size: 30,
+    style: {
+      color: "#ffd24a"
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "table-head"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 26
+    }
+  }, "#"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1
+    }
+  }, "Player"), /*#__PURE__*/React.createElement("span", null, "W-D-L"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 52,
+      textAlign: "right"
+    }
+  }, "ELO")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 7
+    }
+  }, rows.map(r => /*#__PURE__*/React.createElement("div", {
+    key: r.id,
+    className: "ofc-row board-row",
+    style: {
+      cursor: "default"
+    }
+  }, /*#__PURE__*/React.createElement(RankBadge, {
+    rank: r.rank
+  }), /*#__PURE__*/React.createElement(Avatar, {
+    player: O.byId[r.id],
+    size: 34
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14
+    }
+  }, O.byId[r.id].name), r.id === O.you.id && /*#__PURE__*/React.createElement("span", {
+    className: "tag-you",
+    style: {
+      marginLeft: 6
+    }
+  }, "YOU")), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)"
+    }
+  }, r.w, "-", r.d, "-", r.l), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      width: 52,
+      textAlign: "right",
+      fontSize: 17,
+      fontWeight: 800
+    }
+  }, r.elo)))));
+}
+Object.assign(window, {
+  StatsShot,
+  PlayerScreen,
+  MatchScreen,
+  H2HScreen,
+  ArchiveScreen
+});
+
+/* ───────────────────────────────────────────────────────── */
+
+/* OfficeFC — Log-a-match flow + profile setup. */
+
+/* ELO preview using same formula as the engine */
+function eloPreview(myId, oppId, myGoals, oppGoals) {
+  const O = window.OFC,
+    K = 32;
+  const Ra = O.ratings[myId],
+    Rb = O.ratings[oppId];
+  const exp = 1 / (1 + Math.pow(10, (Rb - Ra) / 400));
+  const S = myGoals > oppGoals ? 1 : myGoals < oppGoals ? 0 : 0.5;
+  const d = Math.round(K * (S - exp));
+  return d;
+}
+
+/* ============================= LOG A MATCH ============================= */
+function LogMatchScreen({
+  nav
+}) {
+  const O = window.OFC;
+  const me = O.you;
+  const [step, setStep] = useState(0);
+  const [oppId, setOppId] = useState(null);
+  const [myTeam, setMyTeam] = useState(null);
+  const [oppTeam, setOppTeam] = useState(null);
+  const [myGoals, setMyGoals] = useState(null);
+  const [oppGoals, setOppGoals] = useState(null);
+  const [photo, setPhoto] = useState(false);
+  const [done, setDone] = useState(false);
+  const steps = ["Opponent", "Teams", "Score", "Photo", "Review"];
+  const opp = oppId ? O.byId[oppId] : null;
+  const canNext = [!!oppId, !!myTeam && !!oppTeam, myGoals !== null && oppGoals !== null, true,
+  // photo optional
+  true][step];
+  const myDelta = myGoals !== null && oppGoals !== null && opp ? eloPreview(me.id, oppId, myGoals, oppGoals) : 0;
+  const oppDelta = myGoals !== null && oppGoals !== null && opp ? eloPreview(oppId, me.id, oppGoals, myGoals) : 0;
+  function next() {
+    if (step < 4) setStep(step + 1);else setDone(true);
+  }
+  function back() {
+    if (step === 0) nav.pop();else setStep(step - 1);
+  }
+  if (done) {
+    const res = myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw";
+    return /*#__PURE__*/React.createElement("div", {
+      className: "screen-pad",
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100%"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        textAlign: "center",
+        gap: 4
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "result-burst " + res
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: res === "win" ? "trophy" : res === "draw" ? "ball" : "flame",
+      size: 40
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: "var(--font-head)",
+        fontWeight: 800,
+        fontSize: 26,
+        marginTop: 14,
+        letterSpacing: "-.02em"
+      }
+    }, res === "win" ? "Logged. Bragging rights secured." : res === "draw" ? "Honours even." : "Logged. We don't talk about it."), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 60,
+        fontWeight: 800,
+        letterSpacing: "-.04em",
+        margin: "6px 0"
+      }
+    }, myGoals, /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "var(--text-faint)"
+      }
+    }, ":"), oppGoals), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 24,
+        justifyContent: "center",
+        marginTop: 4
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "kicker"
+    }, "You"), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 20,
+        fontWeight: 800
+      }
+    }, O.ratings[me.id] + myDelta, " ", /*#__PURE__*/React.createElement(EloDelta, {
+      delta: myDelta
+    }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "kicker"
+    }, opp.name.split(" ")[0]), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 20,
+        fontWeight: 800
+      }
+    }, O.ratings[oppId] + oppDelta, " ", /*#__PURE__*/React.createElement(EloDelta, {
+      delta: oppDelta
+    }))))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        paddingBottom: 8
+      }
+    }, /*#__PURE__*/React.createElement(Button, {
+      full: true,
+      size: "lg",
+      onClick: () => nav.tab("home")
+    }, "Back to dashboard"), /*#__PURE__*/React.createElement(Button, {
+      full: true,
+      variant: "ghost",
+      onClick: () => nav.tab("board")
+    }, "See the table")));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad",
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      minHeight: "100%"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      padding: "4px 2px 8px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: back,
+    className: "ofc-iconbtn"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: step === 0 ? "x" : "back",
+    size: 20,
+    stroke: 2.4
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: "var(--font-head)",
+      fontWeight: 800,
+      fontSize: 18
+    }
+  }, "Log a match"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)"
+    }
+  }, "Step ", step + 1, " of 5 \xB7 ", steps[step]))), /*#__PURE__*/React.createElement("div", {
+    className: "step-track"
+  }, steps.map((s, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "step-seg" + (i <= step ? " on" : "")
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      paddingTop: 16,
+      minHeight: 0
+    }
+  }, step === 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "step-q"
+  }, "Who did you play?"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 8
+    }
+  }, O.players.filter(p => p.id !== me.id).map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.id,
+    onClick: () => setOppId(p.id),
+    className: "opp-pick" + (oppId === p.id ? " active" : "")
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: p,
+    size: 40,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "left"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14.5
+    }
+  }, p.name), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)"
+    }
+  }, "ELO ", O.ratings[p.id], " \xB7 @", p.handle)), oppId === p.id && /*#__PURE__*/React.createElement("span", {
+    className: "check-circle"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "check",
+    size: 14,
+    stroke: 3
+  })))))), step === 1 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "step-q"
+  }, "Which teams did you use?"), /*#__PURE__*/React.createElement(TeamSelect, {
+    label: "Your team",
+    me: me,
+    value: myTeam,
+    onChange: setMyTeam
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 12
+    }
+  }), /*#__PURE__*/React.createElement(TeamSelect, {
+    label: opp.name.split(" ")[0] + "’s team",
+    me: opp,
+    value: oppTeam,
+    onChange: setOppTeam
+  })), step === 2 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "step-q"
+  }, "Final score"), /*#__PURE__*/React.createElement("div", {
+    className: "score-entry"
+  }, /*#__PURE__*/React.createElement(Stepper, {
+    player: me,
+    team: myTeam,
+    value: myGoals,
+    onChange: setMyGoals
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 28,
+      color: "var(--text-faint)",
+      fontWeight: 800
+    }
+  }, ":"), /*#__PURE__*/React.createElement(Stepper, {
+    player: opp,
+    team: oppTeam,
+    value: oppGoals,
+    onChange: setOppGoals
+  })), myGoals !== null && oppGoals !== null && /*#__PURE__*/React.createElement("div", {
+    className: "elo-preview-mini"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "bolt",
+    size: 14,
+    style: {
+      color: "var(--accent)"
+    }
+  }), /*#__PURE__*/React.createElement("span", null, "ELO swing preview"), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      marginLeft: "auto",
+      fontWeight: 800
+    }
+  }, /*#__PURE__*/React.createElement(EloDelta, {
+    delta: myDelta
+  })))), step === 3 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "step-q"
+  }, "Snap the stats screen"), /*#__PURE__*/React.createElement("div", {
+    className: "step-hint"
+  }, "Proof for the doubters. Optional, but recommended."), !photo ? /*#__PURE__*/React.createElement("button", {
+    className: "photo-drop",
+    onClick: () => setPhoto(true)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "camera",
+    size: 32,
+    stroke: 1.8
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 14,
+      marginTop: 10
+    }
+  }, "Take or upload a photo"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)",
+      marginTop: 2
+    }
+  }, "Tap to attach the end-of-match stats")) : /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement(StatsShot, {
+    m: {
+      aGoals: myGoals,
+      bGoals: oppGoals
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "photo-remove",
+    onClick: () => setPhoto(false)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "x",
+    size: 14,
+    stroke: 2.6
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "attached-note"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "check",
+    size: 14,
+    stroke: 3
+  }), " Stats photo attached")), /*#__PURE__*/React.createElement("button", {
+    className: "skip-link",
+    onClick: () => {
+      setPhoto(false);
+      next();
+    }
+  }, "Skip for now \u2192")), step === 4 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "step-q"
+  }, "Look right?"), /*#__PURE__*/React.createElement("div", {
+    className: "review-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "match-hero",
+    style: {
+      background: "transparent",
+      border: "none",
+      padding: "4px 0 10px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: me,
+    size: 48,
+    jersey: true,
+    ring: myGoals > oppGoals
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 13,
+      marginTop: 6
+    }
+  }, "You"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, myTeam)), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 40,
+      fontWeight: 800,
+      letterSpacing: "-.03em"
+    }
+  }, myGoals, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-faint)"
+    }
+  }, ":"), oppGoals), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: opp,
+    size: 48,
+    jersey: true,
+    ring: oppGoals > myGoals
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 13,
+      marginTop: 6
+    }
+  }, opp.name.split(" ")[0]), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)"
+    }
+  }, oppTeam))), /*#__PURE__*/React.createElement("div", {
+    className: "review-divider"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, "ELO change preview"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11.5,
+      color: "var(--text-dim)",
+      marginTop: 2
+    }
+  }, photo ? "Stats photo attached" : "No photo attached")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, "You"), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 18,
+      fontWeight: 800
+    }
+  }, /*#__PURE__*/React.createElement(EloDelta, {
+    delta: myDelta
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "right"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kicker"
+  }, opp.name.split(" ")[0]), /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 18,
+      fontWeight: 800
+    }
+  }, /*#__PURE__*/React.createElement(EloDelta, {
+    delta: oppDelta
+  })))))), /*#__PURE__*/React.createElement("div", {
+    className: "step-hint",
+    style: {
+      textAlign: "center",
+      marginTop: 14
+    }
+  }, "Both players can dispute within 24h."))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingTop: 12,
+      paddingBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    full: true,
+    size: "lg",
+    onClick: next,
+    icon: step === 4 ? "check" : undefined,
+    style: {
+      opacity: canNext ? 1 : 0.4,
+      pointerEvents: canNext ? "auto" : "none"
+    }
+  }, step === 4 ? "Submit match" : "Continue")));
+}
+
+/* searchable team select */
+function TeamSelect({
+  label,
+  me,
+  value,
+  onChange
+}) {
+  const O = window.OFC;
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const list = O.teams.filter(t => t.toLowerCase().includes(q.toLowerCase()));
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "field-label"
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: me,
+    size: 18
+  }), " ", label), /*#__PURE__*/React.createElement("button", {
+    className: "team-field" + (value ? " filled" : ""),
+    onClick: () => setOpen(!open)
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "jersey",
+    size: 16,
+    style: {
+      color: value ? me.color : "var(--text-dim)"
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      flex: 1,
+      textAlign: "left",
+      color: value ? "var(--text)" : "var(--text-dim)"
+    }
+  }, value || "Search teams…"), /*#__PURE__*/React.createElement(Icon, {
+    name: open ? "chevron" : "search",
+    size: 16,
+    style: {
+      color: "var(--text-dim)",
+      transform: open ? "rotate(90deg)" : "none"
+    }
+  })), open && /*#__PURE__*/React.createElement("div", {
+    className: "team-pop"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "search-box",
+    style: {
+      margin: "0 0 8px"
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "search",
+    size: 15,
+    stroke: 2.2
+  }), /*#__PURE__*/React.createElement("input", {
+    autoFocus: true,
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "Type a team name"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "team-list"
+  }, list.map(t => /*#__PURE__*/React.createElement("button", {
+    key: t,
+    className: "team-opt" + (value === t ? " active" : ""),
+    onClick: () => {
+      onChange(t);
+      setOpen(false);
+      setQ("");
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "jersey",
+    size: 14,
+    style: {
+      color: "var(--text-dim)"
+    }
+  }), " ", t, value === t && /*#__PURE__*/React.createElement(Icon, {
+    name: "check",
+    size: 14,
+    stroke: 3,
+    style: {
+      marginLeft: "auto",
+      color: "var(--accent)"
+    }
+  }))), list.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "empty",
+    style: {
+      padding: 12
+    }
+  }, "No teams match \u201C", q, "\u201D."))));
+}
+
+/* score stepper */
+function Stepper({
+  player,
+  team,
+  value,
+  onChange
+}) {
+  const v = value === null ? 0 : value;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      textAlign: "center"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: player,
+    size: 40,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "var(--text-dim)",
+      margin: "6px 0 8px",
+      height: 14,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap"
+    }
+  }, team || "—"), /*#__PURE__*/React.createElement("div", {
+    className: "stepper"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(Math.max(0, v - 1)),
+    disabled: v === 0
+  }, "\u2212"), /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontSize: 36,
+      fontWeight: 800,
+      minWidth: 40
+    }
+  }, value === null ? "–" : value), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(v + 1)
+  }, "+")));
+}
+
+/* ============================= PROFILE SETUP ============================= */
+function SetupScreen({
+  nav,
+  params
+}) {
+  const O = window.OFC;
+  const editing = params && params.edit;
+  const me = O.you;
+  const [name, setName] = useState(editing ? me.name : "");
+  const [handle, setHandle] = useState(editing ? me.handle : "");
+  const [jersey, setJersey] = useState(editing ? String(me.jersey) : "");
+  const [color, setColor] = useState(editing ? me.color : "#00ff87");
+  const palette = ["#00ff87", "#ff5470", "#5b9dff", "#ffb020", "#c06bff", "#36e0c8", "#ff8a3d", "#9aa7ff"];
+  const initials = (name.trim() || "??").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const preview = {
+    initials,
+    color,
+    jersey: jersey || "—"
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: "screen-pad",
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      minHeight: "100%"
+    }
+  }, /*#__PURE__*/React.createElement(ScreenHeader, {
+    title: editing ? "Edit profile" : "Create your player",
+    sub: editing ? "" : "Shared console — keep it quick",
+    onBack: editing ? () => nav.pop() : null
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 12,
+      padding: "10px 0 22px"
+    }
+  }, /*#__PURE__*/React.createElement(Avatar, {
+    player: preview,
+    size: 88,
+    ring: true,
+    jersey: true
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "palette-row"
+  }, palette.map(c => /*#__PURE__*/React.createElement("button", {
+    key: c,
+    onClick: () => setColor(c),
+    className: "swatch" + (color === c ? " active" : ""),
+    style: {
+      background: c
+    }
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 14,
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Display name",
+    required: true
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "text-input",
+    value: name,
+    onChange: e => setName(e.target.value),
+    placeholder: "e.g. Marcus Bell",
+    maxLength: 20
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "Handle",
+    optional: true,
+    style: {
+      flex: 2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-input prefix"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--text-dim)"
+    }
+  }, "@"), /*#__PURE__*/React.createElement("input", {
+    value: handle,
+    onChange: e => setHandle(e.target.value.replace(/\s/g, "")),
+    placeholder: "handle",
+    maxLength: 14
+  }))), /*#__PURE__*/React.createElement(Field, {
+    label: "Jersey #",
+    optional: true,
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    className: "text-input mono",
+    value: jersey,
+    onChange: e => setJersey(e.target.value.replace(/\D/g, "").slice(0, 2)),
+    placeholder: "10",
+    inputMode: "numeric"
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingTop: 16,
+      paddingBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement(Button, {
+    full: true,
+    size: "lg",
+    icon: editing ? "check" : "ball",
+    onClick: () => nav.tab("home"),
+    style: {
+      opacity: name.trim() ? 1 : 0.4,
+      pointerEvents: name.trim() ? "auto" : "none"
+    }
+  }, editing ? "Save changes" : "Enter the league")));
+}
+const Field = ({
+  label,
+  required,
+  optional,
+  children,
+  style
+}) => /*#__PURE__*/React.createElement("label", {
+  style: {
+    display: "block",
+    ...style
+  }
+}, /*#__PURE__*/React.createElement("div", {
+  style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 7
+  }
+}, /*#__PURE__*/React.createElement("span", {
+  style: {
+    fontSize: 11.5,
+    letterSpacing: ".1em",
+    textTransform: "uppercase",
+    color: "var(--text-dim)",
+    fontWeight: 700
+  }
+}, label), optional && /*#__PURE__*/React.createElement("span", {
+  style: {
+    fontSize: 10,
+    color: "var(--text-faint)"
+  }
+}, "optional"), required && /*#__PURE__*/React.createElement("span", {
+  style: {
+    fontSize: 10,
+    color: "var(--accent)"
+  }
+}, "\u25CF")), children);
+Object.assign(window, {
+  LogMatchScreen,
+  SetupScreen,
+  TeamSelect,
+  Stepper,
+  Field,
+  eloPreview
+});
+
+/* ───────────────────────────────────────────────────────── */
+
+/* OfficeFC — app shell: navigation, phone frame, tab bar.
+   Self-contained build: the prototype's host-protocol "tweaks panel" scaffolding
+   is intentionally dropped; design defaults (electric-green accent, Archivo display
+   font, cheeky copy) are baked into the CSS / this constant. */
+
+const CHEEKY = true;
+function StatusBar() {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "status-bar"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono",
+    style: {
+      fontWeight: 700
+    }
+  }, "9:41"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "17",
+    height: "11",
+    viewBox: "0 0 17 11",
+    fill: "currentColor"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "0",
+    y: "6",
+    width: "3",
+    height: "5",
+    rx: "1"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "4.5",
+    y: "4",
+    width: "3",
+    height: "7",
+    rx: "1"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "9",
+    y: "2",
+    width: "3",
+    height: "9",
+    rx: "1"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "13.5",
+    y: "0",
+    width: "3",
+    height: "11",
+    rx: "1"
+  })), /*#__PURE__*/React.createElement("svg", {
+    width: "16",
+    height: "11",
+    viewBox: "0 0 16 11",
+    fill: "currentColor"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M8 2.5c2 0 3.8.8 5 2l1.2-1.3C13.6 1.6 11 .5 8 .5S2.4 1.6.8 3.2L2 4.5c1.2-1.2 3-2 6-2Z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M8 5.5c1.1 0 2.1.4 2.8 1.1L8 9.5 5.2 6.6C5.9 5.9 6.9 5.5 8 5.5Z"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 2
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 22,
+      height: 11,
+      border: "1.5px solid currentColor",
+      borderRadius: 3,
+      padding: 1.5,
+      opacity: 0.9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: "78%",
+      height: "100%",
+      background: "currentColor",
+      borderRadius: 1
+    }
+  })))));
+}
+const TABS = [{
+  id: "home",
+  icon: "home",
+  label: "Home"
+}, {
+  id: "board",
+  icon: "board",
+  label: "Table"
+}, {
+  id: "seasons",
+  icon: "seasons",
+  label: "Seasons"
+}, {
+  id: "profile",
+  icon: "profile",
+  label: "You"
+}];
+function TabBar({
+  active,
+  onTab,
+  onLog
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "tab-bar"
+  }, TABS.slice(0, 2).map(t => /*#__PURE__*/React.createElement(TabBtn, {
+    key: t.id,
+    t: t,
+    active: active === t.id,
+    onClick: () => onTab(t.id)
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "fab",
+    onClick: onLog,
+    "aria-label": "Log a match"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "plus",
+    size: 26,
+    stroke: 2.8
+  })), TABS.slice(2).map(t => /*#__PURE__*/React.createElement(TabBtn, {
+    key: t.id,
+    t: t,
+    active: active === t.id,
+    onClick: () => onTab(t.id)
+  })));
+}
+const TabBtn = ({
+  t,
+  active,
+  onClick
+}) => /*#__PURE__*/React.createElement("button", {
+  className: "tab-btn" + (active ? " active" : ""),
+  onClick: onClick
+}, /*#__PURE__*/React.createElement(Icon, {
+  name: t.icon,
+  size: 22,
+  stroke: active ? 2.4 : 2
+}), /*#__PURE__*/React.createElement("span", null, t.label));
+function App() {
+  const [stack, setStack] = useState([{
+    screen: "home"
+  }]);
+  const scrollRef = useRef(null);
+  const nav = useMemo(() => ({
+    push: (screen, params) => setStack(s => [...s, {
+      screen,
+      params: params || {}
+    }]),
+    pop: () => setStack(s => s.length > 1 ? s.slice(0, -1) : s),
+    tab: screen => setStack([{
+      screen
+    }]),
+    get canPop() {
+      return stack.length > 1;
+    }
+  }), [stack.length]);
+
+  // scroll to top on navigation
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [stack.length, stack[stack.length - 1].screen]);
+
+  // responsive scale to fit the phone frame in any viewport
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const fit = () => {
+      const vh = window.innerHeight,
+        vw = window.innerWidth;
+      setScale(Math.min(1, (vh - 36) / 844, (vw - 24) / 390));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  const top = stack[stack.length - 1];
+  const rootTab = stack[0].screen;
+  const activeTab = ["home", "board", "seasons", "profile"].includes(rootTab) ? rootTab : null;
+  const hideChrome = top.screen === "log" || top.screen === "setup";
+  function renderScreen() {
+    const p = top.params || {};
+    switch (top.screen) {
+      case "home":
+        return /*#__PURE__*/React.createElement(HomeScreen, {
+          nav: nav,
+          cheeky: CHEEKY
+        });
+      case "board":
+        return /*#__PURE__*/React.createElement(LeaderboardScreen, {
+          nav: nav
+        });
+      case "seasons":
+        return /*#__PURE__*/React.createElement(SeasonsScreen, {
+          nav: nav
+        });
+      case "profile":
+        return /*#__PURE__*/React.createElement(PlayerScreen, {
+          nav: {
+            ...nav,
+            canPop: false
+          },
+          params: {
+            id: window.OFC.you.id
+          }
+        });
+      case "player":
+        return /*#__PURE__*/React.createElement(PlayerScreen, {
+          nav: {
+            ...nav,
+            canPop: true
+          },
+          params: p
+        });
+      case "match":
+        return /*#__PURE__*/React.createElement(MatchScreen, {
+          nav: nav,
+          params: p
+        });
+      case "h2h":
+        return /*#__PURE__*/React.createElement(H2HScreen, {
+          nav: nav,
+          params: p
+        });
+      case "archive":
+        return /*#__PURE__*/React.createElement(ArchiveScreen, {
+          nav: nav,
+          params: p
+        });
+      case "log":
+        return /*#__PURE__*/React.createElement(LogMatchScreen, {
+          nav: nav
+        });
+      case "setup":
+        return /*#__PURE__*/React.createElement(SetupScreen, {
+          nav: nav,
+          params: p
+        });
+      default:
+        return /*#__PURE__*/React.createElement(HomeScreen, {
+          nav: nav,
+          cheeky: CHEEKY
+        });
+    }
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "stage"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "phone-scaler",
+    style: {
+      transform: `scale(${scale})`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "phone",
+    id: "ofc-root"
+  }, /*#__PURE__*/React.createElement(StatusBar, null), /*#__PURE__*/React.createElement("div", {
+    className: "phone-scroll",
+    ref: scrollRef,
+    "data-screen-label": top.screen
+  }, renderScreen()), !hideChrome && /*#__PURE__*/React.createElement(TabBar, {
+    active: activeTab,
+    onTab: id => nav.tab(id),
+    onLog: () => nav.push("log")
+  }))));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+  </script>
+</body>
+</html>

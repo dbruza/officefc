@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// OfficeFC — Cloud Storage rules.
+//
+// Match photos are PRIVATE. Members may upload their own match photos (image, size-
+// capped); reads go through short-TTL signed URLs minted by a Cloud Function, so
+// direct client reads are denied here. Trusted access uses the Admin SDK.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isMember() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/leagues/office/members/$(request.auth.uid));
+    }
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    function underLimit() {
+      return request.resource.size < 12 * 1024 * 1024; // 12 MB
+    }
+
+    // match-photos/{uid}/{matchId}/{file}
+    match /match-photos/{userId}/{allPaths=**} {
+      allow read: if false; // served via signed URLs only
+      allow write: if isMember() && userId == request.auth.uid && isImage() && underLimit();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

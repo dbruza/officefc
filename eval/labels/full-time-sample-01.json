@@ -1,0 +1,10 @@
+{
+  "image": "full-time-sample-01.png",
+  "synthetic": true,
+  "note": "Generated fixture (eval/sample/generate.mjs). Replace with real screenshots/photos for a meaningful score.",
+  "expected": {
+    "detected_screen": true,
+    "home": { "team_name": "Riverside FC", "goals": 3, "possession": 58, "shots": 14, "shots_on_target": 7 },
+    "away": { "team_name": "Harbour Athletic", "goals": 1, "possession": 42, "shots": 8, "shots_on_target": 4 }
+  }
+}

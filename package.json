@@ -1,0 +1,16 @@
+{
+  "name": "officefc",
+  "version": "1.0.0",
+  "description": "OfficeFC — office FIFA league ELO tracker. Self-contained web app built from the design prototype.",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "node build/build.js",
+    "preview": "node build/serve.js",
+    "test": "node --test \"test/*.test.mjs\"",
+    "eval": "node eval/run-eval.mjs"
+  },
+  "devDependencies": {
+    "@babel/standalone": "7.29.0"
+  }
+}
