@@ -265,8 +265,20 @@ free tier at office scale; GCP credits absorb any overflow. The only off-credit 
 - **M0 — Scaffold: DONE & verified.** Firebase config + emulator suite; Expo app
   (Expo Router + TS, fonts, dark theme, Firebase client init); design tokens + UI primitives ported
   to RN; web bundle builds and renders faithfully (console clean); extraction core still 10/10.
-- **Paused before M1** so the dev Firebase project + local tooling (Java, firebase-tools) can be
-  set up — see `docs/firebase-setup.md`. M1 resumes on confirmation.
-- The AI extraction backend slice (schema, prompt, Anthropic client, validation guardrails, offline
-  tests, eval harness) is built and tested under `supabase/functions/extract-match-stats/`, ready to
-  be wrapped as a Node Cloud Function in M4.
+- **M1 — Auth + membership: CODE COMPLETE; pending live emulator verification.**
+  - Firebase project `office-fc` created (Auth email/password, Firestore `(default)`, Storage).
+  - Auth spine: `AuthProvider`/`useAuth`, route gating across `(auth)`/`(onboarding)`/`(app)`.
+  - Screens: sign-in, sign-up, forgot-password, verify-email, profile-setup, invite-code join, home
+    (with admin invite generator + sign-out).
+  - Cloud Functions (`functions/`): `redeemInvite` (admin-allowlist bootstrap + invite consume) and
+    `createInvite` (admin-only); re-added to `firebase.json` + Functions emulator.
+  - Rules tightened (own-profile/own-membership reads for onboarding) + `@firebase/rules-unit-testing`
+    specs in `test/rules/` (`npm run test:rules`).
+  - Verified here: mobile `tsc` clean, functions `tsc`/build clean, web bundle builds, sign-in +
+    sign-up screens render (console clean), offline extraction tests still 10/10. The live
+    onboarding flow is validated against the emulator per `docs/running-m1.md`.
+- The AI extraction backend slice lives under `supabase/functions/extract-match-stats/`, ready to be
+  wrapped as a Node Cloud Function in M4.
+
+**Next:** M2 — manual match-logging loop (submit → opponent confirm → `recalcSeasonElo`), plus
+seeding an active season.

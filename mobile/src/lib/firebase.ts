@@ -16,6 +16,7 @@ import {
 } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
@@ -42,6 +43,7 @@ export const auth =
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 
 const useEmulators =
   process.env.EXPO_PUBLIC_USE_EMULATORS === "1" ||
@@ -56,6 +58,7 @@ if (useEmulators) {
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
   connectFirestoreEmulator(db, host, 8080);
   connectStorageEmulator(storage, host, 9199);
+  connectFunctionsEmulator(functions, host, 5001);
 }
 
 export { app };

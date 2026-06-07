@@ -8,6 +8,7 @@
     "build": "node build/build.js",
     "preview": "node build/serve.js",
     "test": "node --test \"test/*.test.mjs\"",
+    "test:rules": "firebase emulators:exec --only firestore \"npm --prefix test/rules test\"",
     "eval": "node eval/run-eval.mjs"
   },
   "devDependencies": {
