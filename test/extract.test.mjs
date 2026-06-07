@@ -2,9 +2,9 @@
    Proves: buildRequest → (mock) tool_use response → extractToolInput → normalize. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { extractMatchFromImage } from "../supabase/functions/extract-match-stats/core/extract.mjs";
-import { mockResponse } from "../supabase/functions/extract-match-stats/core/anthropic.mjs";
-import { EXTRACTION_TOOL_NAME } from "../supabase/functions/extract-match-stats/core/schema.mjs";
+import { extractMatchFromImage } from "../functions/src/extract/core/extract.mjs";
+import { mockResponse } from "../functions/src/extract/core/anthropic.mjs";
+import { EXTRACTION_TOOL_NAME } from "../functions/src/extract/core/schema.mjs";
 
 test("full pipeline with a mocked Claude response", async () => {
   let seenRequest = null;

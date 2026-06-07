@@ -1,7 +1,7 @@
 /* Offline unit tests for the extraction trust layer. Run: node --test */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeExtraction } from "../supabase/functions/extract-match-stats/core/validate.mjs";
+import { normalizeExtraction } from "../functions/src/extract/core/validate.mjs";
 
 const cleanRaw = (over = {}) => ({
   detected_screen: true,

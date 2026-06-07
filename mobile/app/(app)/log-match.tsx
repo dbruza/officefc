@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Avatar, Button, Card, EloDelta, Icon, Txt } from "@/components";
+import { Avatar, Button, Card, EloDelta, Icon, SnapFlow, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   getActiveSeason,
@@ -32,6 +32,7 @@ const STEP_NAMES = ["Opponent", "Teams", "Score", "Review"];
 export default function LogMatch() {
   const router = useRouter();
   const { user, profile } = useAuth();
+  const [mode, setMode] = useState<"choose" | "manual" | "snap">("choose");
   const [step, setStep] = useState(0);
   const [season, setSeason] = useState<Season | null>(null);
   const [players, setPlayers] = useState<LeaguePlayer[]>([]);
@@ -91,7 +92,7 @@ export default function LogMatch() {
     step === 3;
 
   function goBack() {
-    if (step === 0) router.back();
+    if (step === 0) setMode("choose");
     else setStep((current) => current - 1);
   }
 
@@ -127,6 +128,69 @@ export default function LogMatch() {
     return (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator color={colors.accent} />
+      </SafeAreaView>
+    );
+  }
+
+  if (mode === "snap" && user && season && profile) {
+    return (
+      <SnapFlow
+        uid={user.uid}
+        profile={profile}
+        season={season}
+        players={players}
+        teams={teams}
+        standings={standings}
+        onCancel={() => setMode("choose")}
+        onDone={() => router.replace("/(app)")}
+      />
+    );
+  }
+
+  if (mode === "choose") {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.iconButton}>
+            <Icon name="x" size={20} stroke={2.5} />
+          </Pressable>
+          <Txt variant="head" size={18}>Log a match</Txt>
+        </View>
+        <ScrollView contentContainerStyle={[styles.content, { flex: 1, justifyContent: "center" }]}>
+          <Txt variant="head" size={24}>How would you like to log this match?</Txt>
+          <Txt color={colors.textDim} size={13} style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}>
+            Snap the stats screen for auto-fill, or enter the score manually.
+          </Txt>
+          <View style={{ gap: spacing.md }}>
+            <Pressable onPress={() => setMode("snap")} style={styles.modeCard}>
+              <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.accent, 0.12) }]}>
+                <Icon name="camera" size={28} color={colors.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Txt variant="head" size={16}>Snap result</Txt>
+                <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
+                  Take a photo of the FIFA end-of-match screen. AI reads the score and stats.
+                </Txt>
+              </View>
+              <Icon name="chevron" size={16} color={colors.textDim} />
+            </Pressable>
+            <Pressable onPress={() => setMode("manual")} style={styles.modeCard}>
+              <View style={[styles.modeIcon, { backgroundColor: colors.surface2 }]}>
+                <Icon name="edit" size={28} color={colors.textDim} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Txt variant="head" size={16}>Enter manually</Txt>
+                <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
+                  Pick opponent, teams, and score step-by-step the classic way.
+                </Txt>
+              </View>
+              <Icon name="chevron" size={16} color={colors.textDim} />
+            </Pressable>
+          </View>
+          {error ? (
+            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, lineHeight: 19 }}>{error}</Txt>
+          ) : null}
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -660,5 +724,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  modeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+  },
+  modeIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

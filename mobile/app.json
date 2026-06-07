@@ -8,17 +8,17 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#070a0e",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "backgroundColor": "#070a0e",
-      "resizeMode": "contain"
-    },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.officefc.app"
+      "bundleIdentifier": "com.officefc.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "OfficeFC uses the camera to capture end-of-match stats screens for AI-assisted match logging.",
+        "NSPhotoLibraryUsageDescription": "OfficeFC accesses your photo library so you can upload stats screens you've already taken."
+      }
     },
     "android": {
       "package": "com.officefc.app",
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#070a0e"
@@ -32,11 +32,37 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      ["expo-splash-screen", {
+        "image": "./assets/splash-icon.png",
+        "backgroundColor": "#070a0e",
+        "resizeMode": "contain",
+        "dark": {
+          "backgroundColor": "#070a0e"
+        }
+      }],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow OfficeFC to access the camera to capture match stats screens."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OfficeFC accesses your photos to upload match stats screens."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#00ff87"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    },
-    "newArchEnabled": false
+    }
   }
 }

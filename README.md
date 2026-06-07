@@ -48,7 +48,7 @@ build/
 prototype/officefc/    ← original multi-file design prototype (reference / source of truth)
 mobile/                ← the production app: Expo (React Native) + Expo Router (see mobile/README.md)
 firebase.json, *.rules ← Firebase config: Firestore/Storage rules, emulators
-supabase/functions/    ← extraction core (reused by the Cloud Function; see AI-assisted logging below)
+functions/src/extract/ ← extraction core (called by the Cloud Function; see AI-assisted logging below)
 eval/                  ← extraction eval harness + labeled fixtures
 test/                  ← offline unit/pipeline tests for the extraction core
 implementationplan.md  ← the production build plan (Expo + GCP/Firebase + AI logging)
@@ -58,10 +58,10 @@ implementationplan.md  ← the production build plan (Expo + GCP/Firebase + AI l
 
 The first piece of the production build: snap the end-of-match stats screen and let
 Claude vision pre-fill the score + key stats for you to confirm. It lives in
-`supabase/functions/extract-match-stats/` (a Supabase Edge Function) with the
+`functions/src/extract/core/` (a Firebase Cloud Function module) with the
 correctness-critical logic — schema, prompt, parsing, and the validation guardrails —
-in dependency-free ESM under `core/`, so the same code runs in Deno (deploy) and Node
-(tests/eval).
+in dependency-free ESM under `core/`, so the same code runs in the Cloud Function
+(Node) and the test/eval harness.
 
 ```bash
 npm test          # offline: validation guardrails + a mocked end-to-end pipeline
@@ -71,7 +71,7 @@ ANTHROPIC_API_KEY=sk-ant-… npm run eval   # scores the real model against the 
 
 It never auto-submits or auto-confirms — it only pre-fills the log form; opponent
 confirmation stays the source of truth. See
-`supabase/functions/extract-match-stats/README.md` and `eval/README.md` for details.
+`functions/src/extract/core/` and `eval/README.md` for details.
 
 ## Rebuild
 
@@ -91,6 +91,7 @@ backed by **GCP / Firebase** (Auth, Firestore, Cloud Functions, Storage) with ac
 opponent-confirmed match logging, photo proof in private storage, admin-managed
 seasons/teams, per-season ELO recalculation, and AI-assisted match logging.
 
-The production app lives in **`mobile/`** (see `mobile/README.md`). M0 (scaffold + ported
-design system) is done and runs on web/iOS/Android; M1+ adds auth, the match loop, and the
-real screens.
+The production app lives in **`mobile/`** (see `mobile/README.md`). M0–M3 now cover the scaffold,
+auth/membership, confirmed-match loop, standings, profiles, head-to-head, match detail, and seasons;
+M4 adds AI-assisted photo logging, followed by season administration and release work. The app
+runs on web, iOS, and Android.

@@ -15,6 +15,7 @@ import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
 import { calculateSeason, type SeasonMatchInput } from "./elo";
+import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
 
 initializeApp();
 const db = getFirestore();
@@ -271,6 +272,73 @@ async function recalcSeasonElo(seasonId: string): Promise<void> {
   await writer.close();
 }
 
+async function recalcLeagueStats(): Promise<void> {
+  const [members, matchSnaps, oldPlayerStats, oldHeadToHead] = await Promise.all([
+    leagueRef().collection("members").get(),
+    db.collection("matches").where("status", "==", "confirmed").get(),
+    db.collection("playerStats").get(),
+    db.collection("h2h").get(),
+  ]);
+  const matches: ConfirmedMatchInput[] = matchSnaps.docs.map((snap) => {
+    const data = snap.data();
+    return {
+      id: snap.id,
+      seasonId: String(data.seasonId),
+      aId: String(data.aId),
+      bId: String(data.bId),
+      aGoals: Number(data.aGoals),
+      bGoals: Number(data.bGoals),
+      aDelta: Number(data.aDelta ?? 0),
+      bDelta: Number(data.bDelta ?? 0),
+      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
+    };
+  });
+  const result = deriveLeagueStats(
+    matches,
+    members.docs.map((snap) => snap.id),
+  );
+  const writer = db.bulkWriter();
+  const playerIds = new Set(result.players.map((player) => player.uid));
+  const pairKeys = new Set(result.headToHead.map((pair) => pair.pairKey));
+
+  for (const snap of oldPlayerStats.docs) {
+    if (!playerIds.has(snap.id)) writer.delete(snap.ref);
+  }
+  for (const snap of oldHeadToHead.docs) {
+    if (!pairKeys.has(snap.id)) writer.delete(snap.ref);
+  }
+  for (const player of result.players) {
+    writer.set(db.doc(`playerStats/${player.uid}`), {
+      ...player,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+  for (const pair of result.headToHead) {
+    writer.set(db.doc(`h2h/${pair.pairKey}`), {
+      ...pair,
+      meetings: pair.meetings.map((meeting) => ({
+        ...meeting,
+        date: Timestamp.fromMillis(meeting.dateMillis),
+      })),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+  await writer.close();
+}
+
+/** Admin-only migration/backfill for the read models introduced in M2/M3. */
+export const rebuildLeagueReadModels = onCall(async (req) => {
+  const { uid } = requireAuth(req);
+  await assertAdmin(uid);
+  const confirmed = await db.collection("matches").where("status", "==", "confirmed").get();
+  const seasonIds = [
+    ...new Set(confirmed.docs.map((snap) => String(snap.get("seasonId"))).filter(Boolean)),
+  ];
+  for (const seasonId of seasonIds) await recalcSeasonElo(seasonId);
+  await recalcLeagueStats();
+  return { ok: true, seasonCount: seasonIds.length, matchCount: confirmed.size };
+});
+
 async function sendPush(
   uid: string,
   title: string,
@@ -330,6 +398,7 @@ export const confirmMatch = onCall(async (req) => {
   });
 
   await recalcSeasonElo(result.seasonId);
+  await recalcLeagueStats();
   await sendPush(
     result.submittedBy,
     "Match confirmed",
@@ -387,3 +456,21 @@ export const notifyMatchSubmitted = onDocumentCreated("matches/{matchId}", async
     { type: "match_pending", matchId: event.params.matchId },
   );
 });
+
+// --- M4B — AI extraction ---
+export { extractMatchStats } from "./extract/extractMatchStats";
+export { getMatchPhotoUrl } from "./extract/getMatchPhotoUrl";
+export { submitAiAssistedMatch } from "./extract/submitAiAssistedMatch";
+
+// --- M5 — Season lifecycle & admin ---
+export {
+  finalizeSeason,
+  createSeason,
+  activateSeason,
+  manageTeam,
+  resolveMatch,
+  listSeasons,
+} from "./seasonAdmin";
+
+// --- M5 — Scheduled jobs ---
+export { weeklySnapshot, sendReminders } from "./scheduled";

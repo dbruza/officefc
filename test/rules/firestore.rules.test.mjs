@@ -49,6 +49,10 @@ beforeEach(async () => {
       seasonId: "s1", aId: "alice", bId: "dave", status: "confirmed",
     });
     await setDoc(doc(db, "seasons/s1"), { name: "Summer Showdown", active: true });
+    await setDoc(doc(db, "playerStats/alice"), { uid: "alice", games: 1, w: 1, d: 0, l: 0 });
+    await setDoc(doc(db, "h2h/alice__dave"), {
+      pairKey: "alice__dave", aId: "alice", bId: "dave", aWins: 1, bWins: 0, draws: 0,
+    });
     await setDoc(doc(db, "teams/team-a"), { name: "Crimson Albion", active: true });
     await setDoc(doc(db, "teams/team-b"), { name: "Royal Vega", active: true });
     await setDoc(doc(db, "invites/OFC-ABCDE"), { role: "member", usedBy: null });
@@ -65,6 +69,16 @@ test("non-member cannot read league matches", async () => {
 
 test("member can read league matches", async () => {
   await assertSucceeds(getDoc(doc(member(), "matches/m1")));
+});
+
+test("members can read M3 aggregate documents", async () => {
+  await assertSucceeds(getDoc(doc(member(), "playerStats/alice")));
+  await assertSucceeds(getDoc(doc(member(), "h2h/alice__dave")));
+});
+
+test("non-members cannot read M3 aggregate documents", async () => {
+  await assertFails(getDoc(doc(outsider(), "playerStats/alice")));
+  await assertFails(getDoc(doc(outsider(), "h2h/alice__dave")));
 });
 
 test("a signed-in non-member can read their OWN profile (onboarding)", async () => {

@@ -1,4 +1,5 @@
 /** ELO-over-time line chart (react-native-svg), ported from the prototype. */
+import { useId } from "react";
 import Svg, { Defs, LinearGradient, Stop, Line, Path, Circle } from "react-native-svg";
 import { colors } from "@/theme";
 
@@ -18,6 +19,7 @@ export function LineChart({
   height?: number;
   color?: string;
 }) {
+  const gradientId = `elo-fill-${useId().replace(/:/g, "")}`;
   if (!data || data.length < 2) return null;
   const pad = { t: 14, r: 8, b: 16, l: 8 };
   const ys = data.map((d) => d.rating);
@@ -37,7 +39,7 @@ export function LineChart({
   return (
     <Svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height}>
       <Defs>
-        <LinearGradient id="eloFill" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={color} stopOpacity={0.28} />
           <Stop offset="1" stopColor={color} stopOpacity={0} />
         </LinearGradient>
@@ -54,7 +56,7 @@ export function LineChart({
           strokeDasharray="2 4"
         />
       ))}
-      <Path d={area} fill="url(#eloFill)" />
+      <Path d={area} fill={`url(#${gradientId})`} />
       <Path d={line} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
       <Circle cx={X(data.length - 1)} cy={Y(last.rating)} r={4.5} fill={color} stroke={colors.bg} strokeWidth={2} />
     </Svg>

@@ -22,10 +22,11 @@ service firebase.storage {
       return request.resource.size < 12 * 1024 * 1024; // 12 MB
     }
 
-    // match-photos/{uid}/{matchId}/{file}
+    // match-photos/{uid}/{draftId}/source.{ext}
     match /match-photos/{userId}/{allPaths=**} {
       allow read: if false; // served via signed URLs only
       allow write: if isMember() && userId == request.auth.uid && isImage() && underLimit();
+      allow delete: if isMember() && userId == request.auth.uid;
     }
 
     match /{allPaths=**} {
