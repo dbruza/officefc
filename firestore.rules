@@ -27,10 +27,11 @@ service cloud.firestore {
       return isMember() && memberRole() == 'admin';
     }
 
-    // Profiles: any member can read. You may write your own profile but never set your
+    // Profiles: any member can read; you can always read your OWN profile (needed during
+    // onboarding, before membership). You may write your own profile but never set your
     // own role (role is authoritative on the membership doc). Admins may write any.
     match /profiles/{userId} {
-      allow read: if isMember();
+      allow read: if isMember() || (signedIn() && userId == uid());
       allow create, update: if isAdmin()
         || (signedIn() && userId == uid() && !('role' in request.resource.data));
       allow delete: if isAdmin();
@@ -42,8 +43,10 @@ service cloud.firestore {
       allow read: if isMember();
       allow write: if false; // function/admin-only
       match /members/{memberId} {
-        allow read: if isMember();
-        allow write: if false; // function/admin-only
+        // Members see the roster; you can always read your OWN membership doc (so the app
+        // can tell whether you've joined yet). Writes are function/admin-only.
+        allow read: if isMember() || (signedIn() && memberId == uid());
+        allow write: if false;
       }
     }
 
