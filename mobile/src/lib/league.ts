@@ -91,6 +91,7 @@ export interface LeagueMatch {
   status: "pending_confirmation" | "confirmed" | "disputed" | "voided";
   source: "manual" | "ai_assisted";
   date: Date | null;
+  photoPath: string | null;
   aEloBefore: number | null;
   aEloAfter: number | null;
   aDelta: number | null;
@@ -219,6 +220,7 @@ function mapMatch(id: string, data: Record<string, unknown>): LeagueMatch {
     status: String(data.status) as LeagueMatch["status"],
     source: data.source === "ai_assisted" ? "ai_assisted" : "manual",
     date: asNullableDate(data.date),
+    photoPath: typeof data.photoPath === "string" ? data.photoPath : null,
     aEloBefore: nullableNumber(data.aEloBefore),
     aEloAfter: nullableNumber(data.aEloAfter),
     aDelta: nullableNumber(data.aDelta),
@@ -561,6 +563,14 @@ export async function getMatchPhotoUrl(matchId: string): Promise<{ url: string; 
   );
   const result = await callable({ matchId });
   return result.data;
+}
+
+export async function deleteMatchPhoto(matchId: string): Promise<void> {
+  const callable = httpsCallable<{ matchId: string }, { ok: boolean; matchId: string }>(
+    functions,
+    "deleteMatchPhoto",
+  );
+  await callable({ matchId });
 }
 
 // --- M5 — Season lifecycle & admin ---

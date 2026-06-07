@@ -13,6 +13,7 @@ import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
 import { calculateSeason, type SeasonMatchInput } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
@@ -20,6 +21,7 @@ import { sendPush } from "./notify";
 
 initializeApp();
 const db = getFirestore();
+const storage = getStorage();
 
 type Role = "admin" | "member";
 
@@ -435,6 +437,30 @@ export const notifyMatchSubmitted = onDocumentCreated("matches/{matchId}", async
     `Confirm or dispute the ${data.aGoals}-${data.bGoals} score.`,
     { type: "match_pending", matchId: event.params.matchId },
   );
+});
+
+/** Delete a match photo from storage and clear the reference. Owner only. */
+export const deleteMatchPhoto = onCall(async (req) => {
+  const { uid } = requireAuth(req);
+  const matchId = String(req.data?.matchId ?? "").trim();
+  if (!matchId) throw new HttpsError("invalid-argument", "matchId is required.");
+
+  const ref = db.doc(`matches/${matchId}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
+    const data = snap.data()!;
+    if (data.submittedBy !== uid) throw new HttpsError("permission-denied", "Only the submitter can delete their photo.");
+    const photoPath = String(data.photoPath ?? "");
+    if (!photoPath) throw new HttpsError("not-found", "No photo stored for this match.");
+
+    const bucket = storage.bucket();
+    const [exists] = await bucket.file(photoPath).exists();
+    if (exists) await bucket.file(photoPath).delete();
+
+    tx.update(ref, { photoPath: FieldValue.delete(), photoDeletedAt: FieldValue.serverTimestamp() });
+  });
+  return { ok: true, matchId };
 });
 
 // --- M4B — AI extraction ---
