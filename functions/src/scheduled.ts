@@ -2,6 +2,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "./config";
 import { calculateSeason } from "./elo";
+import { sendPush } from "./notify";
 
 const db = getFirestore();
 const REMINDER_HOURS = 48;
@@ -20,16 +21,6 @@ function dateMillis(value: unknown): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return 0;
-}
-
-async function sendPush(uid: string, title: string, body: string, data: Record<string, string>): Promise<void> {
-  const tokens = await db.collection(`deviceTokens/${uid}/tokens`).get();
-  const messages = tokens.docs
-    .map((snap) => snap.get("expoPushToken"))
-    .filter((token): token is string => typeof token === "string" && /^(ExponentPushToken|ExpoPushToken)\[/.test(token))
-    .map((to) => ({ to, sound: "default", title, body, data }));
-  if (messages.length === 0) return;
-  try { await fetch("https://exp.host/--/api/v2/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(messages) }); } catch (e) { console.warn("Push failed", e); }
 }
 
 /**

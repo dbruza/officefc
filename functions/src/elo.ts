@@ -46,7 +46,7 @@ export interface SeasonCalculation {
   history: Record<string, HistoryPoint[]>;
 }
 
-function expectedScore(a: number, b: number): number {
+export function expectedScore(a: number, b: number): number {
   return 1 / (1 + Math.pow(10, (b - a) / 400));
 }
 
