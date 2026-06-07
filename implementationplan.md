@@ -254,7 +254,8 @@ free tier at office scale; GCP credits absorb any overflow. The only off-credit 
 
 ## Open items (defaults noted)
 
-- **Admin email allowlist** for bootstrap (default: `djbruza@gmail.com`).
+- **Admin email allowlist** for bootstrap: **`djbruza@gmail.com`** (confirmed) — this address is
+  auto-promoted to admin on first app sign-in. More admins can be added later.
 - POTM = highest monthly ELO gain, min 3 games (default: yes).
 - Non-response stays pending + reminder push, no auto-confirm (default: yes).
 - FIFA 23 console(s) for the eval label set (default: unspecified, generic reader).
