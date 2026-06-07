@@ -58,6 +58,20 @@ npm run test:rules    # boots the Firestore emulator and runs test/rules/*.test.
 These assert the trust boundary: non-members can't read league data, clients can't write
 membership/ELO/status, but a user can read their own profile/membership during onboarding.
 
+## Troubleshooting
+
+- **Blank web page + `ERR_CONNECTION_REFUSED` on `:8081`, terminal shows
+  `Error: EMFILE: too many open files, watch`** — Metro crashed on macOS's low open-file
+  limit while watching the tree. Install Watchman and restart:
+  ```bash
+  brew install watchman
+  cd mobile && npx expo start --web --clear
+  ```
+  Stopgap without Watchman: `ulimit -n 65536` in the terminal before `npm run web`.
+- **App stuck on a spinner / Firebase `ERR_CONNECTION_REFUSED` to `:9099`/`:8080`/`:5001`** —
+  the emulators aren't running. Start them (`firebase emulators:start`) in another terminal,
+  or set `EXPO_PUBLIC_USE_EMULATORS=0` in `mobile/.env` to hit the live project.
+
 ## Notes
 
 - Functions run in the default region `us-central1` (matches the client's `getFunctions`).
