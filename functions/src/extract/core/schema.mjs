@@ -1,5 +1,5 @@
 /* OfficeFC — extraction tool schema.
-   Runtime-agnostic (plain ESM): imported by the Deno Edge Function AND by the
+   Runtime-agnostic (plain ESM): imported by the Cloud Function AND by the
    Node test/eval harness. Defines the single tool Claude must call so it returns
    structured data instead of prose. */
 

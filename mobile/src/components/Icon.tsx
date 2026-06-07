@@ -2,6 +2,7 @@
  * Generic football iconography (no branding), ported from the prototype's inline SVGs
  * to react-native-svg. Stroke-based, inherits `color`.
  */
+import type { JSX } from "react";
 import Svg, { Path, Circle, Rect, G } from "react-native-svg";
 import { colors } from "@/theme";
 

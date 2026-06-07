@@ -1,6 +1,6 @@
 /* OfficeFC — minimal Anthropic Messages client for vision + forced tool use.
-   Uses global fetch (available in Deno and Node >= 18). No SDK dependency, so the
-   exact same module runs in the Supabase Edge Function and in the Node eval harness. */
+   Uses global fetch (available in Node >= 18). No SDK dependency, so the
+   exact same module runs in the Cloud Function and in the Node eval harness. */
 
 import { EXTRACTION_TOOL, EXTRACTION_TOOL_NAME, DEFAULT_MODEL, ANTHROPIC_VERSION } from "./schema.mjs";
 import { SYSTEM_PROMPT, USER_INSTRUCTION } from "./prompt.mjs";

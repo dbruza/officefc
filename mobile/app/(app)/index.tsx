@@ -2,7 +2,16 @@ import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Avatar, Button, Card, Icon, PlayerRow, SectionLabel, Txt } from "@/components";
+import {
+  AppTabBar,
+  Avatar,
+  Button,
+  Card,
+  Icon,
+  PlayerRow,
+  SectionLabel,
+  Txt,
+} from "@/components";
 import { useAuth } from "@/lib/auth";
 import { createInvite } from "@/lib/membership";
 import { authErrorMessage } from "@/lib/authErrors";
@@ -11,8 +20,11 @@ import {
   getActiveSeason,
   getLeaguePlayers,
   getPendingConfirmations,
+  getPlayerStats,
   getStandings,
+  rebuildLeagueReadModels,
   type LeaguePlayer,
+  type PlayerStats,
   type Season,
   type Standing,
 } from "@/lib/league";
@@ -27,6 +39,7 @@ export default function Home() {
   const [season, setSeason] = useState<Season | null>(null);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,15 +54,22 @@ export default function Home() {
         await ensureLeagueSetup();
         activeSeason = await getActiveSeason();
       }
-      const [roster, pending, table] = await Promise.all([
+      const [roster, pending, table, allTime] = await Promise.all([
         getLeaguePlayers(),
         getPendingConfirmations(user.uid),
         activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
+        getPlayerStats(user.uid),
       ]);
+      let resolvedStats = allTime;
+      if (!resolvedStats && isAdmin && table.length) {
+        await rebuildLeagueReadModels();
+        resolvedStats = await getPlayerStats(user.uid);
+      }
       setSeason(activeSeason);
       setPlayers(new Map(roster.map((player) => [player.id, player])));
       setPendingCount(pending.length);
       setStandings(table);
+      setPlayerStats(resolvedStats);
     } catch {
       setError("Couldn't load the live league data. Check the emulators and retry.");
     } finally {
@@ -75,6 +95,9 @@ export default function Home() {
       }
     : null;
   const myStanding = standings.find((row) => row.uid === user?.uid);
+  const nemesis = playerStats?.nemesis
+    ? players.get(playerStats.nemesis.opponentId)
+    : null;
   const daysLeft = useMemo(() => {
     if (!season) return 0;
     return Math.max(0, Math.ceil((season.end.getTime() - Date.now()) / 86_400_000));
@@ -98,7 +121,7 @@ export default function Home() {
         {loading ? <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.x2 }} /> : null}
 
         {!loading ? (
-          <Card style={styles.hero} padded>
+          <Card style={styles.hero} padded onPress={() => router.push("/(app)/profile")}>
             <View style={styles.heroTop}>
               <View>
                 <Txt variant="head" size={10.5} color={colors.textDim} style={{ letterSpacing: 1.4 }}>
@@ -125,6 +148,15 @@ export default function Home() {
               <Record value={myStanding?.d ?? 0} label="D" color={colors.draw} />
               <Record value={myStanding?.l ?? 0} label="L" color={colors.loss} />
               <View style={{ flex: 1 }} />
+              {playerStats?.currentStreakType ? (
+                <Txt
+                  variant="monoBold"
+                  size={9.5}
+                  color={playerStats.currentStreakType === "W" ? colors.accent : colors.textDim}
+                >
+                  {playerStats.currentStreak} {streakCopy(playerStats.currentStreakType)}
+                </Txt>
+              ) : null}
               <View style={[styles.roleChip, isAdmin && { backgroundColor: colors.accent }]}>
                 <Txt
                   variant="monoBold"
@@ -171,6 +203,45 @@ export default function Home() {
           </Card>
         ) : null}
 
+        {nemesis && playerStats?.nemesis ? (
+          <View style={{ marginBottom: spacing.x2 }}>
+            <SectionLabel>Current nemesis</SectionLabel>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/h2h",
+                  params: { a: user?.uid ?? "", b: nemesis.id },
+                })
+              }
+              style={styles.nemesisCard}
+            >
+              <Avatar player={nemesis} size={48} jersey />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Txt variant="bodyMedium" size={14.5} numberOfLines={1}>
+                  {nemesis.name}
+                </Txt>
+                <Txt size={11.5} color={colors.textDim}>
+                  your worst matchup
+                </Txt>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Txt variant="monoBold" size={24}>
+                  <Txt variant="monoBold" size={24} color={colors.loss}>
+                    {playerStats.nemesis.wins}
+                  </Txt>
+                  <Txt variant="monoBold" size={22} color={colors.textFaint}>
+                    {" – "}
+                  </Txt>
+                  {playerStats.nemesis.losses}
+                </Txt>
+                <Txt variant="head" size={8.5} color={colors.loss} style={{ letterSpacing: 1 }}>
+                  ALL-TIME
+                </Txt>
+              </View>
+            </Pressable>
+          </View>
+        ) : null}
+
         <SectionLabel
           action={
             <Pressable onPress={() => router.push("/(app)/leaderboard")}>
@@ -196,6 +267,7 @@ export default function Home() {
                   form={standing.form}
                   move={standing.move}
                   you={standing.uid === user?.uid}
+                  onPress={() => router.push(`/(app)/player/${standing.uid}`)}
                 />
               );
             })}
@@ -221,8 +293,15 @@ export default function Home() {
           Sign out
         </Button>
       </ScrollView>
+      <AppTabBar active="home" />
     </SafeAreaView>
   );
+}
+
+function streakCopy(result: "W" | "D" | "L"): string {
+  if (result === "W") return "WIN STREAK";
+  if (result === "L") return "LOSS RUN";
+  return "DRAWN";
 }
 
 function Record({ value, label, color }: { value: number; label: string; color: string }) {
@@ -361,6 +440,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     marginBottom: spacing.x2,
+  },
+  nemesisCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.loss, 0.2),
+    borderRadius: radius.lg,
+    backgroundColor: mix(colors.surface, colors.loss, 5),
   },
   codeBox: {
     marginTop: spacing.md,

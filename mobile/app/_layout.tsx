@@ -22,8 +22,9 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!ready) return;
-    const group = segments[0]; // "(auth)" | "(onboarding)" | "(app)" | undefined
-    const screen = segments[1];
+    const segmentList: string[] = segments;
+    const group = segmentList[0];
+    const screen = segmentList[1];
 
     if (!user) {
       if (group !== "(auth)") router.replace("/(auth)/sign-in");

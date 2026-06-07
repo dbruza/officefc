@@ -9,9 +9,9 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { extractMatchFromImage } from "../supabase/functions/extract-match-stats/core/extract.mjs";
-import { mockResponse } from "../supabase/functions/extract-match-stats/core/anthropic.mjs";
-import { DEFAULT_MODEL } from "../supabase/functions/extract-match-stats/core/schema.mjs";
+import { extractMatchFromImage } from "../functions/src/extract/core/extract.mjs";
+import { mockResponse } from "../functions/src/extract/core/anthropic.mjs";
+import { DEFAULT_MODEL } from "../functions/src/extract/core/schema.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const labelsDir = join(here, "labels");

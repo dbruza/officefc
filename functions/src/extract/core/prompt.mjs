@@ -1,4 +1,4 @@
-/* OfficeFC — extraction prompt. The rules that keep the model honest:
+/* OfficeFC — extraction prompt. Rules that keep the model honest:
    read-don't-guess, null-when-unsure, left=home / right=away. */
 
 export const SYSTEM_PROMPT = [
