@@ -1,22 +1,67 @@
-/**
- * Home (M1). Confirms the auth + membership loop works end-to-end: greets the signed-in
- * player, shows their role, lets admins mint invite codes, and signs out. The full
- * dashboard (standings, form, ELO) lands in M3 once match data exists.
- */
-import { useState } from "react";
-import { ScrollView, View, StyleSheet } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Txt, Card, Button, Avatar, SectionLabel } from "@/components";
+import { useFocusEffect, useRouter } from "expo-router";
+import { Avatar, Button, Card, Icon, PlayerRow, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import { createInvite } from "@/lib/membership";
 import { authErrorMessage } from "@/lib/authErrors";
+import {
+  ensureLeagueSetup,
+  getActiveSeason,
+  getLeaguePlayers,
+  getPendingConfirmations,
+  getStandings,
+  type LeaguePlayer,
+  type Season,
+  type Standing,
+} from "@/lib/league";
 import { initialsOf, type Player } from "@/types";
 import { colors, spacing, radius } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
 
 export default function Home() {
+  const router = useRouter();
   const { user, profile, membership, signOutUser } = useAuth();
   const isAdmin = membership?.role === "admin";
+  const [season, setSeason] = useState<Season | null>(null);
+  const [standings, setStandings] = useState<Standing[]>([]);
+  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
+  const [pendingCount, setPendingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setError(null);
+    try {
+      let activeSeason = await getActiveSeason();
+      if (!activeSeason && isAdmin) {
+        await ensureLeagueSetup();
+        activeSeason = await getActiveSeason();
+      }
+      const [roster, pending, table] = await Promise.all([
+        getLeaguePlayers(),
+        getPendingConfirmations(user.uid),
+        activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
+      ]);
+      setSeason(activeSeason);
+      setPlayers(new Map(roster.map((player) => [player.id, player])));
+      setPendingCount(pending.length);
+      setStandings(table);
+    } catch {
+      setError("Couldn't load the live league data. Check the emulators and retry.");
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const me: Player | null = profile
     ? {
@@ -29,6 +74,11 @@ export default function Home() {
         isYou: true,
       }
     : null;
+  const myStanding = standings.find((row) => row.uid === user?.uid);
+  const daysLeft = useMemo(() => {
+    if (!season) return 0;
+    return Math.max(0, Math.ceil((season.end.getTime() - Date.now()) / 86_400_000));
+  }, [season]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -36,7 +86,7 @@ export default function Home() {
         <View style={styles.header}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt variant="head" size={10.5} color={colors.textDim} style={{ letterSpacing: 1.6 }}>
-              OFFICEFC · SUMMER SHOWDOWN
+              OFFICEFC · {season?.name.toUpperCase() ?? "LEAGUE"}
             </Txt>
             <Txt variant="head" size={24} numberOfLines={1} style={{ marginTop: 2 }}>
               Hey, {profile?.displayName?.split(" ")[0] ?? "player"}
@@ -45,22 +95,124 @@ export default function Home() {
           {me ? <Avatar player={me} size={44} ring jersey /> : null}
         </View>
 
-        <Card style={styles.hero} padded>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Txt variant="head" size={11} color={colors.textDim} style={{ letterSpacing: 1.4 }}>
-              YOU'RE IN THE LEAGUE
+        {loading ? <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.x2 }} /> : null}
+
+        {!loading ? (
+          <Card style={styles.hero} padded>
+            <View style={styles.heroTop}>
+              <View>
+                <Txt variant="head" size={10.5} color={colors.textDim} style={{ letterSpacing: 1.4 }}>
+                  YOUR SEASON
+                </Txt>
+                <Txt variant="monoBold" size={40} color={colors.accent} style={{ marginTop: 4 }}>
+                  {myStanding?.elo ?? 1500}
+                </Txt>
+                <Txt variant="mono" size={11.5} color={colors.textDim}>
+                  ELO · {myStanding ? `RANK #${myStanding.rank}` : "UNRANKED"}
+                </Txt>
+              </View>
+              <View style={styles.seasonMeta}>
+                <Txt variant="monoBold" size={18}>
+                  {daysLeft}
+                </Txt>
+                <Txt size={10.5} color={colors.textDim}>
+                  DAYS LEFT
+                </Txt>
+              </View>
+            </View>
+            <View style={styles.recordRow}>
+              <Record value={myStanding?.w ?? 0} label="W" color={colors.win} />
+              <Record value={myStanding?.d ?? 0} label="D" color={colors.draw} />
+              <Record value={myStanding?.l ?? 0} label="L" color={colors.loss} />
+              <View style={{ flex: 1 }} />
+              <View style={[styles.roleChip, isAdmin && { backgroundColor: colors.accent }]}>
+                <Txt
+                  variant="monoBold"
+                  size={9}
+                  color={isAdmin ? colors.onAccent : colors.textDim}
+                  style={{ letterSpacing: 1 }}
+                >
+                  {(membership?.role ?? "member").toUpperCase()}
+                </Txt>
+              </View>
+            </View>
+          </Card>
+        ) : null}
+
+        <View style={styles.primaryActions}>
+          <View style={{ flex: 1 }}>
+            <Button full size="lg" icon="plus" onPress={() => router.push("/(app)/log-match")}>
+              Log match
+            </Button>
+          </View>
+          <Pressable
+            onPress={() => router.push("/(app)/confirmations")}
+            style={styles.inboxButton}
+          >
+            <Icon name="check" size={20} color={pendingCount ? colors.accent : colors.textDim} />
+            {pendingCount ? (
+              <View style={styles.badge}>
+                <Txt variant="monoBold" size={9} color={colors.onAccent}>
+                  {pendingCount}
+                </Txt>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
+
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              {error}
             </Txt>
-            <View style={[styles.roleChip, isAdmin && { backgroundColor: colors.accent }]}>
-              <Txt variant="monoBold" size={10} color={isAdmin ? colors.onAccent : colors.textDim} style={{ letterSpacing: 1 }}>
-                {(membership?.role ?? "member").toUpperCase()}
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={load}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+
+        <SectionLabel
+          action={
+            <Pressable onPress={() => router.push("/(app)/leaderboard")}>
+              <Txt variant="head" size={11} color={colors.accent}>
+                FULL TABLE
+              </Txt>
+            </Pressable>
+          }
+        >
+          Top of the table
+        </SectionLabel>
+        {standings.length ? (
+          <View style={{ gap: spacing.sm }}>
+            {standings.slice(0, 3).map((standing) => {
+              const player = players.get(standing.uid);
+              if (!player) return null;
+              return (
+                <PlayerRow
+                  key={standing.uid}
+                  player={player}
+                  rank={standing.rank}
+                  elo={standing.elo}
+                  form={standing.form}
+                  move={standing.move}
+                  you={standing.uid === user?.uid}
+                />
+              );
+            })}
+          </View>
+        ) : (
+          <Card style={styles.emptyTable}>
+            <Icon name="board" size={24} color={colors.textDim} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="head" size={14}>
+                No confirmed results yet
+              </Txt>
+              <Txt size={12} color={colors.textDim} style={{ marginTop: 3 }}>
+                Log a match, get the opponent's nod, and the table comes alive.
               </Txt>
             </View>
-          </View>
-          <Txt size={13.5} color={colors.textDim} style={{ marginTop: 8, lineHeight: 20 }}>
-            Match logging, opponent confirmation, and the live table arrive next (M2–M3). For now,
-            your account, profile, and membership are all set.
-          </Txt>
-        </Card>
+          </Card>
+        )}
 
         {isAdmin ? <AdminInvite /> : null}
 
@@ -70,6 +222,19 @@ export default function Home() {
         </Button>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Record({ value, label, color }: { value: number; label: string; color: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 3 }}>
+      <Txt variant="monoBold" size={16}>
+        {value}
+      </Txt>
+      <Txt variant="head" size={9.5} color={color}>
+        {label}
+      </Txt>
+    </View>
   );
 }
 
@@ -96,8 +261,7 @@ function AdminInvite() {
       <SectionLabel>Invite the office</SectionLabel>
       <Card padded>
         <Txt size={13.5} color={colors.textDim} style={{ lineHeight: 20 }}>
-          Generate a code and share it with a colleague. They enter it after signing up to join the
-          league.
+          Generate a one-use code for another player.
         </Txt>
         {code ? (
           <View style={styles.codeBox}>
@@ -136,12 +300,67 @@ const styles = StyleSheet.create({
     backgroundColor: mix(colors.surface, colors.accent, 6),
     borderColor: withAlpha(colors.accent, 0.22),
     borderRadius: radius.xl,
+    marginBottom: spacing.md,
+  },
+  heroTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  seasonMeta: {
+    alignItems: "center",
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  recordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
   },
   roleChip: {
     backgroundColor: colors.surface2,
     borderRadius: radius.pill,
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 4,
+  },
+  primaryActions: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: spacing.sm,
+    marginBottom: spacing.x2,
+  },
+  inboxButton: {
+    width: 54,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: 7,
+    right: 7,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTable: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.x2,
   },
   codeBox: {
     marginTop: spacing.md,

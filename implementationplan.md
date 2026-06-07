@@ -76,7 +76,7 @@ that downloads from Cloud Storage and verifies a Firebase ID token.
   - `playerStats/{uid}` — all-time record, streaks, biggest win, nemesis.
   - `h2h/{pairKey}` — all-time head-to-head aggregate per player pair.
   - `seasonResults/{seasonId}` — championId, runnerUpId; `seasonResults/{id}/potm/{month}` — playerId.
-- `deviceTokens/{uid}/{tokenId}` — expoPushToken, platform.
+- `deviceTokens/{uid}/tokens/{tokenId}` — expoPushToken, platform.
 
 Photos live in a **private bucket**, readable only by league members via signed URLs.
 
@@ -259,13 +259,17 @@ free tier at office scale; GCP credits absorb any overflow. The only off-credit 
 - POTM = highest monthly ELO gain, min 3 games (default: yes).
 - Non-response stays pending + reminder push, no auto-confirm (default: yes).
 - FIFA 23 console(s) for the eval label set (default: unspecified, generic reader).
+- **Expo SDK upgrade (51 → current) is deferred to before M4.** Develop on web + iOS simulator
+  until then; physical-phone testing via Expo Go needs the project to match Expo Go's SDK (54+),
+  and M4's camera/notifications will require a dev build regardless. Don't bump `expo` by hand —
+  upgrade the whole SDK set via `npx expo install --fix`.
 
 ## Progress / status
 
 - **M0 — Scaffold: DONE & verified.** Firebase config + emulator suite; Expo app
   (Expo Router + TS, fonts, dark theme, Firebase client init); design tokens + UI primitives ported
   to RN; web bundle builds and renders faithfully (console clean); extraction core still 10/10.
-- **M1 — Auth + membership: CODE COMPLETE; pending live emulator verification.**
+- **M1 — Auth + membership: DONE & emulator verified.**
   - Firebase project `office-fc` created (Auth email/password, Firestore `(default)`, Storage).
   - Auth spine: `AuthProvider`/`useAuth`, route gating across `(auth)`/`(onboarding)`/`(app)`.
   - Screens: sign-in, sign-up, forgot-password, verify-email, profile-setup, invite-code join, home
@@ -274,11 +278,21 @@ free tier at office scale; GCP credits absorb any overflow. The only off-credit 
     `createInvite` (admin-only); re-added to `firebase.json` + Functions emulator.
   - Rules tightened (own-profile/own-membership reads for onboarding) + `@firebase/rules-unit-testing`
     specs in `test/rules/` (`npm run test:rules`).
-  - Verified here: mobile `tsc` clean, functions `tsc`/build clean, web bundle builds, sign-in +
-    sign-up screens render (console clean), offline extraction tests still 10/10. The live
-    onboarding flow is validated against the emulator per `docs/running-m1.md`.
+  - Verified: mobile `tsc` clean, functions `tsc`/build clean, web bundle builds, sign-in +
+    sign-up screens render (console clean), offline extraction tests still 10/10, and the live
+    onboarding flow passes against the emulator per `docs/running-m1.md`.
+- **M2 — Core loop: CODE COMPLETE & emulator verified.**
+  - Four-step manual log flow (opponent → teams → score → review), confirmation inbox, and live
+    standings/leaderboard.
+  - Callable `confirmMatch` / `disputeMatch`; deterministic server-side season ELO rebuild writes
+    match deltas, standings, records/form, and ELO history.
+  - Admin-idempotent active-season/team seed; tightened match-create rules; submit/resolve push
+    hooks for registered Expo tokens.
+  - Verified: a `2–1` result between equal-rated players remained pending until the opponent
+    confirmed, then produced `1516/1484`; Functions unit tests, all 17 rules tests, mobile
+    typecheck, web export, and browser console passed. See `docs/running-m2.md`.
 - The AI extraction backend slice lives under `supabase/functions/extract-match-stats/`, ready to be
   wrapped as a Node Cloud Function in M4.
 
-**Next:** M2 — manual match-logging loop (submit → opponent confirm → `recalcSeasonElo`), plus
-seeding an active season.
+**Next:** M3 — read-screen parity (player profile, match detail, head-to-head, richer home stats,
+season archive surfaces) powered by the M2 materialized documents.

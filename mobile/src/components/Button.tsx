@@ -16,6 +16,7 @@ export interface ButtonProps {
   full?: boolean;
   onPress?: () => void;
   style?: ViewStyle;
+  disabled?: boolean;
 }
 
 const sizing: Record<Size, { padV: number; padH: number; font: number; icon: number }> = {
@@ -39,12 +40,14 @@ export function Button({
   full,
   onPress,
   style,
+  disabled = false,
 }: ButtonProps) {
   const s = sizing[size];
   const v = variants[variant];
   return (
     <Pressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.base,
         {
@@ -54,7 +57,7 @@ export function Button({
           borderColor: v.border,
           alignSelf: full ? "stretch" : "flex-start",
           width: full ? "100%" : undefined,
-          opacity: pressed ? 0.85 : 1,
+          opacity: disabled ? 0.42 : pressed ? 0.85 : 1,
         },
         style,
       ]}

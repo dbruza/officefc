@@ -1,4 +1,5 @@
 /** Player avatar — initials on a colour gradient, with an optional jersey badge. */
+import { useId } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Txt } from "./Txt";
@@ -14,10 +15,11 @@ export interface AvatarProps {
 }
 
 export function Avatar({ player, size = 40, ring = false, jersey = false }: AvatarProps) {
+  const uniqueId = useId().replace(/:/g, "");
   if (!player) return null;
   const fs = Math.round(size * 0.38);
   const initials = player.initials ?? initialsOf(player.name);
-  const gradId = `av-${player.id}`;
+  const gradId = `av-${player.id}-${uniqueId}`;
 
   return (
     <View style={{ width: size, height: size, flexShrink: 0 }}>

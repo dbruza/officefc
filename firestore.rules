@@ -26,6 +26,18 @@ service cloud.firestore {
     function isAdmin() {
       return isMember() && memberRole() == 'admin';
     }
+    function isLeagueMember(userId) {
+      return exists(/databases/$(database)/documents/leagues/office/members/$(userId));
+    }
+    function isActiveSeason(seasonId) {
+      return exists(/databases/$(database)/documents/seasons/$(seasonId))
+        && get(/databases/$(database)/documents/seasons/$(seasonId)).data.active == true;
+    }
+    function isValidTeam(teamId, teamName) {
+      return exists(/databases/$(database)/documents/teams/$(teamId))
+        && get(/databases/$(database)/documents/teams/$(teamId)).data.active == true
+        && get(/databases/$(database)/documents/teams/$(teamId)).data.name == teamName;
+    }
 
     // Profiles: any member can read; you can always read your OWN profile (needed during
     // onboarding, before membership). You may write your own profile but never set your
@@ -74,10 +86,32 @@ service cloud.firestore {
     match /matches/{matchId} {
       allow read: if isMember();
       allow create: if isMember()
+        && request.resource.data.keys().hasAll([
+          'seasonId', 'submittedBy', 'aId', 'bId', 'aTeamId', 'bTeamId',
+          'aTeam', 'bTeam', 'aGoals', 'bGoals', 'status', 'source', 'date', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'seasonId', 'submittedBy', 'aId', 'bId', 'aTeamId', 'bTeamId',
+          'aTeam', 'bTeam', 'aGoals', 'bGoals', 'status', 'source', 'date', 'createdAt'
+        ])
         && request.resource.data.submittedBy == uid()
         && (request.resource.data.aId == uid() || request.resource.data.bId == uid())
+        && request.resource.data.aId != request.resource.data.bId
+        && isLeagueMember(request.resource.data.aId)
+        && isLeagueMember(request.resource.data.bId)
+        && isActiveSeason(request.resource.data.seasonId)
+        && isValidTeam(request.resource.data.aTeamId, request.resource.data.aTeam)
+        && isValidTeam(request.resource.data.bTeamId, request.resource.data.bTeam)
+        && request.resource.data.aGoals is int
+        && request.resource.data.bGoals is int
+        && request.resource.data.aGoals >= 0
+        && request.resource.data.aGoals <= 99
+        && request.resource.data.bGoals >= 0
+        && request.resource.data.bGoals <= 99
         && request.resource.data.status == 'pending_confirmation'
-        && request.resource.data.source in ['manual', 'ai_assisted'];
+        && request.resource.data.source == 'manual'
+        && request.resource.data.date == request.time
+        && request.resource.data.createdAt == request.time;
       allow update, delete: if false; // function/admin-only
       match /{sub=**} {
         allow read: if isMember();
@@ -104,7 +138,7 @@ service cloud.firestore {
     }
 
     // Push tokens: a user manages only their own.
-    match /deviceTokens/{userId}/{tokenId} {
+    match /deviceTokens/{userId}/tokens/{tokenId} {
       allow read, write: if signedIn() && userId == uid();
     }
 
