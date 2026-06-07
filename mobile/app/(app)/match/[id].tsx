@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -14,8 +14,10 @@ import {
   Txt,
 } from "@/components";
 import {
+  deleteMatchPhoto,
   getLeaguePlayers,
   getMatch,
+  getMatchPhotoUrl,
   getSeason,
   type LeagueMatch,
   type LeaguePlayer,
@@ -31,6 +33,9 @@ export default function MatchDetailRoute() {
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoExpires, setPhotoExpires] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,12 +45,34 @@ export default function MatchDetailRoute() {
       setMatch(result);
       setPlayers(new Map(roster.map((player) => [player.id, player])));
       setSeason(result ? await getSeason(result.seasonId) : null);
+      if (result?.source === "ai_assisted" && result.photoPath) {
+        try {
+          const { url, expiresAt } = await getMatchPhotoUrl(id);
+          setPhotoUrl(url);
+          setPhotoExpires(expiresAt);
+        } catch {
+          setPhotoUrl(null);
+        }
+      }
     } catch {
       setError("Couldn't load this match.");
     } finally {
       setLoading(false);
     }
   }, [id]);
+
+  const handleDeletePhoto = async () => {
+    setDeleting(true);
+    try {
+      await deleteMatchPhoto(id);
+      setPhotoUrl(null);
+      setMatch((prev) => (prev ? { ...prev, photoPath: null } : null));
+    } catch {
+      Alert.alert("Could not delete photo", "Try again or ask an admin.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -135,6 +162,18 @@ export default function MatchDetailRoute() {
                 />
               </View>
             </View>
+
+            {photoUrl ? (
+              <View style={{ marginTop: spacing.x2 }}>
+                <SectionLabel action={
+                  <Button variant="dark" size="sm" onPress={handleDeletePhoto} disabled={deleting}>{deleting ? "Deleting…" : "Delete photo"}</Button>
+                }>Stats photo</SectionLabel>
+                <Image source={{ uri: photoUrl }} style={styles.photo} resizeMode="contain" />
+                <Txt size={10} color={colors.textDim} style={{ marginTop: 4 }}>
+                  Signed URL expires {new Date(photoExpires).toLocaleTimeString()}. Open again to refresh.
+                </Txt>
+              </View>
+            ) : null}
 
             <View style={{ marginTop: spacing.x2 }}>
               <SectionLabel>Stats screen</SectionLabel>
@@ -309,4 +348,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
   },
   possessionFill: { height: "100%", backgroundColor: colors.accent },
+  photo: {
+    width: "100%",
+    aspectRatio: 900 / 1280,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    marginTop: spacing.sm,
+  },
 });

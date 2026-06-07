@@ -5,16 +5,23 @@ AI-assisted logging. **Goals accuracy is the headline metric** (it's what moves 
 stat fields are secondary.
 
 ```bash
-npm run eval                          # MOCK mode — no network, exercises the harness
-ANTHROPIC_API_KEY=sk-ant-… npm run eval   # REAL mode — scores Claude against the labels
+npm run eval                                    # MOCK mode — no network, exercises the harness
+ANTHROPIC_API_KEY=sk-ant-… npm run eval -- --real  # REAL mode — scores Claude against labels
+node eval/run-eval.mjs --real --model claude-sonnet-4-5  # custom model
+node eval/run-eval.mjs --real --output results.csv       # CSV output for tracking
+node eval/validate-labels.mjs                             # check labels before running
 ```
 
-In REAL mode you can also set `ANTHROPIC_MODEL` (and `ANTHROPIC_BASE_URL`).
+In REAL mode you can also set `ANTHROPIC_BASE_URL`.
 
-## Add cases (do this with REAL photos)
+## Eval gate (M4 release requirement)
 
-The committed `full-time-sample-01.png` is **synthetic** — only enough to wire up the
-harness. A meaningful number needs real images:
+- At least **20** readable FIFA/FC stats-screen images (clean screenshots, glare-y TV photos, draws, big scores, different layouts)
+- At least **5** non-stats/unreadable images (set `"detected_screen": false`)
+- ≥ 90% exact two-sided goals accuracy on readable images
+- Per-field accuracy breakdown for possession, shots, shots-on-target
+
+## Add cases
 
 1. Drop a screenshot/photo in `eval/images/` (png/jpg/webp).
 2. Add `eval/labels/<name>.json` with the ground truth:
@@ -30,9 +37,19 @@ harness. A meaningful number needs real images:
 }
 ```
 
-Aim for variety: different FC/FIFA versions and consoles, clean screenshots vs. glare-y
-photos of a TV, draws, big scores, and a few **non**-stats images (set
-`"detected_screen": false`) to confirm the model rejects them.
+For non-stats images:
+
+```jsonc
+{
+  "image": "menu-screen.png",
+  "expected": { "detected_screen": false }
+}
+```
+
+3. Run `node eval/validate-labels.mjs` to catch malformed labels before scoring.
+4. Run the harness to measure accuracy.
+
+Aim for variety: different FC/FIFA versions (FIFA 23, FC 24, FC 25) and consoles, clean screenshots vs. glare-y photos of a TV, draws, big scores.
 
 ## Regenerate the synthetic fixture
 

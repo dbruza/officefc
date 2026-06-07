@@ -4,6 +4,12 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { LEAGUE_ID } from "../config";
 import { extractMatchFromImage } from "./core/extract.mjs";
+import {
+  assertValidDraftId,
+  DraftSecurityError,
+  evaluateDraftClaim,
+  type DraftState,
+} from "./draftSecurity";
 
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const ANTHROPIC_MODEL = "claude-sonnet-4-5";
@@ -36,6 +42,23 @@ function validateStoragePath(uid: string, draftId: string, storagePath: string):
       "Storage path does not belong to the authenticated user.",
     );
   }
+}
+
+function asHttpsError(error: DraftSecurityError): HttpsError {
+  return new HttpsError(error.code, error.message);
+}
+
+function responseFromDraft(draftId: string, data: DraftState & Record<string, unknown>) {
+  const extraction = (data.raw ?? {}) as Record<string, unknown>;
+  return {
+    draftId,
+    ok: extraction.ok === true,
+    detectedScreen: extraction.detectedScreen === true,
+    confidence: extraction.confidence ?? data.confidence ?? 0,
+    requiresReview: extraction.requiresReview ?? data.requiresReview ?? true,
+    flags: extraction.flags ?? data.flags ?? [],
+    suggestion: extraction.suggestion ?? null,
+  };
 }
 
 async function checkRateLimit(uid: string): Promise<void> {
@@ -97,84 +120,112 @@ export const extractMatchStats = onCall(
       throw new HttpsError("invalid-argument", "draftId and storagePath are required.");
     }
 
+    try {
+      assertValidDraftId(draftId);
+    } catch (error) {
+      if (error instanceof DraftSecurityError) throw asHttpsError(error);
+      throw error;
+    }
     validateStoragePath(uid, draftId, storagePath);
 
     const draftRef = db.doc(`matchDrafts/${draftId}`);
-    const existing = await draftRef.get();
-    if (existing.exists && !force) {
-      const data = existing.data()!;
-      if (data.status === "done" && data.ownerUid === uid) {
-        return data;
+    const matchRef = db.doc(`matches/${draftId}`);
+    const claim = await db.runTransaction(async (tx) => {
+      const draftSnap = await tx.get(draftRef);
+      const matchSnap = await tx.get(matchRef);
+      const draft = draftSnap.exists ? (draftSnap.data() as DraftState) : null;
+      let action;
+      try {
+        action = evaluateDraftClaim({
+          draft,
+          matchExists: matchSnap.exists,
+          uid,
+          storagePath,
+          force: force === true,
+        });
+      } catch (error) {
+        if (error instanceof DraftSecurityError) throw asHttpsError(error);
+        throw error;
       }
+
+      if (action === "reuse") {
+        return { action, data: draftSnap.data()! };
+      }
+
+      tx.set(
+        draftRef,
+        {
+          ownerUid: uid,
+          storagePath,
+          status: "processing",
+          submitted: false,
+          ...(draftSnap.exists ? {} : { createdAt: FieldValue.serverTimestamp() }),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      return { action, data: null };
+    });
+
+    if (claim.action === "reuse" && claim.data) {
+      return responseFromDraft(draftId, claim.data);
     }
 
-    const bucket = storage.bucket();
-    const file = bucket.file(storagePath);
-    const [metadataResult] = await file.getMetadata();
-    const contentType = String(metadataResult.contentType ?? "");
-    const fileSize = Number(metadataResult.size ?? 0);
-
-    if (!isImageType(contentType)) {
-      throw new HttpsError("invalid-argument", "Not a supported image type.");
-    }
-    if (fileSize > MAX_FILE_SIZE) {
-      throw new HttpsError("invalid-argument", `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB).`);
-    }
-
-    await checkRateLimit(uid);
-
-    const [rawBuffer] = await file.download();
-    const { buffer, contentType: processedType } = await downscaleImage(
-      rawBuffer,
-      contentType,
-    );
-    const imageBase64 = buffer.toString("base64");
-
-    let extractionResult;
     try {
-      const raw = await extractMatchFromImage({
+      const bucket = storage.bucket();
+      const file = bucket.file(storagePath);
+      const [metadataResult] = await file.getMetadata();
+      const contentType = String(metadataResult.contentType ?? "");
+      const fileSize = Number(metadataResult.size ?? 0);
+
+      if (!isImageType(contentType)) {
+        throw new HttpsError("invalid-argument", "Not a supported image type.");
+      }
+      if (fileSize > MAX_FILE_SIZE) {
+        throw new HttpsError("invalid-argument", `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB).`);
+      }
+
+      await checkRateLimit(uid);
+
+      const [rawBuffer] = await file.download();
+      const { buffer, contentType: processedType } = await downscaleImage(
+        rawBuffer,
+        contentType,
+      );
+      const imageBase64 = buffer.toString("base64");
+      const extractionResult = await extractMatchFromImage({
         imageBase64,
         mediaType: processedType,
         model: ANTHROPIC_MODEL,
         apiKey: ANTHROPIC_API_KEY.value(),
       });
-      extractionResult = raw;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+
       await draftRef.set({
-        status: "failed",
         ownerUid: uid,
         storagePath,
-        error: message,
+        status: "done",
+        raw: extractionResult,
+        confidence: extractionResult.confidence,
+        requiresReview: extractionResult.requiresReview,
+        flags: extractionResult.flags,
+        model: ANTHROPIC_MODEL,
+        extractedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      }, { merge: true });
+
+      return responseFromDraft(draftId, { raw: extractionResult });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await draftRef.set(
+        {
+          status: "failed",
+          error: message,
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      if (error instanceof HttpsError) throw error;
       throw new HttpsError("internal", `Extraction failed: ${message}`);
     }
-
-    await draftRef.set({
-      ownerUid: uid,
-      storagePath,
-      status: "done",
-      raw: extractionResult,
-      confidence: extractionResult.confidence,
-      requiresReview: extractionResult.requiresReview,
-      flags: extractionResult.flags,
-      model: ANTHROPIC_MODEL,
-      extractedAt: FieldValue.serverTimestamp(),
-      createdAt: existing.exists
-        ? existing.get("createdAt") ?? FieldValue.serverTimestamp()
-        : FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    return {
-      draftId,
-      ok: extractionResult.ok,
-      detectedScreen: extractionResult.detectedScreen,
-      confidence: extractionResult.confidence,
-      requiresReview: extractionResult.requiresReview,
-      flags: extractionResult.flags,
-      suggestion: extractionResult.suggestion,
-    };
   },
 );

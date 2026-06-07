@@ -1,19 +1,60 @@
 import { Platform } from "react-native";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
 import { db } from "./firebase";
 
 let expoPushToken: string | null = null;
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: false,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 export function canRegisterPushToken(): boolean {
   if (Platform.OS === "web") return false;
-  return true;
+  return Device.isDevice;
+}
+
+export async function requestAndRegisterToken(uid: string): Promise<string | null> {
+  if (!canRegisterPushToken()) return null;
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let finalStatus = existing;
+  if (existing !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  if (finalStatus !== "granted") return null;
+
+  const projectId =
+    (Constants.expoConfig?.extra?.eas?.projectId as string | undefined) ??
+    Constants.easConfig?.projectId;
+  const options: { projectId?: string } = projectId ? { projectId } : {};
+  const tokenData = await Notifications.getExpoPushTokenAsync(options);
+  const token = tokenData.data;
+  expoPushToken = token;
+
+  const tokenId = hashToken(token);
+  await setDoc(doc(db, "deviceTokens", uid, "tokens", tokenId), {
+    expoPushToken: token,
+    platform: Platform.OS,
+    updatedAt: new Date().toISOString(),
+  });
+
+  return token;
 }
 
 export async function registerPushToken(uid: string, token: string): Promise<void> {
   expoPushToken = token;
   const tokenId = hashToken(token);
   await setDoc(doc(db, "deviceTokens", uid, "tokens", tokenId), {
-    token,
+    expoPushToken: token,
     platform: Platform.OS,
     updatedAt: new Date().toISOString(),
   });

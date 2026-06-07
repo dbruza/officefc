@@ -6,10 +6,12 @@ import { useEffect } from "react";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import { View, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAppFonts, colors } from "@/theme";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { resolveNotificationRoute } from "@/lib/notifications";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -57,6 +59,27 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useAppFonts();
+  const router = useRouter();
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = (response.notification.request.content.data ?? {}) as Record<string, string>;
+      const route = resolveNotificationRoute(data);
+      if (route) {
+        router.push(route);
+      }
+    });
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        const data = (response.notification.request.content.data ?? {}) as Record<string, string>;
+        const route = resolveNotificationRoute(data);
+        if (route) {
+          router.push(route);
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [router]);
 
   useEffect(() => {
     if (fontsLoaded || fontError) SplashScreen.hideAsync().catch(() => {});
