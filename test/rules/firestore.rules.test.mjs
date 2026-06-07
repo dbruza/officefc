@@ -17,7 +17,7 @@ import {
   assertSucceeds,
   assertFails,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rules = readFileSync(join(here, "../../firestore.rules"), "utf8");
@@ -41,12 +41,16 @@ beforeEach(async () => {
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     await setDoc(doc(db, "leagues/office/members/alice"), { role: "member" });
+    await setDoc(doc(db, "leagues/office/members/bob"), { role: "member" });
     await setDoc(doc(db, "leagues/office/members/dave"), { role: "admin" });
     await setDoc(doc(db, "profiles/alice"), { displayName: "Alice", handle: "alice" });
     await setDoc(doc(db, "profiles/bob"), { displayName: "Bob", handle: "bob" });
     await setDoc(doc(db, "matches/m1"), {
       seasonId: "s1", aId: "alice", bId: "dave", status: "confirmed",
     });
+    await setDoc(doc(db, "seasons/s1"), { name: "Summer Showdown", active: true });
+    await setDoc(doc(db, "teams/team-a"), { name: "Crimson Albion", active: true });
+    await setDoc(doc(db, "teams/team-b"), { name: "Royal Vega", active: true });
     await setDoc(doc(db, "invites/OFC-ABCDE"), { role: "member", usedBy: null });
   });
 });
@@ -88,7 +92,9 @@ test("a member can create a pending match they participate in", async () => {
   await assertSucceeds(
     setDoc(doc(member(), "matches/new1"), {
       seasonId: "s1", submittedBy: "alice", aId: "alice", bId: "dave",
+      aTeamId: "team-a", bTeamId: "team-b", aTeam: "Crimson Albion", bTeam: "Royal Vega",
       aGoals: 2, bGoals: 1, status: "pending_confirmation", source: "manual",
+      date: serverTimestamp(), createdAt: serverTimestamp(),
     }),
   );
 });
@@ -97,7 +103,9 @@ test("a member cannot create a match already marked confirmed", async () => {
   await assertFails(
     setDoc(doc(member(), "matches/new2"), {
       seasonId: "s1", submittedBy: "alice", aId: "alice", bId: "dave",
+      aTeamId: "team-a", bTeamId: "team-b", aTeam: "Crimson Albion", bTeam: "Royal Vega",
       aGoals: 2, bGoals: 1, status: "confirmed", source: "manual",
+      date: serverTimestamp(), createdAt: serverTimestamp(),
     }),
   );
 });
@@ -106,7 +114,42 @@ test("a member cannot create a match they're not part of", async () => {
   await assertFails(
     setDoc(doc(member(), "matches/new3"), {
       seasonId: "s1", submittedBy: "alice", aId: "bob", bId: "dave",
+      aTeamId: "team-a", bTeamId: "team-b", aTeam: "Crimson Albion", bTeam: "Royal Vega",
       aGoals: 1, bGoals: 0, status: "pending_confirmation", source: "manual",
+      date: serverTimestamp(), createdAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("a member cannot submit against a non-member", async () => {
+  await assertFails(
+    setDoc(doc(member(), "matches/new4"), {
+      seasonId: "s1", submittedBy: "alice", aId: "alice", bId: "nora",
+      aTeamId: "team-a", bTeamId: "team-b", aTeam: "Crimson Albion", bTeam: "Royal Vega",
+      aGoals: 1, bGoals: 0, status: "pending_confirmation", source: "manual",
+      date: serverTimestamp(), createdAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("a member cannot smuggle trusted ELO fields into a pending match", async () => {
+  await assertFails(
+    setDoc(doc(member(), "matches/new5"), {
+      seasonId: "s1", submittedBy: "alice", aId: "alice", bId: "dave",
+      aTeamId: "team-a", bTeamId: "team-b", aTeam: "Crimson Albion", bTeam: "Royal Vega",
+      aGoals: 1, bGoals: 0, status: "pending_confirmation", source: "manual",
+      date: serverTimestamp(), createdAt: serverTimestamp(), aDelta: 500,
+    }),
+  );
+});
+
+test("a member must submit a real active team", async () => {
+  await assertFails(
+    setDoc(doc(member(), "matches/new6"), {
+      seasonId: "s1", submittedBy: "alice", aId: "alice", bId: "dave",
+      aTeamId: "team-a", bTeamId: "team-b", aTeam: "Not Crimson Albion", bTeam: "Royal Vega",
+      aGoals: 1, bGoals: 0, status: "pending_confirmation", source: "manual",
+      date: serverTimestamp(), createdAt: serverTimestamp(),
     }),
   );
 });
