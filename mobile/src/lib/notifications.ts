@@ -32,7 +32,9 @@ export async function requestAndRegisterToken(uid: string): Promise<string | nul
   }
   if (finalStatus !== "granted") return null;
 
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+  const projectId =
+    (Constants.expoConfig?.extra?.eas?.projectId as string | undefined) ??
+    Constants.easConfig?.projectId;
   const options: { projectId?: string } = projectId ? { projectId } : {};
   const tokenData = await Notifications.getExpoPushTokenAsync(options);
   const token = tokenData.data;

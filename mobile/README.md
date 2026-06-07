@@ -25,6 +25,9 @@ npm start                   # Expo Go / dev client
 
 Type-check: `npm run typecheck`.
 
+For camera, AI extraction, and push testing on physical phones, follow
+[`../docs/real-device-testing.md`](../docs/real-device-testing.md).
+
 ## Environment
 
 Copy `.env.example` → `.env` and fill the public `EXPO_PUBLIC_FIREBASE_*` values from your

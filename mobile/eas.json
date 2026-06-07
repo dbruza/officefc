@@ -6,18 +6,21 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0"
       }
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0"
       }
     },
     "production": {
       "distribution": "store",
+      "environment": "production",
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0"
       }
