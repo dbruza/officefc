@@ -19,7 +19,6 @@ import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -50,11 +49,11 @@ const useEmulators =
   process.env.EXPO_PUBLIC_USE_EMULATORS === "true";
 
 if (useEmulators) {
-  // `localhost` works on web/iOS sim; Android emulator reaches the host at 10.0.2.2.
-  const host =
-    Platform.OS === "android"
-      ? "10.0.2.2"
-      : (Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost");
+  // Web + iOS simulator share the host's loopback, so `localhost` (→ the emulators' 127.0.0.1
+  // binding) is correct. The Android emulator reaches the host via the 10.0.2.2 alias.
+  // (Testing on a PHYSICAL device against emulators needs extra setup: start the emulators
+  // bound to 0.0.0.0 and point this at the dev machine's LAN IP.)
+  const host = Platform.OS === "android" ? "10.0.2.2" : "localhost";
   connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
   connectFirestoreEmulator(db, host, 8080);
   connectStorageEmulator(storage, host, 9199);
