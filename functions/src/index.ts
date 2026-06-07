@@ -465,6 +465,7 @@ export const deleteMatchPhoto = onCall(async (req) => {
 
 // --- M4B — AI extraction ---
 export { extractMatchStats } from "./extract/extractMatchStats";
+export { abandonMatchDraft } from "./extract/abandonMatchDraft";
 export { getMatchPhotoUrl } from "./extract/getMatchPhotoUrl";
 export { submitAiAssistedMatch } from "./extract/submitAiAssistedMatch";
 
@@ -479,4 +480,4 @@ export {
 } from "./seasonAdmin";
 
 // --- M5 — Scheduled jobs ---
-export { weeklySnapshot, sendReminders } from "./scheduled";
+export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./scheduled";

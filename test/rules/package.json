@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Firestore security-rules tests (run against the emulator).",
+  "description": "Firestore and Storage security-rules tests (run against the emulators).",
   "scripts": {
     "test": "node --test"
   },

@@ -69,6 +69,9 @@ export function evaluateDraftClaim(input: {
   if (draft.submitted === true) {
     throw new DraftSecurityError("failed-precondition", "That AI draft was already submitted.");
   }
+  if (draft.status === "abandoning") {
+    throw new DraftSecurityError("failed-precondition", "That AI draft is being abandoned.");
+  }
   if (draft.status === "processing") {
     throw new DraftSecurityError(
       "failed-precondition",

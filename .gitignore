@@ -20,6 +20,7 @@ mobile/android/
 # Logs & OS cruft
 *.log
 .DS_Store
+.firebase/
 
 # Claude: share launch.json, keep local settings out
 .claude/settings.local.json

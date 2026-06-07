@@ -18,7 +18,11 @@
     },
     "android": {
       "package": "com.officefc.app",
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"],
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#070a0e"
@@ -33,14 +37,17 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      ["expo-splash-screen", {
-        "image": "./assets/splash-icon.png",
-        "backgroundColor": "#070a0e",
-        "resizeMode": "contain",
-        "dark": {
-          "backgroundColor": "#070a0e"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#070a0e",
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#070a0e"
+          }
         }
-      }],
+      ],
       [
         "expo-camera",
         {
@@ -64,9 +71,11 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": null
+        "projectId": "0752f3a3-5e97-4809-a3bf-13351e6985d6"
       }
-    }
+    },
+    "owner": "dbruza"
   }
 }

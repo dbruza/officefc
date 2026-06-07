@@ -48,7 +48,12 @@ const useEmulators =
   process.env.EXPO_PUBLIC_USE_EMULATORS === "1" ||
   process.env.EXPO_PUBLIC_USE_EMULATORS === "true";
 
-if (useEmulators) {
+const webHostAllowsEmulators =
+  Platform.OS !== "web" ||
+  (typeof window !== "undefined" &&
+    ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
+
+if (useEmulators && webHostAllowsEmulators) {
   // Web + iOS simulator share the host's loopback, so `localhost` (→ the emulators' 127.0.0.1
   // binding) is correct. The Android emulator reaches the host via the 10.0.2.2 alias.
   // (Testing on a PHYSICAL device against emulators needs extra setup: start the emulators

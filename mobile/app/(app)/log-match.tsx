@@ -142,6 +142,10 @@ export default function LogMatch() {
         teams={teams}
         standings={standings}
         onCancel={() => setMode("choose")}
+        onManualFallback={() => {
+          setStep(0);
+          setMode("manual");
+        }}
         onDone={() => router.replace("/(app)")}
       />
     );
@@ -159,7 +163,7 @@ export default function LogMatch() {
         <ScrollView contentContainerStyle={[styles.content, { flex: 1, justifyContent: "center" }]}>
           <Txt variant="head" size={24}>How would you like to log this match?</Txt>
           <Txt color={colors.textDim} size={13} style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}>
-            Snap the stats screen for auto-fill, or enter the score manually.
+            Upload or take a photo for AI-assisted auto-fill, or enter the score manually.
           </Txt>
           <View style={{ gap: spacing.md }}>
             <Pressable onPress={() => setMode("snap")} style={styles.modeCard}>
@@ -167,9 +171,9 @@ export default function LogMatch() {
                 <Icon name="camera" size={28} color={colors.accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Txt variant="head" size={16}>Snap result</Txt>
+                <Txt variant="head" size={16}>Upload match photo</Txt>
                 <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                  Take a photo of the FIFA end-of-match screen. AI reads the score and stats.
+                  Upload the end-of-match screen. AI Beta suggests the score and stats for you to verify.
                 </Txt>
               </View>
               <Icon name="chevron" size={16} color={colors.textDim} />

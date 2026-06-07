@@ -7,7 +7,7 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform, StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAppFonts, colors } from "@/theme";
 import { AuthProvider, useAuth } from "@/lib/auth";
@@ -62,6 +62,7 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    if (Platform.OS === "web") return;
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = (response.notification.request.content.data ?? {}) as Record<string, string>;
       const route = resolveNotificationRoute(data);
@@ -92,9 +93,31 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <View style={styles.viewport}>
+        <View style={styles.appShell}>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </View>
+      </View>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  viewport: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    backgroundColor: colors.bg,
+  },
+  appShell: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 520,
+    backgroundColor: colors.bg,
+    borderLeftWidth: Platform.OS === "web" ? 1 : 0,
+    borderRightWidth: Platform.OS === "web" ? 1 : 0,
+    borderColor: colors.line,
+  },
+});
