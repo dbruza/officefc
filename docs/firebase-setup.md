@@ -58,14 +58,23 @@ This rewrites `.firebaserc` to your real project id (currently a placeholder `of
 # Repo root: boot the emulators (uses firebase.json + the rules I committed)
 firebase emulators:start
 #   → Emulator UI: http://localhost:4000
-#   → Auth :9099 · Firestore :8080 · Storage :9199 · Functions :5001
+#   → Auth :9099 · Firestore :8080 · Storage :9199
+#   (Functions + Pub/Sub emulators are added in M2/M5, when there's function code.)
 
-# In another terminal: run the app against the emulators
+# In another terminal: run the app
 cd mobile
-EXPO_PUBLIC_USE_EMULATORS=1 npm run web      # or: npm run ios / npm run android
+npm run web        # or: npm run ios / npm run android
 ```
 
-If the emulator UI loads and the app boots pointing at it, you're done.
+**What "done" looks like right now:** the Emulator UI loads at :4000 and the app boots.
+That's the bar for this step. The current screen is the **M0 design-system showcase**, which
+renders from *mock data* and does **not** call Firebase yet — so filling `.env` is prep for
+M1, and a clean boot confirms the toolchain, not the wiring. I exercise the real Auth/
+Firestore/Storage connections in M1 (that's when `EXPO_PUBLIC_USE_EMULATORS=1` starts to
+matter).
+
+> Emulators run **free regardless of billing plan**. Blaze is only needed to *deploy*
+> Functions/Storage later — enabling it now (credits cover it) just avoids a step in M2.
 
 ## What I do next (M1)
 
