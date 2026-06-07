@@ -103,7 +103,7 @@ export const extractMatchStats = onCall(
     const existing = await draftRef.get();
     if (existing.exists && !force) {
       const data = existing.data()!;
-      if (data.status === "done") {
+      if (data.status === "done" && data.ownerUid === uid) {
         return data;
       }
     }

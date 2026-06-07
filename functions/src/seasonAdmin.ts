@@ -1,8 +1,9 @@
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "./config";
-import { calculateSeason, type SeasonMatchInput, type Standing, BASE_ELO } from "./elo";
+import { calculateSeason, expectedScore, type SeasonMatchInput, type Standing, BASE_ELO, ELO_K } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
+import { sendPush } from "./notify";
 
 const db = getFirestore();
 const POTM_MIN_GAMES = 3;
@@ -53,8 +54,13 @@ async function recalcSeasonElo(seasonId: string): Promise<void> {
   for (const match of result.matches) {
     writer.set(db.doc(`matches/${match.id}`), { aEloBefore: match.aEloBefore, aEloAfter: match.aEloAfter, aDelta: match.aDelta, bEloBefore: match.bEloBefore, bEloAfter: match.bEloAfter, bDelta: match.bDelta, recalculatedAt: FieldValue.serverTimestamp() }, { merge: true });
   }
+  const oldMove = new Map<string, number>();
+  for (const snap of oldStandings.docs) {
+    const m = snap.get("move");
+    if (typeof m === "number") oldMove.set(snap.id, m);
+  }
   for (const standing of result.standings) {
-    writer.set(db.doc(`seasons/${seasonId}/standings/${standing.uid}`), { ...standing, recalculatedAt: FieldValue.serverTimestamp() });
+    writer.set(db.doc(`seasons/${seasonId}/standings/${standing.uid}`), { ...standing, move: oldMove.get(standing.uid) ?? standing.move, recalculatedAt: FieldValue.serverTimestamp() });
   }
   for (const [uid, points] of Object.entries(result.history)) {
     writer.set(db.doc(`seasons/${seasonId}/eloHistory/${uid}`), { points: points.map((p) => ({ matchId: p.matchId, date: Timestamp.fromMillis(p.dateMillis), rating: p.rating })), recalculatedAt: FieldValue.serverTimestamp() });
@@ -84,13 +90,6 @@ async function recalcLeagueStats(): Promise<void> {
   await writer.close();
 }
 
-async function sendPush(uid: string, title: string, body: string, data: Record<string, string>): Promise<void> {
-  const tokens = await db.collection(`deviceTokens/${uid}/tokens`).get();
-  const messages = tokens.docs.map((snap) => snap.get("expoPushToken")).filter((token): token is string => typeof token === "string" && /^(ExponentPushToken|ExpoPushToken)\[/.test(token)).map((to) => ({ to, sound: "default", title, body, data }));
-  if (messages.length === 0) return;
-  try { await fetch("https://exp.host/--/api/v2/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(messages) }); } catch (e) { console.warn("Push failed", e); }
-}
-
 function getMonthKey(ms: number): string {
   const d = new Date(ms);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -114,8 +113,8 @@ function computePOTM(matches: SeasonMatchInput[]): Array<{ month: string; player
     const bBefore = ratings.get(m.bId)!;
     const aScore = m.aGoals > m.bGoals ? 1 : m.aGoals < m.bGoals ? 0 : 0.5;
     const bScore = 1 - aScore;
-    const aDelta = Math.round(32 * (aScore - 1 / (1 + Math.pow(10, (bBefore - aBefore) / 400))));
-    const bDelta = Math.round(32 * (bScore - 1 / (1 + Math.pow(10, (aBefore - bBefore) / 400))));
+    const aDelta = Math.round(ELO_K * (aScore - expectedScore(aBefore, bBefore)));
+    const bDelta = Math.round(ELO_K * (bScore - expectedScore(bBefore, aBefore)));
     const aAfter = aBefore + aDelta;
     const bAfter = bBefore + bDelta;
     ratings.set(m.aId, aAfter);

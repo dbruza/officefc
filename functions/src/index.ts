@@ -16,6 +16,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
 import { calculateSeason, type SeasonMatchInput } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
+import { sendPush } from "./notify";
 
 initializeApp();
 const db = getFirestore();
@@ -253,9 +254,15 @@ async function recalcSeasonElo(seasonId: string): Promise<void> {
       { merge: true },
     );
   }
+  const oldMove = new Map<string, number>();
+  for (const snap of oldStandings.docs) {
+    const m = snap.get("move");
+    if (typeof m === "number") oldMove.set(snap.id, m);
+  }
   for (const standing of result.standings) {
     writer.set(seasonRef(seasonId).collection("standings").doc(standing.uid), {
       ...standing,
+      move: oldMove.get(standing.uid) ?? standing.move,
       recalculatedAt: FieldValue.serverTimestamp(),
     });
   }
@@ -338,33 +345,6 @@ export const rebuildLeagueReadModels = onCall(async (req) => {
   await recalcLeagueStats();
   return { ok: true, seasonCount: seasonIds.length, matchCount: confirmed.size };
 });
-
-async function sendPush(
-  uid: string,
-  title: string,
-  body: string,
-  data: Record<string, string>,
-): Promise<void> {
-  const tokens = await db.collection(`deviceTokens/${uid}/tokens`).get();
-  const messages = tokens.docs
-    .map((snap) => snap.get("expoPushToken"))
-    .filter(
-      (token): token is string =>
-        typeof token === "string" && /^(ExponentPushToken|ExpoPushToken)\[/.test(token),
-    )
-    .map((to) => ({ to, sound: "default", title, body, data }));
-  if (messages.length === 0) return;
-
-  try {
-    await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(messages),
-    });
-  } catch (error) {
-    console.warn("Expo push delivery failed", error);
-  }
-}
 
 /** Only the named opponent can confirm a pending match. */
 export const confirmMatch = onCall(async (req) => {
