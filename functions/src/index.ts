@@ -1,340 +1,37 @@
 /**
  * OfficeFC Cloud Functions — trusted writes that clients can't make directly.
  *
- * M1: membership lifecycle.
- *   - redeemInvite: join the league via a code (or admin-allowlist bootstrap).
- *   - createInvite: admin-only; mint a shareable invite code.
- * M2: match lifecycle.
- *   - ensureLeagueData: admin-only active-season + team seed.
- *   - confirmMatch/disputeMatch: opponent-only pending-match resolution.
- *   - recalculation: deterministic season ELO + standings + history materialization.
+ * This is the deploy entry point: it initializes the Admin SDK once and re-exports
+ * every callable. The handlers themselves live in focused domain modules.
  */
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getStorage } from "firebase-admin/storage";
-import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
-import { requireAuth, assertAdmin } from "./auth";
-import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
-import { generateUniqueJoinCode } from "./utils";
-import { sendPush } from "./notify";
 
 initializeApp();
-const db = getFirestore();
-const storage = getStorage();
 
-type Role = "admin" | "member";
+// Membership & league setup
+export { redeemInvite, ensureLeagueSetup } from "./membership";
 
-const memberRef = (uid: string) => db.doc(`leagues/${LEAGUE_ID}/members/${uid}`);
-const leagueRef = () => db.doc(`leagues/${LEAGUE_ID}`);
-const seasonRef = (seasonId: string) => db.doc(`seasons/${seasonId}`);
+// Season join codes
+export { getSeasonJoinCode, rotateSeasonJoinCode } from "./joinCodes";
 
-const DEFAULT_SEASON = {
-  id: "summer-2026",
-  name: "Summer Showdown",
-  year: 2026,
-  start: Timestamp.fromDate(new Date("2026-04-01T00:00:00.000Z")),
-  end: Timestamp.fromDate(new Date("2026-06-30T23:59:59.999Z")),
-};
+// Match lifecycle
+export {
+  confirmMatch,
+  disputeMatch,
+  notifyMatchSubmitted,
+  deleteMatchPhoto,
+} from "./matchLifecycle";
 
-const DEFAULT_TEAMS = [
-  ["crimson-albion", "Crimson Albion"],
-  ["northgate-united", "Northgate United"],
-  ["royal-vega", "Royal Vega"],
-  ["azzurri-select", "Azzurri Select"],
-  ["bavaria-xi", "Bavaria XI"],
-  ["la-costa-cf", "La Costa CF"],
-  ["harbour-city", "Harbour City"],
-  ["verde-nacional", "Verde Nacional"],
-  ["iron-foundry", "Iron Foundry"],
-  ["capital-athletic", "Capital Athletic"],
-  ["sierra-rovers", "Sierra Rovers"],
-  ["black-forest-sv", "Black Forest SV"],
-  ["oranje-stars", "Oranje Stars"],
-  ["maple-wanderers", "Maple Wanderers"],
-  ["delta-galacticos", "Delta Galacticos"],
-  ["phoenix-borough", "Phoenix Borough"],
-] as const;
+// Read-model rebuild (ELO + stats materialization)
+export { rebuildLeagueReadModels } from "./readModels";
 
-/** Ensure the singleton league, one active season, and the default team catalogue exist. */
-async function ensureLeagueData(): Promise<{ seasonId: string }> {
-  await leagueRef().set(
-    { name: "OfficeFC", createdAt: FieldValue.serverTimestamp() },
-    { merge: true },
-  );
-
-  const active = await db.collection("seasons").where("active", "==", true).limit(1).get();
-  let activeSeasonId = active.docs[0]?.id;
-  if (!activeSeasonId) {
-    activeSeasonId = DEFAULT_SEASON.id;
-    const joinCode = await generateUniqueJoinCode();
-    await seasonRef(activeSeasonId).set({
-      name: DEFAULT_SEASON.name,
-      year: DEFAULT_SEASON.year,
-      start: DEFAULT_SEASON.start,
-      end: DEFAULT_SEASON.end,
-      active: true,
-      joinCode,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-  } else {
-    const seasonSnap = await seasonRef(activeSeasonId).get();
-    if (!seasonSnap.get("joinCode")) {
-      const joinCode = await generateUniqueJoinCode();
-      await seasonRef(activeSeasonId).update({ joinCode });
-    }
-  }
-
-  const batch = db.batch();
-  for (const [id, name] of DEFAULT_TEAMS) {
-    batch.set(
-      db.doc(`teams/${id}`),
-      { name, active: true, updatedAt: FieldValue.serverTimestamp() },
-      { merge: true },
-    );
-  }
-  await batch.commit();
-  return { seasonId: activeSeasonId };
-}
-
-/**
- * Join the league.
- * - Already a member → idempotent no-op (returns existing role).
- * - Allowlisted admin → seed league + admin membership, no code needed.
- * - Otherwise → validate the season join code (multi-use, permanent membership).
- */
-export const redeemInvite = onCall({ cors: true }, async (req) => {
-  const { uid, email } = requireAuth(req);
-
-  const existing = await memberRef(uid).get();
-  if (existing.exists) {
-    return { ok: true, role: existing.get("role") as Role };
-  }
-
-  if (isAllowlistedAdmin(email)) {
-    await ensureLeagueData();
-    await memberRef(uid).set({
-      role: "admin",
-      joinedAt: FieldValue.serverTimestamp(),
-      bootstrap: true,
-    });
-    return { ok: true, role: "admin" as Role, bootstrapped: true };
-  }
-
-  const code = String(req.data?.code ?? "")
-    .trim()
-    .toUpperCase();
-  if (!code) throw new HttpsError("failed-precondition", "A season join code is required.");
-
-  const seasonSnaps = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
-  if (seasonSnaps.empty) throw new HttpsError("not-found", "Join code not found.");
-  const seasonDoc = seasonSnaps.docs[0];
-  if (!seasonDoc.get("active"))
-    throw new HttpsError("failed-precondition", "That season is no longer active.");
-  if (seasonDoc.get("finalized"))
-    throw new HttpsError("failed-precondition", "That season has been finalized.");
-
-  await memberRef(uid).set({
-    role: "member" as Role,
-    joinedAt: FieldValue.serverTimestamp(),
-    viaSeason: seasonDoc.id,
-    viaCode: code,
-  });
-
-  return { ok: true, role: "member" as Role };
-});
-
-/** Admin-only: get (or generate) the join code for a season. */
-export const getSeasonJoinCode = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  await assertAdmin(uid);
-
-  let seasonId = String(req.data?.seasonId ?? "").trim();
-  if (!seasonId) {
-    const active = await db.collection("seasons").where("active", "==", true).limit(1).get();
-    if (active.empty) throw new HttpsError("not-found", "No active season found.");
-    seasonId = active.docs[0].id;
-  }
-
-  const ref = seasonRef(seasonId);
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
-
-  let code = snap.get("joinCode") as string | undefined;
-  if (!code) {
-    code = await generateUniqueJoinCode();
-    await ref.update({ joinCode: code });
-  }
-  return { seasonId, code };
-});
-
-/** Admin-only: rotate the join code for a season (old code stops working immediately). */
-export const rotateSeasonJoinCode = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  await assertAdmin(uid);
-
-  const seasonId = String(req.data?.seasonId ?? "").trim();
-  if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
-
-  const ref = seasonRef(seasonId);
-  const snap = await ref.get();
-  if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
-
-  const code = await generateUniqueJoinCode();
-  await ref.update({ joinCode: code });
-  return { seasonId, code };
-});
-
-/** Admin-only idempotent seed for local/dev environments and fresh deployments. */
-export const ensureLeagueSetup = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  await assertAdmin(uid);
-  const { seasonId } = await ensureLeagueData();
-  return { ok: true, seasonId, teamCount: DEFAULT_TEAMS.length };
-});
-
-/** Admin-only migration/backfill for the read models introduced in M2/M3. */
-export const rebuildLeagueReadModels = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  await assertAdmin(uid);
-  const confirmed = await db.collection("matches").where("status", "==", "confirmed").get();
-  const seasonIds = [
-    ...new Set(confirmed.docs.map((snap) => String(snap.get("seasonId"))).filter(Boolean)),
-  ];
-  for (const seasonId of seasonIds) await recalcSeasonElo(seasonId);
-  await recalcLeagueStats();
-  return { ok: true, seasonCount: seasonIds.length, matchCount: confirmed.size };
-});
-
-/** Only the named opponent can confirm a pending match. */
-export const confirmMatch = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  const matchId = String(req.data?.matchId ?? "").trim();
-  if (!matchId) throw new HttpsError("invalid-argument", "A match id is required.");
-
-  const ref = db.doc(`matches/${matchId}`);
-  const result = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
-    const data = snap.data()!;
-    const participant = uid === data.aId || uid === data.bId;
-    if (!participant || uid === data.submittedBy) {
-      throw new HttpsError("permission-denied", "Only the named opponent can confirm.");
-    }
-    if (data.status !== "pending_confirmation") {
-      throw new HttpsError("failed-precondition", "This match is no longer pending.");
-    }
-    tx.update(ref, {
-      status: "confirmed",
-      confirmedBy: uid,
-      confirmedAt: FieldValue.serverTimestamp(),
-    });
-    return {
-      seasonId: String(data.seasonId),
-      submittedBy: String(data.submittedBy),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-    };
-  });
-
-  await recalcSeasonElo(result.seasonId);
-  await recalcLeagueStats();
-  await sendPush(
-    result.submittedBy,
-    "Match confirmed",
-    `Your ${result.aGoals}-${result.bGoals} result is now in the table.`,
-    { type: "match_confirmed", matchId },
-  );
-  return { ok: true };
-});
-
-/** The named opponent may dispute a pending match; disputed matches never affect ELO. */
-export const disputeMatch = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  const matchId = String(req.data?.matchId ?? "").trim();
-  const reason = String(req.data?.reason ?? "")
-    .trim()
-    .slice(0, 240);
-  if (!matchId) throw new HttpsError("invalid-argument", "A match id is required.");
-
-  const ref = db.doc(`matches/${matchId}`);
-  const submittedBy = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
-    const data = snap.data()!;
-    const participant = uid === data.aId || uid === data.bId;
-    if (!participant || uid === data.submittedBy) {
-      throw new HttpsError("permission-denied", "Only the named opponent can dispute.");
-    }
-    if (data.status !== "pending_confirmation") {
-      throw new HttpsError("failed-precondition", "This match is no longer pending.");
-    }
-    tx.update(ref, {
-      status: "disputed",
-      disputedBy: uid,
-      disputeReason: reason || null,
-      disputedAt: FieldValue.serverTimestamp(),
-    });
-    return String(data.submittedBy);
-  });
-
-  await sendPush(submittedBy, "Match disputed", "Your opponent flagged a submitted result.", {
-    type: "match_disputed",
-    matchId,
-  });
-  return { ok: true };
-});
-
-/** Notify the opponent when any valid client creates a pending match. */
-export const notifyMatchSubmitted = onDocumentCreated("matches/{matchId}", async (event) => {
-  const data = event.data?.data();
-  if (!data || data.status !== "pending_confirmation") return;
-  const opponentId = data.submittedBy === data.aId ? data.bId : data.aId;
-  if (typeof opponentId !== "string") return;
-  await sendPush(
-    opponentId,
-    "Result needs your nod",
-    `Confirm or dispute the ${data.aGoals}-${data.bGoals} score.`,
-    { type: "match_pending", matchId: event.params.matchId },
-  );
-});
-
-/** Delete a match photo from storage and clear the reference. Owner only. */
-export const deleteMatchPhoto = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  const matchId = String(req.data?.matchId ?? "").trim();
-  if (!matchId) throw new HttpsError("invalid-argument", "matchId is required.");
-
-  const ref = db.doc(`matches/${matchId}`);
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
-    const data = snap.data()!;
-    if (data.submittedBy !== uid)
-      throw new HttpsError("permission-denied", "Only the submitter can delete their photo.");
-    const photoPath = String(data.photoPath ?? "");
-    if (!photoPath) throw new HttpsError("not-found", "No photo stored for this match.");
-
-    const bucket = storage.bucket();
-    const [exists] = await bucket.file(photoPath).exists();
-    if (exists) await bucket.file(photoPath).delete();
-
-    tx.update(ref, {
-      photoPath: FieldValue.delete(),
-      photoDeletedAt: FieldValue.serverTimestamp(),
-    });
-  });
-  return { ok: true, matchId };
-});
-
-// --- M4B — AI extraction ---
+// AI extraction
 export { extractMatchStats } from "./extract/extractMatchStats";
 export { abandonMatchDraft } from "./extract/abandonMatchDraft";
 export { getMatchPhotoUrl } from "./extract/getMatchPhotoUrl";
 export { submitAiAssistedMatch } from "./extract/submitAiAssistedMatch";
 
-// --- M5 — Season lifecycle & admin ---
+// Season lifecycle & admin
 export {
   finalizeSeason,
   createSeason,
@@ -344,5 +41,5 @@ export {
   listSeasons,
 } from "./seasonAdmin";
 
-// --- M5 — Scheduled jobs ---
+// Scheduled jobs
 export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./scheduled";
