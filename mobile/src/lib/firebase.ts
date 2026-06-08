@@ -45,8 +45,7 @@ export const storage = getStorage(app);
 export const functions = getFunctions(app);
 
 const useEmulators =
-  process.env.EXPO_PUBLIC_USE_EMULATORS === "1" ||
-  process.env.EXPO_PUBLIC_USE_EMULATORS === "true";
+  process.env.EXPO_PUBLIC_USE_EMULATORS === "1" || process.env.EXPO_PUBLIC_USE_EMULATORS === "true";
 
 const webHostAllowsEmulators =
   Platform.OS !== "web" ||

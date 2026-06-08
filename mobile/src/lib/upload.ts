@@ -27,7 +27,10 @@ function validateFile(size: number, mimeType: string | undefined): void {
     throw new UploadError("invalid_type", "The selected photo could not be converted to JPEG.");
   }
   if (size > MAX_FILE_SIZE) {
-    throw new UploadError("too_large", `File size ${(size / 1024 / 1024).toFixed(1)} MB exceeds the 12 MB limit.`);
+    throw new UploadError(
+      "too_large",
+      `File size ${(size / 1024 / 1024).toFixed(1)} MB exceeds the 12 MB limit.`,
+    );
   }
 }
 

@@ -37,7 +37,10 @@ export default function HeadToHeadRoute() {
       .then((roster) => {
         setPlayers(roster);
         setAId((current) => current || roster[0]?.id || "");
-        setBId((current) => current || roster.find((player) => player.id !== (params.a ?? roster[0]?.id))?.id || "");
+        setBId(
+          (current) =>
+            current || roster.find((player) => player.id !== (params.a ?? roster[0]?.id))?.id || "",
+        );
       })
       .finally(() => setLoading(false));
   }, [params.a]);
@@ -101,10 +104,19 @@ export default function HeadToHeadRoute() {
 
             <View style={styles.statRow}>
               <View style={{ flex: 1 }}>
-                <StatCard label="Goals for" value={oriented.goalsFor} sub={firstName(a.name)} accent />
+                <StatCard
+                  label="Goals for"
+                  value={oriented.goalsFor}
+                  sub={firstName(a.name)}
+                  accent
+                />
               </View>
               <View style={{ flex: 1 }}>
-                <StatCard label="Goals against" value={oriented.goalsAgainst} sub={firstName(b.name)} />
+                <StatCard
+                  label="Goals against"
+                  value={oriented.goalsAgainst}
+                  sub={firstName(b.name)}
+                />
               </View>
             </View>
 
@@ -125,7 +137,10 @@ export default function HeadToHeadRoute() {
                     <ResultDot result={meeting.result} />
                     <Txt size={11.5} color={colors.textDim} style={{ width: 50 }}>
                       {meeting.date
-                        ? meeting.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+                        ? meeting.date.toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                          })
                         : "—"}
                     </Txt>
                     <Txt variant="monoBold" size={18} style={{ flex: 1, textAlign: "center" }}>
@@ -165,7 +180,11 @@ function PlayerPicker({
   onSelect: (uid: string) => void;
 }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerScroll}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.pickerScroll}
+    >
       {players
         .filter((player) => player.id !== excluded)
         .map((player) => (

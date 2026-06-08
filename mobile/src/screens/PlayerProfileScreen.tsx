@@ -102,7 +102,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScreenHeader
-        title={isYou ? "Your profile" : player?.name ?? "Player profile"}
+        title={isYou ? "Your profile" : (player?.name ?? "Player profile")}
         subtitle={player ? `@${player.handle} · #${player.jersey}` : undefined}
         back={!root}
       />
@@ -129,7 +129,8 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                   {standing?.elo ?? 1500}
                 </Txt>
                 <Txt variant="mono" size={12} color={colors.textDim}>
-                  {standing ? `Rank #${standing.rank}` : "Unranked"} · {season?.name ?? "No active season"}
+                  {standing ? `Rank #${standing.rank}` : "Unranked"} ·{" "}
+                  {season?.name ?? "No active season"}
                 </Txt>
               </View>
             </View>
@@ -256,7 +257,13 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                         <Txt
                           variant="monoBold"
                           size={18}
-                          color={row.wins > row.losses ? colors.win : row.wins < row.losses ? colors.loss : colors.text}
+                          color={
+                            row.wins > row.losses
+                              ? colors.win
+                              : row.wins < row.losses
+                                ? colors.loss
+                                : colors.text
+                          }
                         >
                           {row.wins}
                         </Txt>

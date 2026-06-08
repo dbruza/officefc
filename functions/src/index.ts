@@ -142,14 +142,18 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
     return { ok: true, role: "admin" as Role, bootstrapped: true };
   }
 
-  const code = String(req.data?.code ?? "").trim().toUpperCase();
+  const code = String(req.data?.code ?? "")
+    .trim()
+    .toUpperCase();
   if (!code) throw new HttpsError("failed-precondition", "A season join code is required.");
 
   const seasonSnaps = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
   if (seasonSnaps.empty) throw new HttpsError("not-found", "Join code not found.");
   const seasonDoc = seasonSnaps.docs[0];
-  if (!seasonDoc.get("active")) throw new HttpsError("failed-precondition", "That season is no longer active.");
-  if (seasonDoc.get("finalized")) throw new HttpsError("failed-precondition", "That season has been finalized.");
+  if (!seasonDoc.get("active"))
+    throw new HttpsError("failed-precondition", "That season is no longer active.");
+  if (seasonDoc.get("finalized"))
+    throw new HttpsError("failed-precondition", "That season has been finalized.");
 
   await memberRef(uid).set({
     role: "member" as Role,
@@ -418,7 +422,9 @@ export const confirmMatch = onCall({ cors: true }, async (req) => {
 export const disputeMatch = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   const matchId = String(req.data?.matchId ?? "").trim();
-  const reason = String(req.data?.reason ?? "").trim().slice(0, 240);
+  const reason = String(req.data?.reason ?? "")
+    .trim()
+    .slice(0, 240);
   if (!matchId) throw new HttpsError("invalid-argument", "A match id is required.");
 
   const ref = db.doc(`matches/${matchId}`);
@@ -474,7 +480,8 @@ export const deleteMatchPhoto = onCall({ cors: true }, async (req) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
     const data = snap.data()!;
-    if (data.submittedBy !== uid) throw new HttpsError("permission-denied", "Only the submitter can delete their photo.");
+    if (data.submittedBy !== uid)
+      throw new HttpsError("permission-denied", "Only the submitter can delete their photo.");
     const photoPath = String(data.photoPath ?? "");
     if (!photoPath) throw new HttpsError("not-found", "No photo stored for this match.");
 
@@ -482,7 +489,10 @@ export const deleteMatchPhoto = onCall({ cors: true }, async (req) => {
     const [exists] = await bucket.file(photoPath).exists();
     if (exists) await bucket.file(photoPath).delete();
 
-    tx.update(ref, { photoPath: FieldValue.delete(), photoDeletedAt: FieldValue.serverTimestamp() });
+    tx.update(ref, {
+      photoPath: FieldValue.delete(),
+      photoDeletedAt: FieldValue.serverTimestamp(),
+    });
   });
   return { ok: true, matchId };
 });
@@ -505,4 +515,3 @@ export {
 
 // --- M5 — Scheduled jobs ---
 export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./scheduled";
-

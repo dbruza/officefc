@@ -8,10 +8,7 @@ import {
   Archivo_600SemiBold,
   Archivo_700Bold,
 } from "@expo-google-fonts/archivo";
-import {
-  JetBrainsMono_500Medium,
-  JetBrainsMono_700Bold,
-} from "@expo-google-fonts/jetbrains-mono";
+import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
 
 export * from "./tokens";
 

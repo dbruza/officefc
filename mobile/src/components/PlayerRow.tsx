@@ -52,7 +52,12 @@ export function PlayerRow({
           </Txt>
           {you ? (
             <View style={styles.youTag}>
-              <Txt variant="monoBold" size={8.5} color={colors.onAccent} style={{ letterSpacing: 1 }}>
+              <Txt
+                variant="monoBold"
+                size={8.5}
+                color={colors.onAccent}
+                style={{ letterSpacing: 1 }}
+              >
                 YOU
               </Txt>
             </View>

@@ -14,7 +14,16 @@ export interface TextFieldProps extends TextInputProps {
   prefix?: string;
 }
 
-export function TextField({ label, hint, error, prefix, style, onFocus, onBlur, ...rest }: TextFieldProps) {
+export function TextField({
+  label,
+  hint,
+  error,
+  prefix,
+  style,
+  onFocus,
+  onBlur,
+  ...rest
+}: TextFieldProps) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.wrap}>
@@ -26,7 +35,13 @@ export function TextField({ label, hint, error, prefix, style, onFocus, onBlur, 
       <View
         style={[
           styles.field,
-          { borderColor: error ? colors.loss : focused ? withAlpha(colors.accent, 0.6) : colors.line },
+          {
+            borderColor: error
+              ? colors.loss
+              : focused
+                ? withAlpha(colors.accent, 0.6)
+                : colors.line,
+          },
         ]}
       >
         {prefix ? (

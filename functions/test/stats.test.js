@@ -68,7 +68,13 @@ test("head-to-head uses stable player ordering and recent-first meetings", () =>
   assert.equal(h2h.aId, "alice");
   assert.equal(h2h.bId, "zara");
   assert.deepEqual(
-    { aWins: h2h.aWins, bWins: h2h.bWins, draws: h2h.draws, aGoals: h2h.aGoals, bGoals: h2h.bGoals },
+    {
+      aWins: h2h.aWins,
+      bWins: h2h.bWins,
+      draws: h2h.draws,
+      aGoals: h2h.aGoals,
+      bGoals: h2h.bGoals,
+    },
     { aWins: 1, bWins: 1, draws: 1, aGoals: 5, bGoals: 3 },
   );
   assert.deepEqual(

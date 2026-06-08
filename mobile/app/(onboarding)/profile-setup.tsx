@@ -46,7 +46,8 @@ export default function ProfileSetup() {
     const cleanHandle = handle.trim().replace(/^@/, "").toLowerCase();
     const n = Number(jersey);
     if (displayName.trim().length < 2) return setError("Enter your display name.");
-    if (!HANDLE_RE.test(cleanHandle)) return setError("Handle: 2–20 chars, letters/numbers/underscore.");
+    if (!HANDLE_RE.test(cleanHandle))
+      return setError("Handle: 2–20 chars, letters/numbers/underscore.");
     if (!Number.isInteger(n) || n < 1 || n > 99) return setError("Jersey number must be 1–99.");
     if (!user) return setError("Session expired — sign in again.");
 
@@ -100,7 +101,12 @@ export default function ProfileSetup() {
       />
 
       <View>
-        <Txt variant="head" size={11} color={colors.textDim} style={{ letterSpacing: 1.2, marginBottom: 10 }}>
+        <Txt
+          variant="head"
+          size={11}
+          color={colors.textDim}
+          style={{ letterSpacing: 1.2, marginBottom: 10 }}
+        >
           AVATAR COLOUR
         </Txt>
         <View style={styles.swatches}>

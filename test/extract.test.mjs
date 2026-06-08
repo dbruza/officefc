@@ -14,11 +14,21 @@ test("full pipeline with a mocked Claude response", async () => {
       detected_screen: true,
       confidence: 0.9,
       home: { team_name: "Riverside FC", goals: 2, possession: 55, shots: 11, shots_on_target: 6 },
-      away: { team_name: "Harbour Athletic", goals: 4, possession: 45, shots: 13, shots_on_target: 8 },
+      away: {
+        team_name: "Harbour Athletic",
+        goals: 4,
+        possession: 45,
+        shots: 13,
+        shots_on_target: 8,
+      },
     });
   };
 
-  const result = await extractMatchFromImage({ imageBase64: "ZmFrZQ==", mediaType: "image/png", caller });
+  const result = await extractMatchFromImage({
+    imageBase64: "ZmFrZQ==",
+    mediaType: "image/png",
+    caller,
+  });
 
   // request was shaped correctly (forced tool use + image block)
   assert.equal(seenRequest.tool_choice.name, EXTRACTION_TOOL_NAME);

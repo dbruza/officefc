@@ -114,19 +114,17 @@ export function deriveLeagueStats(
   for (const match of matches) {
     const pairKey = pairKeyFor(match.aId, match.bId);
     const [aId, bId] = [match.aId, match.bId].sort();
-    const row =
-      pairMap.get(pairKey) ??
-      {
-        pairKey,
-        aId,
-        bId,
-        aWins: 0,
-        bWins: 0,
-        draws: 0,
-        aGoals: 0,
-        bGoals: 0,
-        meetings: [],
-      };
+    const row = pairMap.get(pairKey) ?? {
+      pairKey,
+      aId,
+      bId,
+      aWins: 0,
+      bWins: 0,
+      draws: 0,
+      aGoals: 0,
+      bGoals: 0,
+      meetings: [],
+    };
     const storedAsPlayed = match.aId === aId;
     const aGoals = storedAsPlayed ? match.aGoals : match.bGoals;
     const bGoals = storedAsPlayed ? match.bGoals : match.aGoals;
@@ -218,7 +216,10 @@ export function deriveLeagueStats(
         };
       })
       .filter((candidate) => candidate.games >= 3)
-      .sort((a, b) => a.share - b.share || b.games - a.games || a.opponentId.localeCompare(b.opponentId));
+      .sort(
+        (a, b) =>
+          a.share - b.share || b.games - a.games || a.opponentId.localeCompare(b.opponentId),
+      );
     const nemesis = candidates[0]
       ? {
           opponentId: candidates[0].opponentId,

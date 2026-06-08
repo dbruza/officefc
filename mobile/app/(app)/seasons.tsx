@@ -2,15 +2,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  AppTabBar,
-  Avatar,
-  Card,
-  Icon,
-  ScreenHeader,
-  SectionLabel,
-  Txt,
-} from "@/components";
+import { AppTabBar, Avatar, Card, Icon, ScreenHeader, SectionLabel, Txt } from "@/components";
 import {
   getLeaguePlayers,
   getSeasonPotm,
@@ -67,8 +59,12 @@ export default function SeasonsRoute() {
   );
 
   const active = seasons.find((season) => season.active) ?? null;
-  const daysLeft = active ? Math.max(0, Math.ceil((active.end.getTime() - Date.now()) / 86_400_000)) : 0;
-  const totalDays = active ? Math.max(1, (active.end.getTime() - active.start.getTime()) / 86_400_000) : 1;
+  const daysLeft = active
+    ? Math.max(0, Math.ceil((active.end.getTime() - Date.now()) / 86_400_000))
+    : 0;
+  const totalDays = active
+    ? Math.max(1, (active.end.getTime() - active.start.getTime()) / 86_400_000)
+    : 1;
   const elapsedDays = active ? Math.max(0, (Date.now() - active.start.getTime()) / 86_400_000) : 0;
   const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
   const leadingPlayer = leader ? players.get(leader.uid) : null;

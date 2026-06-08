@@ -12,7 +12,7 @@ export interface Membership {
 
 export async function getMembership(uid: string): Promise<Membership | null> {
   const snap = await getDoc(doc(db, "leagues", LEAGUE_ID, "members", uid));
-  return snap.exists() ? ({ uid, role: snap.data().role as Role }) : null;
+  return snap.exists() ? { uid, role: snap.data().role as Role } : null;
 }
 
 export interface RedeemResult {

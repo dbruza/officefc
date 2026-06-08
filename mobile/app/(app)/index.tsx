@@ -2,16 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import {
-  AppTabBar,
-  Avatar,
-  Button,
-  Card,
-  Icon,
-  PlayerRow,
-  SectionLabel,
-  Txt,
-} from "@/components";
+import { AppTabBar, Avatar, Button, Card, Icon, PlayerRow, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import { getSeasonJoinCode, rotateSeasonJoinCode } from "@/lib/membership";
 import { authErrorMessage } from "@/lib/authErrors";
@@ -112,9 +103,7 @@ export default function Home() {
       }
     : null;
   const myStanding = standings.find((row) => row.uid === user?.uid);
-  const nemesis = playerStats?.nemesis
-    ? players.get(playerStats.nemesis.opponentId)
-    : null;
+  const nemesis = playerStats?.nemesis ? players.get(playerStats.nemesis.opponentId) : null;
   const daysLeft = useMemo(() => {
     if (!season) return 0;
     return Math.max(0, Math.ceil((season.end.getTime() - Date.now()) / 86_400_000));
@@ -135,13 +124,20 @@ export default function Home() {
           {me ? <Avatar player={me} size={44} ring jersey /> : null}
         </View>
 
-        {loading ? <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.x2 }} /> : null}
+        {loading ? (
+          <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.x2 }} />
+        ) : null}
 
         {!loading ? (
           <Card style={styles.hero} padded onPress={() => router.push("/(app)/profile")}>
             <View style={styles.heroTop}>
               <View>
-                <Txt variant="head" size={10.5} color={colors.textDim} style={{ letterSpacing: 1.4 }}>
+                <Txt
+                  variant="head"
+                  size={10.5}
+                  color={colors.textDim}
+                  style={{ letterSpacing: 1.4 }}
+                >
                   YOUR SEASON
                 </Txt>
                 <Txt variant="monoBold" size={40} color={colors.accent} style={{ marginTop: 4 }}>
@@ -194,10 +190,7 @@ export default function Home() {
               Log match
             </Button>
           </View>
-          <Pressable
-            onPress={() => router.push("/(app)/confirmations")}
-            style={styles.inboxButton}
-          >
+          <Pressable onPress={() => router.push("/(app)/confirmations")} style={styles.inboxButton}>
             <Icon name="check" size={20} color={pendingCount ? colors.accent : colors.textDim} />
             {pendingCount ? (
               <View style={styles.badge}>
@@ -379,8 +372,8 @@ function AdminInvite() {
       <SectionLabel>Invite the office</SectionLabel>
       <Card padded>
         <Txt size={13.5} color={colors.textDim} style={{ lineHeight: 20 }}>
-          Share this season's join code. Anyone in the office can use it to join — it stays the
-          same until you rotate it.
+          Share this season's join code. Anyone in the office can use it to join — it stays the same
+          until you rotate it.
         </Txt>
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.md }} />

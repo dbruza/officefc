@@ -1,9 +1,7 @@
 import type { DraftState } from "./draftSecurity";
 import { DraftSecurityError } from "./draftSecurity";
 
-export type DraftAbandonAction =
-  | { action: "missing" }
-  | { action: "abandon"; storagePath: string };
+export type DraftAbandonAction = { action: "missing" } | { action: "abandon"; storagePath: string };
 
 export function evaluateDraftAbandonment(input: {
   draft: DraftState | null;

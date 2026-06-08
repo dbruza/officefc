@@ -2,11 +2,21 @@
    Uses global fetch (available in Node >= 18). No SDK dependency, so the
    exact same module runs in the Cloud Function and in the Node eval harness. */
 
-import { EXTRACTION_TOOL, EXTRACTION_TOOL_NAME, DEFAULT_MODEL, ANTHROPIC_VERSION } from "./schema.mjs";
+import {
+  EXTRACTION_TOOL,
+  EXTRACTION_TOOL_NAME,
+  DEFAULT_MODEL,
+  ANTHROPIC_VERSION,
+} from "./schema.mjs";
 import { SYSTEM_PROMPT, USER_INSTRUCTION } from "./prompt.mjs";
 
 /** Build the Messages API request body for one image. */
-export function buildRequest({ imageBase64, mediaType = "image/png", model = DEFAULT_MODEL, maxTokens = 512 }) {
+export function buildRequest({
+  imageBase64,
+  mediaType = "image/png",
+  model = DEFAULT_MODEL,
+  maxTokens = 512,
+}) {
   if (!imageBase64) throw new Error("buildRequest: imageBase64 is required");
   return {
     model,
@@ -28,7 +38,12 @@ export function buildRequest({ imageBase64, mediaType = "image/png", model = DEF
 }
 
 /** Call the Anthropic Messages API and return the parsed JSON response. */
-export async function callClaude({ apiKey, baseUrl = "https://api.anthropic.com", request, fetchImpl = fetch }) {
+export async function callClaude({
+  apiKey,
+  baseUrl = "https://api.anthropic.com",
+  request,
+  fetchImpl = fetch,
+}) {
   if (!apiKey) throw new Error("callClaude: missing Anthropic API key");
   const res = await fetchImpl(`${baseUrl.replace(/\/$/, "")}/v1/messages`, {
     method: "POST",
@@ -49,7 +64,9 @@ export async function callClaude({ apiKey, baseUrl = "https://api.anthropic.com"
 /** Pull the report_match_stats tool input out of a Messages API response. */
 export function extractToolInput(response) {
   const blocks = (response && response.content) || [];
-  const toolBlock = blocks.find((b) => b && b.type === "tool_use" && b.name === EXTRACTION_TOOL_NAME);
+  const toolBlock = blocks.find(
+    (b) => b && b.type === "tool_use" && b.name === EXTRACTION_TOOL_NAME,
+  );
   if (!toolBlock) throw new Error("No report_match_stats tool_use block in model response");
   return toolBlock.input;
 }

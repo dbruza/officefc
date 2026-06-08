@@ -13,7 +13,6 @@ export function isAllowlistedAdmin(email: string | undefined | null): boolean {
 export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export function randomCode(): string {
   let s = "";
-  for (let i = 0; i < 5; i++)
-    s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  for (let i = 0; i < 5; i++) s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
   return `OFC-${s}`;
 }

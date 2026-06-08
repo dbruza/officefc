@@ -19,7 +19,12 @@ export function AppTabBar({ active }: { active: AppTab }) {
   return (
     <View style={styles.bar}>
       {TABS.slice(0, 2).map((tab) => (
-        <TabButton key={tab.id} tab={tab} active={active === tab.id} onPress={() => router.replace(tab.href)} />
+        <TabButton
+          key={tab.id}
+          tab={tab}
+          active={active === tab.id}
+          onPress={() => router.replace(tab.href)}
+        />
       ))}
       <View style={styles.fabSlot}>
         <Pressable onPress={() => router.push("/(app)/log-match")} style={styles.fab}>
@@ -27,7 +32,12 @@ export function AppTabBar({ active }: { active: AppTab }) {
         </Pressable>
       </View>
       {TABS.slice(2).map((tab) => (
-        <TabButton key={tab.id} tab={tab} active={active === tab.id} onPress={() => router.replace(tab.href)} />
+        <TabButton
+          key={tab.id}
+          tab={tab}
+          active={active === tab.id}
+          onPress={() => router.replace(tab.href)}
+        />
       ))}
     </View>
   );
@@ -44,7 +54,12 @@ function TabButton({
 }) {
   return (
     <Pressable onPress={onPress} style={styles.tab}>
-      <Icon name={tab.icon} size={21} stroke={active ? 2.4 : 2} color={active ? colors.accent : colors.textDim} />
+      <Icon
+        name={tab.icon}
+        size={21}
+        stroke={active ? 2.4 : 2}
+        color={active ? colors.accent : colors.textDim}
+      />
       <Txt variant="head" size={9.5} color={active ? colors.accent : colors.textDim}>
         {tab.label}
       </Txt>

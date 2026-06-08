@@ -1,11 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import {
-  DraftSecurityError,
-  assertValidDraftId,
-  type DraftState,
-} from "./draftSecurity";
+import { DraftSecurityError, assertValidDraftId, type DraftState } from "./draftSecurity";
 import { evaluateDraftAbandonment } from "./draftLifecycle";
 
 const db = getFirestore();

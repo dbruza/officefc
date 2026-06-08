@@ -318,10 +318,7 @@ export async function getStandings(seasonId: string): Promise<Standing[]> {
     .sort((a, b) => a.rank - b.rank);
 }
 
-export async function getEloHistory(
-  seasonId: string,
-  uid: string,
-): Promise<EloHistoryPoint[]> {
+export async function getEloHistory(seasonId: string, uid: string): Promise<EloHistoryPoint[]> {
   const snap = await getDoc(doc(db, "seasons", seasonId, "eloHistory", uid));
   if (!snap.exists()) return [];
   const points = snap.get("points");
@@ -547,7 +544,12 @@ export async function rebuildLeagueReadModels(): Promise<{
   return result.data;
 }
 
-export function previewElo(myElo: number, opponentElo: number, myGoals: number, opponentGoals: number) {
+export function previewElo(
+  myElo: number,
+  opponentElo: number,
+  myGoals: number,
+  opponentGoals: number,
+) {
   const expected = 1 / (1 + Math.pow(10, (opponentElo - myElo) / 400));
   const score = myGoals > opponentGoals ? 1 : myGoals < opponentGoals ? 0 : 0.5;
   return Math.round(32 * (score - expected));
@@ -574,7 +576,9 @@ export interface AiAssistedSubmitInput {
   };
 }
 
-export async function submitAiAssistedMatch(input: AiAssistedSubmitInput): Promise<{ matchId: string }> {
+export async function submitAiAssistedMatch(
+  input: AiAssistedSubmitInput,
+): Promise<{ matchId: string }> {
   const callable = httpsCallable<AiAssistedSubmitInput, { ok: boolean; matchId: string }>(
     functions,
     "submitAiAssistedMatch",
@@ -583,16 +587,22 @@ export async function submitAiAssistedMatch(input: AiAssistedSubmitInput): Promi
   return result.data;
 }
 
-export async function callExtractMatchStats(draftId: string, storagePath: string, force = false): Promise<Record<string, unknown>> {
-  const callable = httpsCallable<{ draftId: string; storagePath: string; force?: boolean }, Record<string, unknown>>(
-    functions,
-    "extractMatchStats",
-  );
+export async function callExtractMatchStats(
+  draftId: string,
+  storagePath: string,
+  force = false,
+): Promise<Record<string, unknown>> {
+  const callable = httpsCallable<
+    { draftId: string; storagePath: string; force?: boolean },
+    Record<string, unknown>
+  >(functions, "extractMatchStats");
   const result = await callable({ draftId, storagePath, force });
   return result.data;
 }
 
-export async function getMatchPhotoUrl(matchId: string): Promise<{ url: string; expiresAt: number }> {
+export async function getMatchPhotoUrl(
+  matchId: string,
+): Promise<{ url: string; expiresAt: number }> {
   const callable = httpsCallable<{ matchId: string }, { url: string; expiresAt: number }>(
     functions,
     "getMatchPhotoUrl",
@@ -610,53 +620,85 @@ export async function deleteMatchPhoto(matchId: string): Promise<void> {
 }
 
 export async function abandonMatchDraft(draftId: string): Promise<{ ok: true }> {
-  const callable = httpsCallable<{ draftId: string }, { ok: true }>(
-    functions,
-    "abandonMatchDraft",
-  );
+  const callable = httpsCallable<{ draftId: string }, { ok: true }>(functions, "abandonMatchDraft");
   const result = await callable({ draftId });
   return result.data;
 }
 
 // --- M5 — Season lifecycle & admin ---
 
-export async function finalizeSeason(seasonId: string, force = false): Promise<{ championId: string | null; runnerUpId: string | null; potmCount: number }> {
-  const callable = httpsCallable<{ seasonId: string; force?: boolean }, { ok: boolean; championId: string | null; runnerUpId: string | null; potmCount: number }>(
-    functions, "finalizeSeason",
-  );
+export async function finalizeSeason(
+  seasonId: string,
+  force = false,
+): Promise<{ championId: string | null; runnerUpId: string | null; potmCount: number }> {
+  const callable = httpsCallable<
+    { seasonId: string; force?: boolean },
+    { ok: boolean; championId: string | null; runnerUpId: string | null; potmCount: number }
+  >(functions, "finalizeSeason");
   const result = await callable({ seasonId, force });
   return result.data;
 }
 
-export async function createSeason(name: string, start: string, end: string): Promise<{ seasonId: string }> {
-  const callable = httpsCallable<{ name: string; start: string; end: string }, { ok: boolean; seasonId: string }>(
-    functions, "createSeason",
-  );
+export async function createSeason(
+  name: string,
+  start: string,
+  end: string,
+): Promise<{ seasonId: string }> {
+  const callable = httpsCallable<
+    { name: string; start: string; end: string },
+    { ok: boolean; seasonId: string }
+  >(functions, "createSeason");
   const result = await callable({ name, start, end });
   return result.data;
 }
 
 export async function activateSeason(seasonId: string): Promise<{ seasonId: string }> {
   const callable = httpsCallable<{ seasonId: string }, { ok: boolean; seasonId: string }>(
-    functions, "activateSeason",
+    functions,
+    "activateSeason",
   );
   const result = await callable({ seasonId });
   return result.data;
 }
 
-export async function manageTeam(action: "add", name: string): Promise<{ teamId: string; name: string }>;
-export async function manageTeam(action: "rename" | "deactivate", teamId: string, name?: string): Promise<{ teamId: string }>;
-export async function manageTeam(action: string, teamIdOrName: string, name?: string): Promise<Record<string, string>> {
-  const callable = httpsCallable<Record<string, string>, Record<string, string>>(functions, "manageTeam");
+export async function manageTeam(
+  action: "add",
+  name: string,
+): Promise<{ teamId: string; name: string }>;
+export async function manageTeam(
+  action: "rename" | "deactivate",
+  teamId: string,
+  name?: string,
+): Promise<{ teamId: string }>;
+export async function manageTeam(
+  action: string,
+  teamIdOrName: string,
+  name?: string,
+): Promise<Record<string, string>> {
+  const callable = httpsCallable<Record<string, string>, Record<string, string>>(
+    functions,
+    "manageTeam",
+  );
   const data: Record<string, string> = { action };
   if (action === "add") data.name = teamIdOrName;
-  else { data.teamId = teamIdOrName; if (name) data.name = name; }
+  else {
+    data.teamId = teamIdOrName;
+    if (name) data.name = name;
+  }
   const result = await callable(data);
   return result.data;
 }
 
-export async function resolveMatch(matchId: string, action: "confirm" | "correct_confirm" | "void", correctedScore?: { aGoals: number; bGoals: number }, reason?: string): Promise<{ matchId: string }> {
-  const callable = httpsCallable<Record<string, unknown>, { ok: boolean; matchId: string }>(functions, "resolveMatch");
+export async function resolveMatch(
+  matchId: string,
+  action: "confirm" | "correct_confirm" | "void",
+  correctedScore?: { aGoals: number; bGoals: number },
+  reason?: string,
+): Promise<{ matchId: string }> {
+  const callable = httpsCallable<Record<string, unknown>, { ok: boolean; matchId: string }>(
+    functions,
+    "resolveMatch",
+  );
   const data: Record<string, unknown> = { matchId, action };
   if (reason) data.reason = reason;
   if (correctedScore) data.correctedScore = correctedScore;
@@ -664,8 +706,13 @@ export async function resolveMatch(matchId: string, action: "confirm" | "correct
   return result.data;
 }
 
-export async function listSeasons(): Promise<Array<{ id: string; name: string; active: boolean; finalized: boolean }>> {
-  const callable = httpsCallable<Record<string, never>, Array<{ id: string; name: string; active: boolean; finalized: boolean }>>(functions, "listSeasons");
+export async function listSeasons(): Promise<
+  Array<{ id: string; name: string; active: boolean; finalized: boolean }>
+> {
+  const callable = httpsCallable<
+    Record<string, never>,
+    Array<{ id: string; name: string; active: boolean; finalized: boolean }>
+  >(functions, "listSeasons");
   const result = await callable({});
   return result.data;
 }
@@ -686,7 +733,13 @@ export interface AdminPendingMatch {
 export async function getAdminPendingMatches(): Promise<AdminPendingMatch[]> {
   const matchesCol = collection(db, "matches");
   const [pendingSnap, disputedSnap] = await Promise.all([
-    getDocs(query(matchesCol, where("status", "==", "pending_confirmation"), orderBy("createdAt", "desc"))),
+    getDocs(
+      query(
+        matchesCol,
+        where("status", "==", "pending_confirmation"),
+        orderBy("createdAt", "desc"),
+      ),
+    ),
     getDocs(query(matchesCol, where("status", "==", "disputed"), orderBy("createdAt", "desc"))),
   ]);
   const all = [...pendingSnap.docs, ...disputedSnap.docs];

@@ -49,8 +49,8 @@ export default function Join() {
             Admin setup
           </Txt>
           <Txt size={13} color={colors.textDim} style={{ marginTop: 4, lineHeight: 19 }}>
-            Tap below to create the league and join as an admin — no code needed. You can then
-            share a season join code with everyone else.
+            Tap below to create the league and join as an admin — no code needed. You can then share
+            a season join code with everyone else.
           </Txt>
         </Card>
       ) : (

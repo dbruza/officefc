@@ -57,8 +57,22 @@ export function LineChart({
         />
       ))}
       <Path d={area} fill={`url(#${gradientId})`} />
-      <Path d={line} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-      <Circle cx={X(data.length - 1)} cy={Y(last.rating)} r={4.5} fill={color} stroke={colors.bg} strokeWidth={2} />
+      <Path
+        d={line}
+        fill="none"
+        stroke={color}
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <Circle
+        cx={X(data.length - 1)}
+        cy={Y(last.rating)}
+        r={4.5}
+        fill={color}
+        stroke={colors.bg}
+        strokeWidth={2}
+      />
     </Svg>
   );
 }

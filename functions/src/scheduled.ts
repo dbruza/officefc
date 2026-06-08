@@ -33,13 +33,22 @@ function dateMillis(value: unknown): number {
  * Runs every Sunday at 00:00 UTC.
  */
 export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
-  const active = await db.collection("seasons").where("active", "==", true).where("finalized", "==", false).limit(1).get();
+  const active = await db
+    .collection("seasons")
+    .where("active", "==", true)
+    .where("finalized", "==", false)
+    .limit(1)
+    .get();
   if (active.empty) return;
 
   const seasonId = active.docs[0].id;
   const [members, matchSnaps, oldSnaps] = await Promise.all([
     db.collection(`leagues/${LEAGUE_ID}/members`).get(),
-    db.collection("matches").where("seasonId", "==", seasonId).where("status", "==", "confirmed").get(),
+    db
+      .collection("matches")
+      .where("seasonId", "==", seasonId)
+      .where("status", "==", "confirmed")
+      .get(),
     db.collection(`seasons/${seasonId}/snapshots`).get(),
   ]);
 
@@ -59,13 +68,20 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
     };
   });
 
-  const result = calculateSeason(matches, members.docs.map((s) => s.id), dateMillis(active.docs[0].get("start")));
+  const result = calculateSeason(
+    matches,
+    members.docs.map((s) => s.id),
+    dateMillis(active.docs[0].get("start")),
+  );
 
   const weekKey = getWeekKey(Date.now());
   const ref = db.doc(`seasons/${seasonId}/snapshots/${weekKey}`);
 
   const prevSnap = oldSnaps.docs
-    .map((doc) => ({ id: doc.id, rows: doc.get("rows") as Record<string, { rank: number; elo: number }> | undefined }))
+    .map((doc) => ({
+      id: doc.id,
+      rows: doc.get("rows") as Record<string, { rank: number; elo: number }> | undefined,
+    }))
     .sort((a, b) => b.id.localeCompare(a.id))[0];
 
   const prevRanks = new Map<string, number>();
@@ -103,7 +119,8 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
  */
 export const sendReminders = onSchedule("0 */6 * * *", async () => {
   const cutoff = Date.now() - REMINDER_HOURS * 60 * 60 * 1000;
-  const pending = await db.collection("matches")
+  const pending = await db
+    .collection("matches")
     .where("status", "==", "pending_confirmation")
     .get();
 
@@ -138,18 +155,18 @@ export const sendReminders = onSchedule("0 */6 * * *", async () => {
  */
 export const cleanupAbandonedDrafts = onSchedule("0 3 * * *", async () => {
   const cutoffMillis = Date.now() - DRAFT_RETENTION_HOURS * 60 * 60 * 1000;
-  const drafts = await db.collection("matchDrafts")
-    .where("submitted", "==", false)
-    .get();
+  const drafts = await db.collection("matchDrafts").where("submitted", "==", false).get();
 
   let deleted = 0;
   for (const snapshot of drafts.docs) {
     const data = snapshot.data() as DraftState & { createdAt?: unknown };
-    if (!isStaleUnsubmittedDraft({
-      createdAtMillis: dateMillis(data.createdAt),
-      submitted: data.submitted,
-      cutoffMillis,
-    })) {
+    if (
+      !isStaleUnsubmittedDraft({
+        createdAtMillis: dateMillis(data.createdAt),
+        submitted: data.submitted,
+        cutoffMillis,
+      })
+    ) {
       continue;
     }
 
@@ -157,11 +174,13 @@ export const cleanupAbandonedDrafts = onSchedule("0 3 * * *", async () => {
       const current = await tx.get(snapshot.ref);
       if (!current.exists) return null;
       const currentData = current.data() as DraftState & { createdAt?: unknown };
-      if (!isStaleUnsubmittedDraft({
-        createdAtMillis: dateMillis(currentData.createdAt),
-        submitted: currentData.submitted,
-        cutoffMillis,
-      })) {
+      if (
+        !isStaleUnsubmittedDraft({
+          createdAtMillis: dateMillis(currentData.createdAt),
+          submitted: currentData.submitted,
+          cutoffMillis,
+        })
+      ) {
         return null;
       }
       tx.update(snapshot.ref, {

@@ -2,14 +2,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Avatar,
-  Card,
-  Icon,
-  PlayerRow,
-  ScreenHeader,
-  Txt,
-} from "@/components";
+import { Avatar, Card, Icon, PlayerRow, ScreenHeader, Txt } from "@/components";
 import {
   getLeaguePlayers,
   getSeason,

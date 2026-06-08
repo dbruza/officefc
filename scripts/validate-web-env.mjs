@@ -18,7 +18,10 @@ function parseEnv(contents) {
     const separator = line.indexOf("=");
     if (separator < 0) continue;
     const key = line.slice(0, separator).trim();
-    const value = line.slice(separator + 1).trim().replace(/^(['"])(.*)\1$/, "$2");
+    const value = line
+      .slice(separator + 1)
+      .trim()
+      .replace(/^(['"])(.*)\1$/, "$2");
     values[key] = value;
   }
   return values;
@@ -29,7 +32,9 @@ let fileValues = {};
 try {
   fileValues = parseEnv(readFileSync(envPath, "utf8"));
 } catch {
-  console.error("Missing mobile/.env. Copy mobile/.env.example and add the office-fc web app config.");
+  console.error(
+    "Missing mobile/.env. Copy mobile/.env.example and add the office-fc web app config.",
+  );
   process.exit(1);
 }
 
