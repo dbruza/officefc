@@ -21,7 +21,7 @@ async function assertMember(uid: string): Promise<void> {
  * Return a short-lived signed read URL for a match's private photo.
  * The client must be a league member; the photo path must be stored on the match doc.
  */
-export const getMatchPhotoUrl = onCall(async (req) => {
+export const getMatchPhotoUrl = onCall({ cors: true }, async (req) => {
   const uid = requireAuth(req);
   await assertMember(uid);
 

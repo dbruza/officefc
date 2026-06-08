@@ -1,8 +1,8 @@
 /**
- * Firestore security-rules tests. Run against the Firestore emulator:
+ * Firestore and Storage security-rules tests. Run against the emulators:
  *
  *   cd test/rules && npm install            # once
- *   firebase emulators:exec --only firestore "npm --prefix test/rules test"
+ *   npm run test:rules
  *
  * (or use the root `npm run test:rules`). Proves the trust boundary: non-members can't
  * read league data, clients can't write trusted fields, but onboarding self-reads work.
@@ -21,13 +21,17 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rules = readFileSync(join(here, "../../firestore.rules"), "utf8");
+const storageRules = readFileSync(join(here, "../../storage.rules"), "utf8");
 
 let testEnv;
 
 before(async () => {
   testEnv = await initializeTestEnvironment({
-    projectId: "officefc-rules-test",
+    // Match the emulator CLI project so Storage's firestore.exists() cross-service
+    // lookup reads the same Firestore namespace seeded below.
+    projectId: "office-fc",
     firestore: { rules, host: "127.0.0.1", port: 8080 },
+    storage: { rules: storageRules, host: "127.0.0.1", port: 12199 },
   });
 });
 
@@ -37,6 +41,7 @@ after(async () => {
 
 beforeEach(async () => {
   await testEnv.clearFirestore();
+  await testEnv.clearStorage();
   // Seed: alice is a member, dave is an admin. (withSecurityRulesDisabled bypasses rules.)
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
@@ -192,4 +197,24 @@ test("a user can create their own profile without a role", async () => {
       displayName: "Nora", handle: "nora", jersey: 8, color: "#00ff87",
     }),
   );
+});
+
+test("a member can upload and delete their own private match photo", async () => {
+  const photo = testEnv.authenticatedContext("alice").storage()
+    .ref("match-photos/alice/draft-1/source.jpg");
+  await assertSucceeds(photo.put(new Uint8Array([1, 2, 3]), { contentType: "image/jpeg" }));
+  await assertSucceeds(photo.delete());
+});
+
+test("direct client reads of match photos are denied, including to members", async () => {
+  const photo = testEnv.authenticatedContext("alice").storage()
+    .ref("match-photos/alice/draft-2/source.jpg");
+  await assertSucceeds(photo.put(new Uint8Array([1, 2, 3]), { contentType: "image/jpeg" }));
+  await assertFails(photo.getDownloadURL());
+});
+
+test("non-members cannot upload match photos", async () => {
+  const photo = testEnv.authenticatedContext("nora").storage()
+    .ref("match-photos/nora/draft-3/source.jpg");
+  await assertFails(photo.put(new Uint8Array([1, 2, 3]), { contentType: "image/jpeg" }));
 });

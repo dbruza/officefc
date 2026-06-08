@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { Avatar, Button, Card, EloDelta, Icon, Txt } from "@/components";
 import { uploadMatchPhoto } from "@/lib/upload";
+import { pickMatchPhoto } from "@/lib/photoPicker";
 import {
+  abandonMatchDraft,
   callExtractMatchStats,
   submitAiAssistedMatch,
   previewElo,
@@ -61,16 +64,28 @@ interface SnapFlowProps {
   teams: Team[];
   standings: Standing[];
   onCancel: () => void;
+  onManualFallback: () => void;
   onDone: () => void;
 }
 
-export function SnapFlow({ uid, profile, season, players, teams, standings, onCancel, onDone }: SnapFlowProps) {
+export function SnapFlow({
+  uid,
+  profile,
+  season,
+  players,
+  teams,
+  standings,
+  onCancel,
+  onManualFallback,
+  onDone,
+}: SnapFlowProps) {
   const me: Player = { id: uid, name: profile.displayName, handle: profile.handle, jersey: profile.jersey, color: profile.color, isYou: true };
+  const { width } = useWindowDimensions();
+  const showCameraOption = Platform.OS !== "web" || width < 768;
 
   const [step, setStep] = useState<SnapStep>("capture");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
-  const [storagePath, setStoragePath] = useState<string | null>(null);
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mySide, setMySide] = useState<"home" | "away">("home");
@@ -79,7 +94,6 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
   const [opponentTeam, setOpponentTeam] = useState<Team | null>(null);
   const [myGoals, setMyGoals] = useState(0);
   const [opponentGoals, setOpponentGoals] = useState(0);
-  const [submittedMatchId, setSubmittedMatchId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [myPossession, setMyPossession] = useState<number | null>(null);
   const [opponentPossession, setOpponentPossession] = useState<number | null>(null);
@@ -87,6 +101,8 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
   const [opponentShots, setOpponentShots] = useState<number | null>(null);
   const [myShotsOnTarget, setMyShotsOnTarget] = useState<number | null>(null);
   const [opponentShotsOnTarget, setOpponentShotsOnTarget] = useState<number | null>(null);
+  const activeDraftId = useRef<string | null>(null);
+  const cancelRequested = useRef(false);
 
   const ratingByUid = useMemo(
     () => new Map(standings.map((s) => [s.uid, s.elo])),
@@ -118,48 +134,42 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
     }
   }, [mySide, extraction]);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") setError("Camera permission is needed to snap stats screens.");
-    })();
-  }, []);
-
-  async function handleCapture() {
+  async function cleanupDraft(id = activeDraftId.current): Promise<void> {
+    if (!id) return;
     try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        quality: 0.9,
-        allowsEditing: false,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        setImageUri(result.assets[0].uri);
-        await handleUpload(result.assets[0].uri, result.assets[0].mimeType, result.assets[0].fileSize);
-      }
-    } catch {
-      setError("Could not open camera.");
+      await abandonMatchDraft(id);
+      if (activeDraftId.current === id) activeDraftId.current = null;
+      setDraftId((current) => current === id ? null : current);
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : "Could not remove the abandoned upload.");
     }
   }
 
-  async function handlePick() {
+  async function handleSelect(source: "camera" | "library") {
+    cancelRequested.current = false;
+    setError(null);
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        setError("Photo library access is needed.");
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        quality: 0.9,
-        allowsEditing: false,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        setImageUri(result.assets[0].uri);
-        await handleUpload(result.assets[0].uri, result.assets[0].mimeType, result.assets[0].fileSize);
-      }
-    } catch {
-      setError("Could not open photo library.");
+      const selected = await pickMatchPhoto(source);
+      if (!selected) return;
+      await cleanupDraft();
+      setExtraction(null);
+      setImageUri(selected.uri);
+      await handleUpload(selected.uri, selected.mimeType, selected.fileSize);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not open that photo.");
+      setStep("capture");
     }
+  }
+
+  async function handleLeave(destination: "cancel" | "manual") {
+    cancelRequested.current = true;
+    try {
+      await cleanupDraft();
+    } catch {
+      // Daily server cleanup is the fallback if the browser is offline while leaving.
+    }
+    if (destination === "manual") onManualFallback();
+    else onCancel();
   }
 
   async function handleUpload(uri: string, mimeType?: string, fileSize?: number) {
@@ -167,8 +177,12 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
     setError(null);
     try {
       const upload = await uploadMatchPhoto(uid, uri, mimeType, fileSize);
+      activeDraftId.current = upload.draftId;
       setDraftId(upload.draftId);
-      setStoragePath(upload.storagePath);
+      if (cancelRequested.current) {
+        await cleanupDraft(upload.draftId);
+        return;
+      }
       await handleExtract(upload.draftId, upload.storagePath);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload failed.";
@@ -207,7 +221,7 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
     setIsSubmitting(true);
     setError(null);
     try {
-      const result = await submitAiAssistedMatch({
+      await submitAiAssistedMatch({
         draftId,
         seasonId: season.id,
         opponentId: opponent.id,
@@ -225,7 +239,7 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
           opponentShotsOnTarget,
         },
       });
-      setSubmittedMatchId(result.matchId);
+      activeDraftId.current = null;
       setStep("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submission failed.");
@@ -255,26 +269,42 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
     return (
       <View style={styles.full}>
         <View style={styles.headerRow}>
-          <Pressable onPress={onCancel} style={styles.iconBtn}>
+          <Pressable onPress={() => void handleLeave("cancel")} style={styles.iconBtn}>
             <Icon name="x" size={20} stroke={2.5} />
           </Pressable>
-          <Txt variant="head" size={18}>Snap Result</Txt>
+          <Txt variant="head" size={18}>Upload match photo</Txt>
         </View>
         <View style={styles.centerContent}>
           <Icon name="camera" size={48} color={colors.textDim} />
           <Txt variant="head" size={20} style={{ marginTop: spacing.lg }}>
-            Snap the full-time stats screen
+            Upload or take a photo
           </Txt>
           <Txt color={colors.textDim} size={13} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.x2, lineHeight: 19 }}>
-            Take a photo of FIFA 23's end-of-match screen. The AI will read the score and key stats for you to confirm.
+            Use the full-time stats screen. AI Beta will suggest the score and key stats, but you must verify every value.
           </Txt>
           <View style={{ gap: spacing.md, marginTop: spacing.x2, width: "100%", paddingHorizontal: spacing.x2 }}>
-            <Button full size="lg" icon="camera" onPress={handleCapture}>
-              Take a photo
+            {showCameraOption ? (
+              <Button full size="lg" icon="camera" onPress={() => void handleSelect("camera")}>
+                Take a photo
+              </Button>
+            ) : null}
+            <Button
+              full
+              size="lg"
+              variant={showCameraOption ? "dark" : "primary"}
+              icon="photo"
+              onPress={() => void handleSelect("library")}
+            >
+              {Platform.OS === "web" && width >= 768 ? "Choose image file" : "Choose from library"}
             </Button>
-            <Button full size="lg" variant="dark" icon="photo" onPress={handlePick}>
-              Choose from gallery
+            <Button full size="md" variant="ghost" icon="edit" onPress={() => void handleLeave("manual")}>
+              Enter score manually
             </Button>
+          </View>
+          <View style={styles.privacyNotice}>
+            <Txt size={11.5} color={colors.textDim} style={{ textAlign: "center", lineHeight: 17 }}>
+              Photos stay private. Anthropic processes the image for extraction. League members can view submitted photos through temporary links, submitters can delete them, and abandoned drafts are deleted after 24 hours.
+            </Txt>
           </View>
           {error ? (
             <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, textAlign: "center" }}>
@@ -290,7 +320,7 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
     return (
       <View style={styles.full}>
         <View style={styles.headerRow}>
-          <Pressable onPress={onCancel} style={styles.iconBtn}>
+          <Pressable onPress={() => void handleLeave("cancel")} style={styles.iconBtn}>
             <Icon name="x" size={20} stroke={2.5} />
           </Pressable>
           <Txt variant="head" size={18}>Processing</Txt>
@@ -355,7 +385,7 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
             </Pressable>
           </View>
         </ScrollView>
-        <FlowFooter onBack={onCancel} onSkip={() => {}} hideNext />
+        <FlowFooter onBack={() => void handleLeave("cancel")} onSkip={() => {}} hideNext />
       </View>
     );
   }
@@ -435,6 +465,9 @@ export function SnapFlow({ uid, profile, season, players, teams, standings, onCa
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
           <Txt variant="head" size={22} style={{ marginBottom: spacing.sm }}>
             Verify the score and stats
+          </Txt>
+          <Txt size={12.5} color={colors.textDim} style={{ lineHeight: 18 }}>
+            AI Beta can be wrong. Check every value against the photo before continuing.
           </Txt>
           <View style={styles.confBadge}>
             <Icon name="bolt" size={14} color={conf >= 0.8 ? colors.accent : colors.draw} />
@@ -815,6 +848,15 @@ const styles = StyleSheet.create({
   centerContent: {
     flex: 1, alignItems: "center", justifyContent: "center",
     paddingHorizontal: spacing.x2,
+  },
+  privacyNotice: {
+    marginTop: spacing.lg,
+    marginHorizontal: spacing.x2,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
   },
   content: { padding: spacing.lg, paddingBottom: spacing.x3 },
   previewImage: { width: "100%", height: 220, borderRadius: radius.md, backgroundColor: colors.surface2 },

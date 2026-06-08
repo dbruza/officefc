@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
@@ -23,6 +23,7 @@ import {
   getPlayerStats,
   getStandings,
   rebuildLeagueReadModels,
+  subscribePendingConfirmations,
   type LeaguePlayer,
   type PlayerStats,
   type Season,
@@ -54,9 +55,8 @@ export default function Home() {
         await ensureLeagueSetup();
         activeSeason = await getActiveSeason();
       }
-      const [roster, pending, table, allTime] = await Promise.all([
+      const [roster, table, allTime] = await Promise.all([
         getLeaguePlayers(),
-        getPendingConfirmations(user.uid),
         activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
         getPlayerStats(user.uid),
       ]);
@@ -67,7 +67,6 @@ export default function Home() {
       }
       setSeason(activeSeason);
       setPlayers(new Map(roster.map((player) => [player.id, player])));
-      setPendingCount(pending.length);
       setStandings(table);
       setPlayerStats(resolvedStats);
     } catch {
@@ -82,6 +81,24 @@ export default function Home() {
       void load();
     }, [load]),
   );
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribePendingConfirmations(
+      user.uid,
+      (matches) => setPendingCount(matches.length),
+      () => setError("Couldn't update the confirmation inbox in real time."),
+    );
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void getPendingConfirmations(user.uid).then((matches) => setPendingCount(matches.length));
+      }
+    });
+    return () => {
+      unsubscribe();
+      appState.remove();
+    };
+  }, [user]);
 
   const me: Player | null = profile
     ? {

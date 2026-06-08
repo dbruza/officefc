@@ -105,7 +105,7 @@ function isImageType(contentType: string | undefined): boolean {
 }
 
 export const extractMatchStats = onCall(
-  { secrets: [ANTHROPIC_API_KEY] },
+  { cors: true, secrets: [ANTHROPIC_API_KEY] },
   async (req) => {
     const uid = requireAuth(req);
     await assertMember(uid);
@@ -200,30 +200,51 @@ export const extractMatchStats = onCall(
         apiKey: ANTHROPIC_API_KEY.value(),
       });
 
-      await draftRef.set({
-        ownerUid: uid,
-        storagePath,
-        status: "done",
-        raw: extractionResult,
-        confidence: extractionResult.confidence,
-        requiresReview: extractionResult.requiresReview,
-        flags: extractionResult.flags,
-        model: ANTHROPIC_MODEL,
-        extractedAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
+      await db.runTransaction(async (tx) => {
+        const current = await tx.get(draftRef);
+        const data = current.exists ? (current.data() as DraftState) : null;
+        if (
+          !data ||
+          data.ownerUid !== uid ||
+          data.storagePath !== storagePath ||
+          data.status !== "processing"
+        ) {
+          throw new HttpsError("failed-precondition", "This AI draft is no longer active.");
+        }
+        tx.set(draftRef, {
+          status: "done",
+          raw: extractionResult,
+          confidence: extractionResult.confidence,
+          requiresReview: extractionResult.requiresReview,
+          flags: extractionResult.flags,
+          model: ANTHROPIC_MODEL,
+          extractedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+      });
 
       return responseFromDraft(draftId, { raw: extractionResult });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await draftRef.set(
-        {
-          status: "failed",
-          error: message,
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
+      await db.runTransaction(async (tx) => {
+        const current = await tx.get(draftRef);
+        const data = current.exists ? (current.data() as DraftState) : null;
+        if (
+          data?.ownerUid === uid &&
+          data.storagePath === storagePath &&
+          data.status === "processing"
+        ) {
+          tx.set(
+            draftRef,
+            {
+              status: "failed",
+              error: message,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+      });
       if (error instanceof HttpsError) throw error;
       throw new HttpsError("internal", `Extraction failed: ${message}`);
     }

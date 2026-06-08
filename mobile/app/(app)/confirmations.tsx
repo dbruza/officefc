@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Avatar, Button, Card, Icon, Txt } from "@/components";
@@ -9,6 +9,7 @@ import {
   disputeMatch,
   getLeaguePlayers,
   getPendingConfirmations,
+  subscribePendingConfirmations,
   type LeaguePlayer,
   type PendingMatch,
 } from "@/lib/league";
@@ -47,6 +48,24 @@ export default function Confirmations() {
       void load();
     }, [load]),
   );
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribePendingConfirmations(
+      user.uid,
+      setMatches,
+      () => setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
+    );
+    const appState = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void getPendingConfirmations(user.uid).then(setMatches);
+      }
+    });
+    return () => {
+      unsubscribe();
+      appState.remove();
+    };
+  }, [user]);
 
   async function resolve(match: PendingMatch, action: "confirm" | "dispute") {
     setBusyId(match.id);

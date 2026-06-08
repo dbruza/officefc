@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -448,6 +449,41 @@ export async function getPendingConfirmations(uid: string): Promise<PendingMatch
     .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
 }
 
+export function subscribePendingConfirmations(
+  uid: string,
+  onMatches: (matches: PendingMatch[]) => void,
+  onError?: (error: Error) => void,
+): () => void {
+  return onSnapshot(
+    query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
+    (snapshot) => {
+      const matches = snapshot.docs
+        .map((matchDoc) => {
+          const data = matchDoc.data();
+          return {
+            id: matchDoc.id,
+            seasonId: String(data.seasonId),
+            submittedBy: String(data.submittedBy),
+            aId: String(data.aId),
+            bId: String(data.bId),
+            aTeamId: String(data.aTeamId),
+            bTeamId: String(data.bTeamId),
+            aTeam: String(data.aTeam),
+            bTeam: String(data.bTeam),
+            aGoals: Number(data.aGoals),
+            bGoals: Number(data.bGoals),
+            status: "pending_confirmation" as const,
+            date: data.date instanceof Timestamp ? data.date.toDate() : null,
+          };
+        })
+        .filter((match) => (match.aId === uid || match.bId === uid) && match.submittedBy !== uid)
+        .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+      onMatches(matches);
+    },
+    (error) => onError?.(error),
+  );
+}
+
 export interface SubmitMatchInput {
   seasonId: string;
   submittedBy: string;
@@ -571,6 +607,15 @@ export async function deleteMatchPhoto(matchId: string): Promise<void> {
     "deleteMatchPhoto",
   );
   await callable({ matchId });
+}
+
+export async function abandonMatchDraft(draftId: string): Promise<{ ok: true }> {
+  const callable = httpsCallable<{ draftId: string }, { ok: true }>(
+    functions,
+    "abandonMatchDraft",
+  );
+  const result = await callable({ draftId });
+  return result.data;
 }
 
 // --- M5 — Season lifecycle & admin ---

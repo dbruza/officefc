@@ -92,6 +92,24 @@ test("concurrent extraction is rejected and completed extraction is reused", () 
   );
 });
 
+test("an abandoning draft cannot be reclaimed by extraction", () => {
+  expectCode(
+    () =>
+      evaluateDraftClaim({
+        draft: {
+          ownerUid: "alice",
+          storagePath: "match-photos/alice/m1/source.jpg",
+          status: "abandoning",
+        },
+        matchExists: false,
+        uid: "alice",
+        storagePath: "match-photos/alice/m1/source.jpg",
+        force: false,
+      }),
+    "failed-precondition",
+  );
+});
+
 test("submission refuses to overwrite an unrelated match", () => {
   expectCode(
     () =>

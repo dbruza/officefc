@@ -28,9 +28,6 @@
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": null
-      },
       "android": {
         "track": "internal",
         "releaseStatus": "draft"

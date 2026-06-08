@@ -1,11 +1,16 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { LEAGUE_ID } from "./config";
 import { calculateSeason } from "./elo";
 import { sendPush } from "./notify";
+import { isStaleUnsubmittedDraft } from "./extract/draftLifecycle";
+import type { DraftState } from "./extract/draftSecurity";
 
 const db = getFirestore();
+const storage = getStorage();
 const REMINDER_HOURS = 48;
+const DRAFT_RETENTION_HOURS = 24;
 
 function getWeekKey(ms: number): string {
   const d = new Date(ms);
@@ -114,4 +119,64 @@ export const sendReminders = onSchedule("0 */6 * * *", async () => {
     sent++;
   }
   console.log(`Reminders sent: ${sent}`);
+});
+
+/**
+ * Remove private uploads for AI drafts that were never submitted.
+ * Runs daily at 03:00 UTC; failed object deletions remain marked for the next run.
+ */
+export const cleanupAbandonedDrafts = onSchedule("0 3 * * *", async () => {
+  const cutoffMillis = Date.now() - DRAFT_RETENTION_HOURS * 60 * 60 * 1000;
+  const drafts = await db.collection("matchDrafts")
+    .where("submitted", "==", false)
+    .get();
+
+  let deleted = 0;
+  for (const snapshot of drafts.docs) {
+    const data = snapshot.data() as DraftState & { createdAt?: unknown };
+    if (!isStaleUnsubmittedDraft({
+      createdAtMillis: dateMillis(data.createdAt),
+      submitted: data.submitted,
+      cutoffMillis,
+    })) {
+      continue;
+    }
+
+    const claimed = await db.runTransaction(async (tx) => {
+      const current = await tx.get(snapshot.ref);
+      if (!current.exists) return null;
+      const currentData = current.data() as DraftState & { createdAt?: unknown };
+      if (!isStaleUnsubmittedDraft({
+        createdAtMillis: dateMillis(currentData.createdAt),
+        submitted: currentData.submitted,
+        cutoffMillis,
+      })) {
+        return null;
+      }
+      tx.update(snapshot.ref, {
+        status: "abandoning",
+        cleanupStartedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return typeof currentData.storagePath === "string" ? currentData.storagePath : "";
+    });
+    if (claimed === null) continue;
+
+    if (claimed) {
+      const file = storage.bucket().file(claimed);
+      const [exists] = await file.exists();
+      if (exists) await file.delete();
+    }
+
+    await db.runTransaction(async (tx) => {
+      const current = await tx.get(snapshot.ref);
+      if (!current.exists) return;
+      const currentData = current.data() as DraftState;
+      if (currentData.submitted !== true && currentData.status === "abandoning") {
+        tx.delete(snapshot.ref);
+      }
+    });
+    deleted++;
+  }
+  console.log(`Stale AI drafts deleted: ${deleted}`);
 });

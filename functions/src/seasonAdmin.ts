@@ -147,7 +147,7 @@ function computePOTM(matches: SeasonMatchInput[]): Array<{ month: string; player
   return result;
 }
 
-export const finalizeSeason = onCall(async (req) => {
+export const finalizeSeason = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -193,7 +193,7 @@ export const finalizeSeason = onCall(async (req) => {
   return { ok: true, championId, runnerUpId, potmCount: potmResults.length };
 });
 
-export const createSeason = onCall(async (req) => {
+export const createSeason = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -221,7 +221,7 @@ export const createSeason = onCall(async (req) => {
   return { ok: true, seasonId };
 });
 
-export const activateSeason = onCall(async (req) => {
+export const activateSeason = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -241,7 +241,7 @@ export const activateSeason = onCall(async (req) => {
   return { ok: true, seasonId };
 });
 
-export const manageTeam = onCall(async (req) => {
+export const manageTeam = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -275,7 +275,7 @@ export const manageTeam = onCall(async (req) => {
   throw new HttpsError("invalid-argument", `Unknown action: ${action}`);
 });
 
-export const resolveMatch = onCall(async (req) => {
+export const resolveMatch = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -369,7 +369,7 @@ export const resolveMatch = onCall(async (req) => {
   return { ok: true, matchId };
 });
 
-export const listSeasons = onCall(async (req) => {
+export const listSeasons = onCall({ cors: true }, async (req) => {
   requireAuth(req);
   const snap = await db.collection("seasons").orderBy("start", "desc").get();
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));

@@ -1,9 +1,9 @@
 import { storage, db } from "./firebase";
-import { ref, uploadBytes, deleteObject } from "firebase/storage";
+import { ref, uploadBytes } from "firebase/storage";
 import { collection, doc } from "firebase/firestore";
 
 const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12 MB
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const ALLOWED_TYPES = ["image/jpeg"];
 
 export class UploadError extends Error {
   code: string;
@@ -18,22 +18,13 @@ export function generateDraftId(): string {
   return doc(collection(db, "matches")).id;
 }
 
-export function buildStoragePath(uid: string, draftId: string, extension: string): string {
-  return `match-photos/${uid}/${draftId}/source.${extension}`;
-}
-
-function inferExtension(uri: string, mimeType?: string): string {
-  if (mimeType) {
-    const ext = mimeType.split("/")[1];
-    if (ext) return ext === "jpeg" ? "jpg" : ext;
-  }
-  const match = uri.match(/\.(\w+)(\?|$)/);
-  return match ? match[1] : "jpg";
+export function buildStoragePath(uid: string, draftId: string): string {
+  return `match-photos/${uid}/${draftId}/source.jpg`;
 }
 
 function validateFile(size: number, mimeType: string | undefined): void {
   if (!mimeType || !ALLOWED_TYPES.includes(mimeType)) {
-    throw new UploadError("invalid_type", "Only image files (JPEG, PNG, WebP, HEIC) are accepted.");
+    throw new UploadError("invalid_type", "The selected photo could not be converted to JPEG.");
   }
   if (size > MAX_FILE_SIZE) {
     throw new UploadError("too_large", `File size ${(size / 1024 / 1024).toFixed(1)} MB exceeds the 12 MB limit.`);
@@ -55,26 +46,19 @@ export async function uploadMatchPhoto(
   mimeType?: string,
   fileSize?: number,
 ): Promise<UploadResult> {
-  if (fileSize) validateFile(fileSize, mimeType);
-
   const draftId = generateDraftId();
-  const ext = inferExtension(uri, mimeType);
-  const storagePath = buildStoragePath(uid, draftId, ext);
+  const storagePath = buildStoragePath(uid, draftId);
 
   const response = await fetch(uri);
   if (!response.ok) throw new UploadError("fetch_failed", "Could not read the selected image.");
   const blob = await response.blob();
+  validateFile(fileSize ?? blob.size, mimeType ?? blob.type);
 
   const storageRef = ref(storage, storagePath);
   await uploadBytes(storageRef, blob, {
+    contentType: "image/jpeg",
     customMetadata: { owner_uid: uid, draft_id: draftId, uploaded_at: new Date().toISOString() },
   });
 
   return { draftId, storagePath };
-}
-
-/** Delete an abandoned draft upload (owner-only per storage rules). */
-export async function deleteDraftUpload(storagePath: string): Promise<void> {
-  const storageRef = ref(storage, storagePath);
-  await deleteObject(storageRef);
 }

@@ -8,8 +8,13 @@
     "build": "node build/build.js",
     "preview": "node build/serve.js",
     "test": "node --test \"test/*.test.mjs\"",
-    "test:rules": "firebase emulators:exec --only firestore \"npm --prefix test/rules test\"",
-    "eval": "node eval/run-eval.mjs"
+    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore,storage \"npm --prefix test/rules test\"",
+    "eval": "node eval/run-eval.mjs",
+    "validate:web-env": "node scripts/validate-web-env.mjs",
+    "build:web": "npm run validate:web-env && node scripts/build-web.mjs",
+    "deploy:web": "npm run build:web && firebase deploy --project office-fc --only hosting",
+    "deploy:backend": "npm run validate:web-env && firebase deploy --project office-fc --only firestore,storage,functions",
+    "deploy:mvp": "npm run build:web && firebase deploy --project office-fc --only firestore,storage,functions,hosting"
   },
   "devDependencies": {
     "@babel/standalone": "7.29.0"

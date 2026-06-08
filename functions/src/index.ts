@@ -108,7 +108,7 @@ async function ensureLeagueData(): Promise<{ seasonId: string }> {
  * - Allowlisted admin → seed league + admin membership, no code needed.
  * - Otherwise → validate & atomically consume the invite code.
  */
-export const redeemInvite = onCall(async (req) => {
+export const redeemInvite = onCall({ cors: true }, async (req) => {
   const { uid, email } = requireAuth(req);
 
   const existing = await memberRef(uid).get();
@@ -159,7 +159,7 @@ function randomCode(): string {
 }
 
 /** Admin-only: mint a shareable invite code. */
-export const createInvite = onCall(async (req) => {
+export const createInvite = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -183,7 +183,7 @@ export const createInvite = onCall(async (req) => {
 });
 
 /** Admin-only idempotent seed for local/dev environments and fresh deployments. */
-export const ensureLeagueSetup = onCall(async (req) => {
+export const ensureLeagueSetup = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
   const { seasonId } = await ensureLeagueData();
@@ -336,7 +336,7 @@ async function recalcLeagueStats(): Promise<void> {
 }
 
 /** Admin-only migration/backfill for the read models introduced in M2/M3. */
-export const rebuildLeagueReadModels = onCall(async (req) => {
+export const rebuildLeagueReadModels = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
   const confirmed = await db.collection("matches").where("status", "==", "confirmed").get();
@@ -349,7 +349,7 @@ export const rebuildLeagueReadModels = onCall(async (req) => {
 });
 
 /** Only the named opponent can confirm a pending match. */
-export const confirmMatch = onCall(async (req) => {
+export const confirmMatch = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   const matchId = String(req.data?.matchId ?? "").trim();
   if (!matchId) throw new HttpsError("invalid-argument", "A match id is required.");
@@ -391,7 +391,7 @@ export const confirmMatch = onCall(async (req) => {
 });
 
 /** The named opponent may dispute a pending match; disputed matches never affect ELO. */
-export const disputeMatch = onCall(async (req) => {
+export const disputeMatch = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   const matchId = String(req.data?.matchId ?? "").trim();
   const reason = String(req.data?.reason ?? "").trim().slice(0, 240);
@@ -440,7 +440,7 @@ export const notifyMatchSubmitted = onDocumentCreated("matches/{matchId}", async
 });
 
 /** Delete a match photo from storage and clear the reference. Owner only. */
-export const deleteMatchPhoto = onCall(async (req) => {
+export const deleteMatchPhoto = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   const matchId = String(req.data?.matchId ?? "").trim();
   if (!matchId) throw new HttpsError("invalid-argument", "matchId is required.");
@@ -465,6 +465,7 @@ export const deleteMatchPhoto = onCall(async (req) => {
 
 // --- M4B — AI extraction ---
 export { extractMatchStats } from "./extract/extractMatchStats";
+export { abandonMatchDraft } from "./extract/abandonMatchDraft";
 export { getMatchPhotoUrl } from "./extract/getMatchPhotoUrl";
 export { submitAiAssistedMatch } from "./extract/submitAiAssistedMatch";
 
@@ -479,4 +480,5 @@ export {
 } from "./seasonAdmin";
 
 // --- M5 — Scheduled jobs ---
-export { weeklySnapshot, sendReminders } from "./scheduled";
+export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./scheduled";
+

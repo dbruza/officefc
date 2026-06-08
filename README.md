@@ -95,3 +95,6 @@ The production app lives in **`mobile/`** (see `mobile/README.md`). M0–M3 now 
 auth/membership, confirmed-match loop, standings, profiles, head-to-head, match detail, and seasons;
 M4 adds AI-assisted photo logging, followed by season administration and release work. The app
 runs on web, iOS, and Android.
+
+For the invite-only web MVP deployment at `officefc.bruza.tech`, see
+[`docs/web-mvp-launch.md`](docs/web-mvp-launch.md).
