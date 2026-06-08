@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — minimal Anthropic Messages client for vision + forced tool use.
    Uses global fetch (available in Node >= 18). No SDK dependency, so the
    exact same module runs in the Cloud Function and in the Node eval harness. */

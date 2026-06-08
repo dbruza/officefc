@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — extraction tool schema.
    Runtime-agnostic (plain ESM): imported by the Cloud Function AND by the
    Node test/eval harness. Defines the single tool Claude must call so it returns

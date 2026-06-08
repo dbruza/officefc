@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — validation & normalization of the raw model output.
    This is the trust layer: it turns whatever the model returned into a normalized,
    human-reviewable suggestion and decides when a human MUST review before submit.

@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — extraction prompt. Rules that keep the model honest:
    read-don't-guess, null-when-unsure, left=home / right=away. */
 

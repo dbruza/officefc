@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — extraction orchestrator: image bytes -> normalized suggestion.
    `caller` is injectable so tests/eval can run the full pipeline offline with a
    deterministic mock, while the Edge Function injects the real Anthropic call. */
