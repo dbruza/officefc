@@ -14,7 +14,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
+import { LEAGUE_ID, isAllowlistedAdmin, randomCode } from "./config";
 import { calculateSeason, type SeasonMatchInput } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
 import { sendPush } from "./notify";
@@ -27,7 +27,6 @@ type Role = "admin" | "member";
 
 const memberRef = (uid: string) => db.doc(`leagues/${LEAGUE_ID}/members/${uid}`);
 const leagueRef = () => db.doc(`leagues/${LEAGUE_ID}`);
-const inviteRef = (code: string) => db.doc(`invites/${code}`);
 const seasonRef = (seasonId: string) => db.doc(`seasons/${seasonId}`);
 
 const DEFAULT_SEASON = {
@@ -80,14 +79,22 @@ async function ensureLeagueData(): Promise<{ seasonId: string }> {
   let activeSeasonId = active.docs[0]?.id;
   if (!activeSeasonId) {
     activeSeasonId = DEFAULT_SEASON.id;
+    const joinCode = await generateUniqueJoinCode();
     await seasonRef(activeSeasonId).set({
       name: DEFAULT_SEASON.name,
       year: DEFAULT_SEASON.year,
       start: DEFAULT_SEASON.start,
       end: DEFAULT_SEASON.end,
       active: true,
+      joinCode,
       createdAt: FieldValue.serverTimestamp(),
     });
+  } else {
+    const seasonSnap = await seasonRef(activeSeasonId).get();
+    if (!seasonSnap.get("joinCode")) {
+      const joinCode = await generateUniqueJoinCode();
+      await seasonRef(activeSeasonId).update({ joinCode });
+    }
   }
 
   const batch = db.batch();
@@ -102,11 +109,20 @@ async function ensureLeagueData(): Promise<{ seasonId: string }> {
   return { seasonId: activeSeasonId };
 }
 
+async function generateUniqueJoinCode(): Promise<string> {
+  for (let i = 0; i < 10; i++) {
+    const code = randomCode();
+    const existing = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
+    if (existing.empty) return code;
+  }
+  throw new Error("Failed to generate a unique join code after 10 attempts.");
+}
+
 /**
  * Join the league.
  * - Already a member → idempotent no-op (returns existing role).
  * - Allowlisted admin → seed league + admin membership, no code needed.
- * - Otherwise → validate & atomically consume the invite code.
+ * - Otherwise → validate the season join code (multi-use, permanent membership).
  */
 export const redeemInvite = onCall({ cors: true }, async (req) => {
   const { uid, email } = requireAuth(req);
@@ -127,59 +143,63 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
   }
 
   const code = String(req.data?.code ?? "").trim().toUpperCase();
-  if (!code) throw new HttpsError("failed-precondition", "An invite code is required.");
+  if (!code) throw new HttpsError("failed-precondition", "A season join code is required.");
 
-  const role = await db.runTransaction(async (tx) => {
-    const inv = await tx.get(inviteRef(code));
-    if (!inv.exists) throw new HttpsError("not-found", "Invite code not found.");
-    if (inv.get("usedBy")) throw new HttpsError("failed-precondition", "That code was already used.");
-    const expiresAt = inv.get("expiresAt") as Timestamp | undefined;
-    if (expiresAt && expiresAt.toMillis() < Date.now()) {
-      throw new HttpsError("failed-precondition", "That code has expired.");
-    }
-    const grantedRole = (inv.get("role") as Role) ?? "member";
-    tx.set(memberRef(uid), {
-      role: grantedRole,
-      joinedAt: FieldValue.serverTimestamp(),
-      invitedBy: inv.get("createdBy") ?? null,
-      viaCode: code,
-    });
-    tx.update(inviteRef(code), { usedBy: uid, usedAt: FieldValue.serverTimestamp() });
-    return grantedRole;
+  const seasonSnaps = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
+  if (seasonSnaps.empty) throw new HttpsError("not-found", "Join code not found.");
+  const seasonDoc = seasonSnaps.docs[0];
+  if (!seasonDoc.get("active")) throw new HttpsError("failed-precondition", "That season is no longer active.");
+  if (seasonDoc.get("finalized")) throw new HttpsError("failed-precondition", "That season has been finalized.");
+
+  await memberRef(uid).set({
+    role: "member" as Role,
+    joinedAt: FieldValue.serverTimestamp(),
+    viaSeason: seasonDoc.id,
+    viaCode: code,
   });
 
-  return { ok: true, role };
+  return { ok: true, role: "member" as Role };
 });
 
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I
-function randomCode(): string {
-  let s = "";
-  for (let i = 0; i < 5; i++) s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
-  return `OFC-${s}`;
-}
-
-/** Admin-only: mint a shareable invite code. */
-export const createInvite = onCall({ cors: true }, async (req) => {
+/** Admin-only: get (or generate) the join code for a season. */
+export const getSeasonJoinCode = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
-  const role: Role = req.data?.role === "admin" ? "admin" : "member";
-  const ttlDays = Math.min(Math.max(Number(req.data?.ttlDays) || 14, 1), 90);
-  const expiresMillis = Date.now() + ttlDays * 86_400_000;
+  let seasonId = String(req.data?.seasonId ?? "").trim();
+  if (!seasonId) {
+    const active = await db.collection("seasons").where("active", "==", true).limit(1).get();
+    if (active.empty) throw new HttpsError("not-found", "No active season found.");
+    seasonId = active.docs[0].id;
+  }
 
-  // Find an unused code (collisions are astronomically unlikely, but be safe).
-  let code = randomCode();
-  for (let i = 0; i < 5 && (await inviteRef(code).get()).exists; i++) code = randomCode();
+  const ref = seasonRef(seasonId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
 
-  await inviteRef(code).set({
-    role,
-    createdBy: uid,
-    createdAt: FieldValue.serverTimestamp(),
-    expiresAt: Timestamp.fromMillis(expiresMillis),
-    usedBy: null,
-  });
+  let code = snap.get("joinCode") as string | undefined;
+  if (!code) {
+    code = await generateUniqueJoinCode();
+    await ref.update({ joinCode: code });
+  }
+  return { seasonId, code };
+});
 
-  return { code, role, expiresAt: expiresMillis };
+/** Admin-only: rotate the join code for a season (old code stops working immediately). */
+export const rotateSeasonJoinCode = onCall({ cors: true }, async (req) => {
+  const { uid } = requireAuth(req);
+  await assertAdmin(uid);
+
+  const seasonId = String(req.data?.seasonId ?? "").trim();
+  if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
+
+  const ref = seasonRef(seasonId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
+
+  const code = await generateUniqueJoinCode();
+  await ref.update({ joinCode: code });
+  return { seasonId, code };
 });
 
 /** Admin-only idempotent seed for local/dev environments and fresh deployments. */
@@ -221,6 +241,10 @@ async function recalcSeasonElo(seasonId: string): Promise<void> {
       bId: String(data.bId),
       aGoals: Number(data.aGoals),
       bGoals: Number(data.bGoals),
+      aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
+      bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
+      aPossession: data.aPossession != null ? Number(data.aPossession) : null,
+      bPossession: data.bPossession != null ? Number(data.bPossession) : null,
       dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
     };
   });

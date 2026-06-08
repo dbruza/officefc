@@ -9,3 +9,11 @@ export const ADMIN_ALLOWLIST = ["djbruza@gmail.com"];
 export function isAllowlistedAdmin(email: string | undefined | null): boolean {
   return !!email && ADMIN_ALLOWLIST.includes(email.toLowerCase());
 }
+
+export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export function randomCode(): string {
+  let s = "";
+  for (let i = 0; i < 5; i++)
+    s += CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)];
+  return `OFC-${s}`;
+}

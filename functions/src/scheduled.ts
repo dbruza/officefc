@@ -45,7 +45,18 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
 
   const matches = matchSnaps.docs.map((snap) => {
     const data = snap.data();
-    return { id: snap.id, aId: String(data.aId), bId: String(data.bId), aGoals: Number(data.aGoals), bGoals: Number(data.bGoals), dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt) };
+    return {
+      id: snap.id,
+      aId: String(data.aId),
+      bId: String(data.bId),
+      aGoals: Number(data.aGoals),
+      bGoals: Number(data.bGoals),
+      aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
+      bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
+      aPossession: data.aPossession != null ? Number(data.aPossession) : null,
+      bPossession: data.bPossession != null ? Number(data.bPossession) : null,
+      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
+    };
   });
 
   const result = calculateSeason(matches, members.docs.map((s) => s.id), dateMillis(active.docs[0].get("start")));
