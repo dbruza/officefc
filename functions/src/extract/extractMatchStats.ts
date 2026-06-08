@@ -105,7 +105,7 @@ function isImageType(contentType: string | undefined): boolean {
 }
 
 export const extractMatchStats = onCall(
-  { secrets: [ANTHROPIC_API_KEY] },
+  { cors: true, secrets: [ANTHROPIC_API_KEY] },
   async (req) => {
     const uid = requireAuth(req);
     await assertMember(uid);

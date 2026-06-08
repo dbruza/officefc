@@ -52,7 +52,7 @@ function fieldsEdited(
   return edited;
 }
 
-export const submitAiAssistedMatch = onCall(async (req) => {
+export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
   const uid = requireAuth(req);
   await assertMember(uid);
 

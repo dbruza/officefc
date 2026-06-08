@@ -21,7 +21,7 @@ async function deleteIfPresent(storagePath: string): Promise<void> {
   if (exists) await file.delete();
 }
 
-export const abandonMatchDraft = onCall(async (req) => {
+export const abandonMatchDraft = onCall({ cors: true }, async (req) => {
   if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = req.auth.uid;
   const draftId = String(req.data?.draftId ?? "").trim();
