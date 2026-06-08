@@ -21,6 +21,7 @@ import {
 } from "@/lib/league";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
+import { firstName } from "@/lib/format";
 import type { MatchResult } from "@/types";
 
 export default function HeadToHeadRoute() {
@@ -261,10 +262,6 @@ function orientMeeting(meeting: H2HMeeting, asA: boolean) {
     delta: asA ? meeting.aDelta : meeting.bDelta,
     result: (goalsFor > goalsAgainst ? "W" : goalsFor < goalsAgainst ? "L" : "D") as MatchResult,
   };
-}
-
-function firstName(name: string): string {
-  return name.split(" ")[0];
 }
 
 const styles = StyleSheet.create({

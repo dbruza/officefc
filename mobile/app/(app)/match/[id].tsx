@@ -25,6 +25,7 @@ import {
 } from "@/lib/league";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
+import { firstName } from "@/lib/format";
 
 export default function MatchDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -312,10 +313,6 @@ function StatsRow({ label, a, b }: { label: string; a: string | number; b: strin
       </Txt>
     </View>
   );
-}
-
-function firstName(name: string): string {
-  return name.split(" ")[0];
 }
 
 function formatDate(date: Date | null): string {

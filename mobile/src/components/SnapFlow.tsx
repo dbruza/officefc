@@ -128,23 +128,21 @@ export function SnapFlow({
 
   const usesExtraction = extraction?.suggestion != null && extraction.ok;
 
+  // Pre-fill the editable stat fields from the AI extraction, mapped to my/opponent side.
   useEffect(() => {
-    if (usesExtraction && extraction?.suggestion) {
-      const s = extraction.suggestion;
-      const isHome = mySide === "home";
-      const myExtract = isHome ? s.home : s.away;
-      const oppExtract = isHome ? s.away : s.home;
-      if (myExtract.goals != null) setMyGoals(myExtract.goals);
-      else setMyGoals(0);
-      if (oppExtract.goals != null) setOpponentGoals(oppExtract.goals);
-      else setOpponentGoals(0);
-      setMyPossession(myExtract.possession);
-      setOpponentPossession(oppExtract.possession);
-      setMyShots(myExtract.shots);
-      setOpponentShots(oppExtract.shots);
-      setMyShotsOnTarget(myExtract.shots_on_target);
-      setOpponentShotsOnTarget(oppExtract.shots_on_target);
-    }
+    if (!usesExtraction || !extraction?.suggestion) return;
+    const s = extraction.suggestion;
+    const isHome = mySide === "home";
+    const myExtract = isHome ? s.home : s.away;
+    const oppExtract = isHome ? s.away : s.home;
+    setMyGoals(myExtract.goals ?? 0);
+    setOpponentGoals(oppExtract.goals ?? 0);
+    setMyPossession(myExtract.possession);
+    setOpponentPossession(oppExtract.possession);
+    setMyShots(myExtract.shots);
+    setOpponentShots(oppExtract.shots);
+    setMyShotsOnTarget(myExtract.shots_on_target);
+    setOpponentShotsOnTarget(oppExtract.shots_on_target);
   }, [mySide, extraction]);
 
   async function cleanupDraft(id = activeDraftId.current): Promise<void> {
@@ -267,6 +265,7 @@ export function SnapFlow({
     }
   }
 
+  // Maps the review flags returned by the AI extraction backend to human-readable copy.
   function flagLabel(field: string): string {
     const map: Record<string, string> = {
       low_confidence: "AI confidence is low — please double-check these values",
