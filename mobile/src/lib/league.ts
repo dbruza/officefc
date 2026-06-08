@@ -339,13 +339,10 @@ export function h2hPairKey(aId: string, bId: string): string {
   return [aId, bId].sort().join("__");
 }
 
-export async function getHeadToHead(aId: string, bId: string): Promise<HeadToHead | null> {
-  const snap = await getDoc(doc(db, "h2h", h2hPairKey(aId, bId)));
-  if (!snap.exists()) return null;
-  const data = snap.data();
+function mapHeadToHead(id: string, data: Record<string, unknown>): HeadToHead {
   const meetings = Array.isArray(data.meetings) ? data.meetings : [];
   return {
-    pairKey: snap.id,
+    pairKey: id,
     aId: String(data.aId),
     bId: String(data.bId),
     aWins: Number(data.aWins),
@@ -365,35 +362,17 @@ export async function getHeadToHead(aId: string, bId: string): Promise<HeadToHea
   };
 }
 
+export async function getHeadToHead(aId: string, bId: string): Promise<HeadToHead | null> {
+  const snap = await getDoc(doc(db, "h2h", h2hPairKey(aId, bId)));
+  if (!snap.exists()) return null;
+  return mapHeadToHead(snap.id, snap.data());
+}
+
 export async function getHeadToHeadsForPlayer(uid: string): Promise<HeadToHead[]> {
   const snap = await getDocs(collection(db, "h2h"));
-  return Promise.all(
-    snap.docs
-      .filter((h2hDoc) => h2hDoc.get("aId") === uid || h2hDoc.get("bId") === uid)
-      .map(async (h2hDoc) => {
-        const data = h2hDoc.data();
-        const meetings = Array.isArray(data.meetings) ? data.meetings : [];
-        return {
-          pairKey: h2hDoc.id,
-          aId: String(data.aId),
-          bId: String(data.bId),
-          aWins: Number(data.aWins),
-          bWins: Number(data.bWins),
-          draws: Number(data.draws),
-          aGoals: Number(data.aGoals),
-          bGoals: Number(data.bGoals),
-          meetings: meetings.map((meeting) => ({
-            matchId: String(meeting.matchId),
-            seasonId: String(meeting.seasonId),
-            date: asNullableDate(meeting.date),
-            aGoals: Number(meeting.aGoals),
-            bGoals: Number(meeting.bGoals),
-            aDelta: Number(meeting.aDelta ?? 0),
-            bDelta: Number(meeting.bDelta ?? 0),
-          })),
-        };
-      }),
-  );
+  return snap.docs
+    .filter((h2hDoc) => h2hDoc.get("aId") === uid || h2hDoc.get("bId") === uid)
+    .map((h2hDoc) => mapHeadToHead(h2hDoc.id, h2hDoc.data()));
 }
 
 export async function getMatch(matchId: string): Promise<LeagueMatch | null> {
@@ -419,31 +398,39 @@ export async function getSeasonPotm(seasonId: string): Promise<PotmResult[]> {
     .sort((a, b) => a.month.localeCompare(b.month));
 }
 
+function mapPendingMatch(id: string, data: Record<string, unknown>): PendingMatch {
+  return {
+    id,
+    seasonId: String(data.seasonId),
+    submittedBy: String(data.submittedBy),
+    aId: String(data.aId),
+    bId: String(data.bId),
+    aTeamId: String(data.aTeamId),
+    bTeamId: String(data.bTeamId),
+    aTeam: String(data.aTeam),
+    bTeam: String(data.bTeam),
+    aGoals: Number(data.aGoals),
+    bGoals: Number(data.bGoals),
+    status: "pending_confirmation" as const,
+    date: data.date instanceof Timestamp ? data.date.toDate() : null,
+  };
+}
+
+/** Pending matches the user must act on — their match, not their own submission — newest first. */
+function pendingForUser(matches: PendingMatch[], uid: string): PendingMatch[] {
+  return matches
+    .filter((match) => (match.aId === uid || match.bId === uid) && match.submittedBy !== uid)
+    .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+}
+
 export async function getPendingConfirmations(uid: string): Promise<PendingMatch[]> {
   const snap = await getDocs(
     query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
   );
-  return snap.docs
-    .map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        seasonId: String(data.seasonId),
-        submittedBy: String(data.submittedBy),
-        aId: String(data.aId),
-        bId: String(data.bId),
-        aTeamId: String(data.aTeamId),
-        bTeamId: String(data.bTeamId),
-        aTeam: String(data.aTeam),
-        bTeam: String(data.bTeam),
-        aGoals: Number(data.aGoals),
-        bGoals: Number(data.bGoals),
-        status: "pending_confirmation" as const,
-        date: data.date instanceof Timestamp ? data.date.toDate() : null,
-      };
-    })
-    .filter((match) => (match.aId === uid || match.bId === uid) && match.submittedBy !== uid)
-    .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+  return pendingForUser(
+    snap.docs.map((doc) => mapPendingMatch(doc.id, doc.data())),
+    uid,
+  );
 }
 
 export function subscribePendingConfirmations(
@@ -454,27 +441,10 @@ export function subscribePendingConfirmations(
   return onSnapshot(
     query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
     (snapshot) => {
-      const matches = snapshot.docs
-        .map((matchDoc) => {
-          const data = matchDoc.data();
-          return {
-            id: matchDoc.id,
-            seasonId: String(data.seasonId),
-            submittedBy: String(data.submittedBy),
-            aId: String(data.aId),
-            bId: String(data.bId),
-            aTeamId: String(data.aTeamId),
-            bTeamId: String(data.bTeamId),
-            aTeam: String(data.aTeam),
-            bTeam: String(data.bTeam),
-            aGoals: Number(data.aGoals),
-            bGoals: Number(data.bGoals),
-            status: "pending_confirmation" as const,
-            date: data.date instanceof Timestamp ? data.date.toDate() : null,
-          };
-        })
-        .filter((match) => (match.aId === uid || match.bId === uid) && match.submittedBy !== uid)
-        .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+      const matches = pendingForUser(
+        snapshot.docs.map((matchDoc) => mapPendingMatch(matchDoc.id, matchDoc.data())),
+        uid,
+      );
       onMatches(matches);
     },
     (error) => onError?.(error),
@@ -544,15 +514,24 @@ export async function rebuildLeagueReadModels(): Promise<{
   return result.data;
 }
 
+// Mirrors functions/src/elo.ts — the server is the source of truth for ratings.
+const ELO_K = 32;
+const ELO_SCALE = 400;
+
+/**
+ * Approximate the ELO delta for a result, for live UI preview only. This uses a plain
+ * win/draw/loss score; the committed rating comes from the server's stats-aware
+ * performanceScore (goals + shots-on-target + possession), so the preview can differ slightly.
+ */
 export function previewElo(
   myElo: number,
   opponentElo: number,
   myGoals: number,
   opponentGoals: number,
 ) {
-  const expected = 1 / (1 + Math.pow(10, (opponentElo - myElo) / 400));
+  const expected = 1 / (1 + Math.pow(10, (opponentElo - myElo) / ELO_SCALE));
   const score = myGoals > opponentGoals ? 1 : myGoals < opponentGoals ? 0 : 0.5;
-  return Math.round(32 * (score - expected));
+  return Math.round(ELO_K * (score - expected));
 }
 
 // --- M4 / AI-assisted match logging ---
