@@ -14,6 +14,9 @@ export { redeemInvite, ensureLeagueSetup } from "./membership";
 // Season join codes
 export { getSeasonJoinCode, rotateSeasonJoinCode } from "./joinCodes";
 
+// Team catalogue sync
+export { seedTeams } from "./teams";
+
 // Match lifecycle
 export {
   confirmMatch,

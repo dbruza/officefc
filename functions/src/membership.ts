@@ -3,6 +3,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
 import { requireAuth, assertAdmin } from "./auth";
 import { generateUniqueJoinCode } from "./utils";
+import { seedTeamCatalogue } from "./teams";
 
 type Role = "admin" | "member";
 
@@ -14,27 +15,8 @@ const DEFAULT_SEASON = {
   end: Timestamp.fromDate(new Date("2026-06-30T23:59:59.999Z")),
 };
 
-const DEFAULT_TEAMS = [
-  ["crimson-albion", "Crimson Albion"],
-  ["northgate-united", "Northgate United"],
-  ["royal-vega", "Royal Vega"],
-  ["azzurri-select", "Azzurri Select"],
-  ["bavaria-xi", "Bavaria XI"],
-  ["la-costa-cf", "La Costa CF"],
-  ["harbour-city", "Harbour City"],
-  ["verde-nacional", "Verde Nacional"],
-  ["iron-foundry", "Iron Foundry"],
-  ["capital-athletic", "Capital Athletic"],
-  ["sierra-rovers", "Sierra Rovers"],
-  ["black-forest-sv", "Black Forest SV"],
-  ["oranje-stars", "Oranje Stars"],
-  ["maple-wanderers", "Maple Wanderers"],
-  ["delta-galacticos", "Delta Galacticos"],
-  ["phoenix-borough", "Phoenix Borough"],
-] as const;
-
-/** Ensure the singleton league, one active season, and the default team catalogue exist. */
-async function ensureLeagueData(): Promise<{ seasonId: string }> {
+/** Ensure the singleton league, one active season, and the team catalogue exist. */
+async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number }> {
   const db = getFirestore();
   await db
     .doc(`leagues/${LEAGUE_ID}`)
@@ -62,16 +44,8 @@ async function ensureLeagueData(): Promise<{ seasonId: string }> {
     }
   }
 
-  const batch = db.batch();
-  for (const [id, name] of DEFAULT_TEAMS) {
-    batch.set(
-      db.doc(`teams/${id}`),
-      { name, active: true, updatedAt: FieldValue.serverTimestamp() },
-      { merge: true },
-    );
-  }
-  await batch.commit();
-  return { seasonId: activeSeasonId };
+  const { seeded } = await seedTeamCatalogue();
+  return { seasonId: activeSeasonId, teamCount: seeded };
 }
 
 /**
@@ -127,6 +101,6 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
 export const ensureLeagueSetup = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
-  const { seasonId } = await ensureLeagueData();
-  return { ok: true, seasonId, teamCount: DEFAULT_TEAMS.length };
+  const { seasonId, teamCount } = await ensureLeagueData();
+  return { ok: true, seasonId, teamCount };
 });

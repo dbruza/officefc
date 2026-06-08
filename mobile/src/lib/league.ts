@@ -502,6 +502,15 @@ export async function ensureLeagueSetup(): Promise<void> {
   await callable({});
 }
 
+export async function seedTeams(): Promise<{ seeded: number; removed: number }> {
+  const callable = httpsCallable<
+    Record<string, never>,
+    { ok: boolean; seeded: number; removed: number }
+  >(functions, "seedTeams");
+  const result = await callable({});
+  return result.data;
+}
+
 export async function rebuildLeagueReadModels(): Promise<{
   seasonCount: number;
   matchCount: number;

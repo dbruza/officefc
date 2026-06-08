@@ -18,6 +18,7 @@ import {
   activateSeason,
   finalizeSeason,
   manageTeam,
+  seedTeams,
   resolveMatch,
   listSeasons,
   getTeams,
@@ -268,6 +269,32 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
   const [newTeamName, setNewTeamName] = useState("");
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameName, setRenameName] = useState("");
+  const [syncing, setSyncing] = useState(false);
+
+  function confirmSync() {
+    Alert.alert(
+      "Sync team catalogue",
+      "Import every catalogue team and remove legacy placeholder teams?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sync",
+          onPress: async () => {
+            setSyncing(true);
+            try {
+              const { seeded, removed } = await seedTeams();
+              Alert.alert("Catalogue synced", `${seeded} teams synced · ${removed} removed.`);
+              onReload();
+            } catch (e: any) {
+              Alert.alert("Error", e.message);
+            } finally {
+              setSyncing(false);
+            }
+          },
+        },
+      ],
+    );
+  }
 
   async function doAdd() {
     if (!newTeamName) return;
@@ -335,11 +362,22 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
           size="md"
           icon="plus"
           onPress={() => setAdding(true)}
-          style={{ marginBottom: spacing.lg }}
+          style={{ marginBottom: spacing.sm }}
         >
           Add Team
         </Button>
       )}
+
+      <Button
+        size="md"
+        variant="dark"
+        icon="bolt"
+        onPress={confirmSync}
+        disabled={syncing}
+        style={{ marginBottom: spacing.lg }}
+      >
+        {syncing ? "Syncing…" : "Sync team catalogue"}
+      </Button>
 
       <FlatList
         data={teams}
