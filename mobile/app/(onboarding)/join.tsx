@@ -16,7 +16,7 @@ export default function Join() {
 
   async function submit() {
     setError(null);
-    if (!admin && code.trim().length === 0) return setError("Enter your invite code.");
+    if (!admin && code.trim().length === 0) return setError("Enter your join code.");
     setBusy(true);
     try {
       await redeemInvite(code);
@@ -33,7 +33,7 @@ export default function Join() {
       subtitle={
         admin
           ? "You're on the admin allowlist — we'll set you up to run the league."
-          : "Enter the invite code an admin shared with you."
+          : "Enter your league's join code — ask an admin to share it."
       }
       footer={
         <View style={{ alignItems: "center" }}>
@@ -50,12 +50,12 @@ export default function Join() {
           </Txt>
           <Txt size={13} color={colors.textDim} style={{ marginTop: 4, lineHeight: 19 }}>
             Tap below to create the league and join as an admin — no code needed. You can then
-            generate invite codes for everyone else.
+            share a season join code with everyone else.
           </Txt>
         </Card>
       ) : (
         <TextField
-          label="Invite code"
+          label="Join code"
           value={code}
           onChangeText={(t) => setCode(t.toUpperCase().replace(/\s/g, ""))}
           placeholder="e.g. OFC-7F3K9"

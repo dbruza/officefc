@@ -13,7 +13,7 @@ import {
   Txt,
 } from "@/components";
 import { useAuth } from "@/lib/auth";
-import { createInvite } from "@/lib/membership";
+import { getSeasonJoinCode, rotateSeasonJoinCode } from "@/lib/membership";
 import { authErrorMessage } from "@/lib/authErrors";
 import {
   ensureLeagueSetup,
@@ -336,19 +336,41 @@ function Record({ value, label, color }: { value: number; label: string; color: 
 
 function AdminInvite() {
   const [code, setCode] = useState<string | null>(null);
+  const [seasonId, setSeasonId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [rotating, setRotating] = useState(false);
 
-  async function generate() {
+  const loadCode = useCallback(async () => {
     setError(null);
-    setBusy(true);
+    setLoading(true);
     try {
-      const res = await createInvite("member", 14);
+      const res = await getSeasonJoinCode();
       setCode(res.code);
+      setSeasonId(res.seasonId);
     } catch (e) {
       setError(authErrorMessage(e));
     } finally {
-      setBusy(false);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCode();
+  }, [loadCode]);
+
+  async function rotate() {
+    if (!seasonId) return;
+    setError(null);
+    setRotating(true);
+    try {
+      const res = await rotateSeasonJoinCode(seasonId);
+      setCode(res.code);
+      setSeasonId(res.seasonId);
+    } catch (e) {
+      setError(authErrorMessage(e));
+    } finally {
+      setRotating(false);
     }
   }
 
@@ -357,15 +379,18 @@ function AdminInvite() {
       <SectionLabel>Invite the office</SectionLabel>
       <Card padded>
         <Txt size={13.5} color={colors.textDim} style={{ lineHeight: 20 }}>
-          Generate a one-use code for another player.
+          Share this season's join code. Anyone in the office can use it to join — it stays the
+          same until you rotate it.
         </Txt>
-        {code ? (
+        {loading ? (
+          <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.md }} />
+        ) : code ? (
           <View style={styles.codeBox}>
             <Txt variant="monoBold" size={22} color={colors.accent} style={{ letterSpacing: 2 }}>
               {code}
             </Txt>
             <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 4 }}>
-              Valid for 14 days · one use
+              Shared code · works for everyone
             </Txt>
           </View>
         ) : null}
@@ -374,8 +399,15 @@ function AdminInvite() {
             {error}
           </Txt>
         ) : null}
-        <Button full icon="plus" style={{ marginTop: spacing.md }} onPress={generate}>
-          {busy ? "Generating…" : code ? "Generate another" : "Generate invite code"}
+        <Button
+          full
+          icon="bolt"
+          variant="dark"
+          style={{ marginTop: spacing.md }}
+          onPress={rotate}
+          disabled={loading || rotating || !seasonId}
+        >
+          {rotating ? "Rotating…" : "Rotate code"}
         </Button>
       </Card>
     </View>

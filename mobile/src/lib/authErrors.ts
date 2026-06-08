@@ -9,10 +9,10 @@ const MESSAGES: Record<string, string> = {
   "auth/wrong-password": "Email or password is incorrect.",
   "auth/too-many-requests": "Too many attempts. Wait a moment and try again.",
   "auth/network-request-failed": "Network error. Check your connection and retry.",
-  // Callable function errors (redeemInvite/createInvite)
+  // Callable function errors (redeemInvite / season join codes)
   "functions/permission-denied": "You're not allowed to do that.",
-  "functions/not-found": "That invite code wasn't found.",
-  "functions/failed-precondition": "That invite code is expired or already used.",
+  "functions/not-found": "That join code wasn't found.",
+  "functions/failed-precondition": "That season is no longer accepting new players.",
   "functions/unauthenticated": "Please sign in again.",
 };
 
