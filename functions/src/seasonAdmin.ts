@@ -1,12 +1,21 @@
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { LEAGUE_ID } from "./config";
-import { calculateSeason, expectedScore, type SeasonMatchInput, type Standing, BASE_ELO, ELO_K } from "./elo";
+import { LEAGUE_ID, randomCode } from "./config";
+import { calculateSeason, expectedScore, performanceScore, type SeasonMatchInput, type Standing, BASE_ELO, ELO_K } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
 import { sendPush } from "./notify";
 
 const db = getFirestore();
 const POTM_MIN_GAMES = 3;
+
+async function generateUniqueJoinCode(): Promise<string> {
+  for (let i = 0; i < 10; i++) {
+    const code = randomCode();
+    const existing = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
+    if (existing.empty) return code;
+  }
+  throw new Error("Failed to generate a unique join code after 10 attempts.");
+}
 
 function requireAuth(req: CallableRequest): { uid: string; email?: string } {
   if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
@@ -41,7 +50,18 @@ async function recalcSeasonElo(seasonId: string): Promise<void> {
 
   const matches: SeasonMatchInput[] = matchSnaps.docs.map((snap) => {
     const data = snap.data();
-    return { id: snap.id, aId: String(data.aId), bId: String(data.bId), aGoals: Number(data.aGoals), bGoals: Number(data.bGoals), dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt) };
+    return {
+      id: snap.id,
+      aId: String(data.aId),
+      bId: String(data.bId),
+      aGoals: Number(data.aGoals),
+      bGoals: Number(data.bGoals),
+      aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
+      bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
+      aPossession: data.aPossession != null ? Number(data.aPossession) : null,
+      bPossession: data.bPossession != null ? Number(data.bPossession) : null,
+      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
+    };
   });
   const startMillis = dateMillis(season.get("start"));
   const result = calculateSeason(matches, members.docs.map((s) => s.id), startMillis);
@@ -111,10 +131,9 @@ function computePOTM(matches: SeasonMatchInput[]): Array<{ month: string; player
     ratings.set(m.bId, ratings.get(m.bId) ?? BASE_ELO);
     const aBefore = ratings.get(m.aId)!;
     const bBefore = ratings.get(m.bId)!;
-    const aScore = m.aGoals > m.bGoals ? 1 : m.aGoals < m.bGoals ? 0 : 0.5;
-    const bScore = 1 - aScore;
-    const aDelta = Math.round(ELO_K * (aScore - expectedScore(aBefore, bBefore)));
-    const bDelta = Math.round(ELO_K * (bScore - expectedScore(bBefore, aBefore)));
+    const perfA = performanceScore(m);
+    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aBefore, bBefore)));
+    const bDelta = Math.round(ELO_K * ((1 - perfA) - expectedScore(bBefore, aBefore)));
     const aAfter = aBefore + aDelta;
     const bAfter = bBefore + bDelta;
     ratings.set(m.aId, aAfter);
@@ -171,7 +190,18 @@ export const finalizeSeason = onCall({ cors: true }, async (req) => {
 
   const matchInputs: SeasonMatchInput[] = confirmed.docs.map((doc) => {
     const d = doc.data();
-    return { id: doc.id, aId: String(d.aId), bId: String(d.bId), aGoals: Number(d.aGoals), bGoals: Number(d.bGoals), dateMillis: dateMillis(d.date ?? d.confirmedAt ?? d.createdAt) };
+    return {
+      id: doc.id,
+      aId: String(d.aId),
+      bId: String(d.bId),
+      aGoals: Number(d.aGoals),
+      bGoals: Number(d.bGoals),
+      aShotsOnTarget: d.aShotsOnTarget != null ? Number(d.aShotsOnTarget) : null,
+      bShotsOnTarget: d.bShotsOnTarget != null ? Number(d.bShotsOnTarget) : null,
+      aPossession: d.aPossession != null ? Number(d.aPossession) : null,
+      bPossession: d.bPossession != null ? Number(d.bPossession) : null,
+      dateMillis: dateMillis(d.date ?? d.confirmedAt ?? d.createdAt),
+    };
   });
 
   const standingsSnap = await db.collection(`seasons/${seasonId}/standings`).get();
@@ -209,6 +239,7 @@ export const createSeason = onCall({ cors: true }, async (req) => {
   if (startMs >= endMs) throw new HttpsError("invalid-argument", "Start must be before end.");
 
   const seasonId = `season-${Date.now()}`;
+  const joinCode = await generateUniqueJoinCode();
   await db.doc(`seasons/${seasonId}`).set({
     name,
     year: new Date(startMs).getFullYear(),
@@ -216,9 +247,10 @@ export const createSeason = onCall({ cors: true }, async (req) => {
     end: Timestamp.fromMillis(endMs),
     active: false,
     finalized: false,
+    joinCode,
     createdAt: FieldValue.serverTimestamp(),
   });
-  return { ok: true, seasonId };
+  return { ok: true, seasonId, joinCode };
 });
 
 export const activateSeason = onCall({ cors: true }, async (req) => {
@@ -233,10 +265,15 @@ export const activateSeason = onCall({ cors: true }, async (req) => {
   if (snap.get("finalized")) throw new HttpsError("failed-precondition", "Cannot activate a finalized season.");
   if (snap.get("active")) return { ok: true, seasonId };
 
+  let joinCode = snap.get("joinCode") as string | undefined;
+  if (!joinCode) {
+    joinCode = await generateUniqueJoinCode();
+  }
+
   const active = await db.collection("seasons").where("active", "==", true).get();
   const batch = db.batch();
   for (const doc of active.docs) { batch.update(doc.ref, { active: false }); }
-  batch.update(ref, { active: true, activatedAt: FieldValue.serverTimestamp() });
+  batch.update(ref, { active: true, joinCode, activatedAt: FieldValue.serverTimestamp() });
   await batch.commit();
   return { ok: true, seasonId };
 });
@@ -370,7 +407,13 @@ export const resolveMatch = onCall({ cors: true }, async (req) => {
 });
 
 export const listSeasons = onCall({ cors: true }, async (req) => {
-  requireAuth(req);
+  const { uid } = requireAuth(req);
+  const memberSnap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
+  const isAdmin = memberSnap.exists && memberSnap.get("role") === "admin";
   const snap = await db.collection("seasons").orderBy("start", "desc").get();
-  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    if (!isAdmin) delete data.joinCode;
+    return { id: doc.id, ...data };
+  });
 });

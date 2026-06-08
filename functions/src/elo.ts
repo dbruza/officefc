@@ -10,6 +10,10 @@ export interface SeasonMatchInput {
   aGoals: number;
   bGoals: number;
   dateMillis: number;
+  aShotsOnTarget?: number | null;
+  bShotsOnTarget?: number | null;
+  aPossession?: number | null;
+  bPossession?: number | null;
 }
 
 export interface CalculatedMatch extends SeasonMatchInput {
@@ -44,6 +48,36 @@ export interface SeasonCalculation {
   matches: CalculatedMatch[];
   standings: Standing[];
   history: Record<string, HistoryPoint[]>;
+}
+
+export const W_GOALS = 0.6;
+export const W_SOT = 0.25;
+export const W_POSS = 0.15;
+const GOAL_MARGIN_SCALE = 2;
+
+function goalScore(gf: number, ga: number): number {
+  const gd = gf - ga;
+  return 0.5 + 0.5 * (gd / (Math.abs(gd) + GOAL_MARGIN_SCALE));
+}
+
+function share(a: number | null | undefined, b: number | null | undefined): number | null {
+  if (a == null || b == null) return null;
+  const t = a + b;
+  return t > 0 ? a / t : null;
+}
+
+export function performanceScore(m: {
+  aGoals: number; bGoals: number;
+  aShotsOnTarget?: number | null; bShotsOnTarget?: number | null;
+  aPossession?: number | null; bPossession?: number | null;
+}): number {
+  const parts: Array<[number, number]> = [[W_GOALS, goalScore(m.aGoals, m.bGoals)]];
+  const sot = share(m.aShotsOnTarget, m.bShotsOnTarget);
+  if (sot != null) parts.push([W_SOT, sot]);
+  const poss = share(m.aPossession, m.bPossession);
+  if (poss != null) parts.push([W_POSS, poss]);
+  const wsum = parts.reduce((s, [w]) => s + w, 0);
+  return parts.reduce((s, [w, v]) => s + w * v, 0) / wsum;
 }
 
 export function expectedScore(a: number, b: number): number {
@@ -88,10 +122,9 @@ export function calculateSeason(
   const calculated = matches.map((match): CalculatedMatch => {
     const aEloBefore = ratings.get(match.aId) ?? BASE_ELO;
     const bEloBefore = ratings.get(match.bId) ?? BASE_ELO;
-    const aScore = match.aGoals > match.bGoals ? 1 : match.aGoals < match.bGoals ? 0 : 0.5;
-    const bScore = 1 - aScore;
-    const aDelta = Math.round(ELO_K * (aScore - expectedScore(aEloBefore, bEloBefore)));
-    const bDelta = Math.round(ELO_K * (bScore - expectedScore(bEloBefore, aEloBefore)));
+    const perfA = performanceScore(match);
+    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEloBefore, bEloBefore)));
+    const bDelta = Math.round(ELO_K * ((1 - perfA) - expectedScore(bEloBefore, aEloBefore)));
     const aEloAfter = aEloBefore + aDelta;
     const bEloAfter = bEloBefore + bDelta;
 
