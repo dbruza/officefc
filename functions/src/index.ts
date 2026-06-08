@@ -9,14 +9,15 @@
  *   - confirmMatch/disputeMatch: opponent-only pending-match resolution.
  *   - recalculation: deterministic season ELO + standings + history materialization.
  */
-import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { LEAGUE_ID, isAllowlistedAdmin, randomCode } from "./config";
-import { calculateSeason, type SeasonMatchInput } from "./elo";
-import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
+import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
+import { requireAuth, assertAdmin } from "./auth";
+import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
+import { generateUniqueJoinCode } from "./utils";
 import { sendPush } from "./notify";
 
 initializeApp();
@@ -55,18 +56,6 @@ const DEFAULT_TEAMS = [
   ["delta-galacticos", "Delta Galacticos"],
   ["phoenix-borough", "Phoenix Borough"],
 ] as const;
-
-function requireAuth(req: CallableRequest): { uid: string; email?: string } {
-  if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  return { uid: req.auth.uid, email: req.auth.token.email };
-}
-
-async function assertAdmin(uid: string): Promise<void> {
-  const snap = await memberRef(uid).get();
-  if (!snap.exists || snap.get("role") !== "admin") {
-    throw new HttpsError("permission-denied", "Admins only.");
-  }
-}
 
 /** Ensure the singleton league, one active season, and the default team catalogue exist. */
 async function ensureLeagueData(): Promise<{ seasonId: string }> {
@@ -107,15 +96,6 @@ async function ensureLeagueData(): Promise<{ seasonId: string }> {
   }
   await batch.commit();
   return { seasonId: activeSeasonId };
-}
-
-async function generateUniqueJoinCode(): Promise<string> {
-  for (let i = 0; i < 10; i++) {
-    const code = randomCode();
-    const existing = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
-    if (existing.empty) return code;
-  }
-  throw new Error("Failed to generate a unique join code after 10 attempts.");
 }
 
 /**
@@ -213,155 +193,6 @@ export const ensureLeagueSetup = onCall({ cors: true }, async (req) => {
   const { seasonId } = await ensureLeagueData();
   return { ok: true, seasonId, teamCount: DEFAULT_TEAMS.length };
 });
-
-function dateMillis(value: unknown): number {
-  if (value instanceof Timestamp) return value.toMillis();
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return 0;
-}
-
-async function recalcSeasonElo(seasonId: string): Promise<void> {
-  const [season, members, matchSnaps, oldStandings, oldHistory] = await Promise.all([
-    seasonRef(seasonId).get(),
-    leagueRef().collection("members").get(),
-    db
-      .collection("matches")
-      .where("seasonId", "==", seasonId)
-      .where("status", "==", "confirmed")
-      .get(),
-    seasonRef(seasonId).collection("standings").get(),
-    seasonRef(seasonId).collection("eloHistory").get(),
-  ]);
-  if (!season.exists) throw new HttpsError("not-found", "Season not found.");
-
-  const matches: SeasonMatchInput[] = matchSnaps.docs.map((snap) => {
-    const data = snap.data();
-    return {
-      id: snap.id,
-      aId: String(data.aId),
-      bId: String(data.bId),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-      aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
-      bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
-      aPossession: data.aPossession != null ? Number(data.aPossession) : null,
-      bPossession: data.bPossession != null ? Number(data.bPossession) : null,
-      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
-    };
-  });
-  const startMillis = dateMillis(season.get("start"));
-  const result = calculateSeason(
-    matches,
-    members.docs.map((snap) => snap.id),
-    startMillis,
-  );
-
-  const writer = db.bulkWriter();
-  const standingIds = new Set(result.standings.map((standing) => standing.uid));
-  const historyIds = new Set(Object.keys(result.history));
-  for (const snap of oldStandings.docs) {
-    if (!standingIds.has(snap.id)) writer.delete(snap.ref);
-  }
-  for (const snap of oldHistory.docs) {
-    if (!historyIds.has(snap.id)) writer.delete(snap.ref);
-  }
-
-  for (const match of result.matches) {
-    writer.set(
-      db.doc(`matches/${match.id}`),
-      {
-        aEloBefore: match.aEloBefore,
-        aEloAfter: match.aEloAfter,
-        aDelta: match.aDelta,
-        bEloBefore: match.bEloBefore,
-        bEloAfter: match.bEloAfter,
-        bDelta: match.bDelta,
-        recalculatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-  }
-  const oldMove = new Map<string, number>();
-  for (const snap of oldStandings.docs) {
-    const m = snap.get("move");
-    if (typeof m === "number") oldMove.set(snap.id, m);
-  }
-  for (const standing of result.standings) {
-    writer.set(seasonRef(seasonId).collection("standings").doc(standing.uid), {
-      ...standing,
-      move: oldMove.get(standing.uid) ?? standing.move,
-      recalculatedAt: FieldValue.serverTimestamp(),
-    });
-  }
-  for (const [uid, points] of Object.entries(result.history)) {
-    writer.set(seasonRef(seasonId).collection("eloHistory").doc(uid), {
-      points: points.map((point) => ({
-        matchId: point.matchId,
-        date: Timestamp.fromMillis(point.dateMillis),
-        rating: point.rating,
-      })),
-      recalculatedAt: FieldValue.serverTimestamp(),
-    });
-  }
-  await writer.close();
-}
-
-async function recalcLeagueStats(): Promise<void> {
-  const [members, matchSnaps, oldPlayerStats, oldHeadToHead] = await Promise.all([
-    leagueRef().collection("members").get(),
-    db.collection("matches").where("status", "==", "confirmed").get(),
-    db.collection("playerStats").get(),
-    db.collection("h2h").get(),
-  ]);
-  const matches: ConfirmedMatchInput[] = matchSnaps.docs.map((snap) => {
-    const data = snap.data();
-    return {
-      id: snap.id,
-      seasonId: String(data.seasonId),
-      aId: String(data.aId),
-      bId: String(data.bId),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-      aDelta: Number(data.aDelta ?? 0),
-      bDelta: Number(data.bDelta ?? 0),
-      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
-    };
-  });
-  const result = deriveLeagueStats(
-    matches,
-    members.docs.map((snap) => snap.id),
-  );
-  const writer = db.bulkWriter();
-  const playerIds = new Set(result.players.map((player) => player.uid));
-  const pairKeys = new Set(result.headToHead.map((pair) => pair.pairKey));
-
-  for (const snap of oldPlayerStats.docs) {
-    if (!playerIds.has(snap.id)) writer.delete(snap.ref);
-  }
-  for (const snap of oldHeadToHead.docs) {
-    if (!pairKeys.has(snap.id)) writer.delete(snap.ref);
-  }
-  for (const player of result.players) {
-    writer.set(db.doc(`playerStats/${player.uid}`), {
-      ...player,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-  }
-  for (const pair of result.headToHead) {
-    writer.set(db.doc(`h2h/${pair.pairKey}`), {
-      ...pair,
-      meetings: pair.meetings.map((meeting) => ({
-        ...meeting,
-        date: Timestamp.fromMillis(meeting.dateMillis),
-      })),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-  }
-  await writer.close();
-}
 
 /** Admin-only migration/backfill for the read models introduced in M2/M3. */
 export const rebuildLeagueReadModels = onCall({ cors: true }, async (req) => {

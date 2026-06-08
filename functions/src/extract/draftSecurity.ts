@@ -1,3 +1,5 @@
+import { HttpsError } from "firebase-functions/v2/https";
+
 export type DraftSecurityCode =
   | "already-exists"
   | "failed-precondition"
@@ -12,6 +14,11 @@ export class DraftSecurityError extends Error {
     super(message);
     this.name = "DraftSecurityError";
   }
+}
+
+/** Translate a draft-security failure into the callable's HttpsError wire form. */
+export function asHttpsError(error: DraftSecurityError): HttpsError {
+  return new HttpsError(error.code, error.message);
 }
 
 export interface DraftState {

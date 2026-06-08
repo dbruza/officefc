@@ -1,6 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { deriveLeagueStats, pairKeyFor } = require("../lib/stats.js");
+const {
+  deriveLeagueStats,
+  _internals: { pairKeyFor },
+} = require("../lib/stats.js");
 
 const match = (id, aId, bId, aGoals, bGoals, dateMillis, aDelta = 16, bDelta = -16) => ({
   id,

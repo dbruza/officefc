@@ -1,7 +1,9 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "../config";
+import { requireAuth, assertMember } from "../auth";
 import {
+  asHttpsError,
   assertValidDraftId,
   DraftSecurityError,
   evaluateDraftSubmission,
@@ -10,20 +12,6 @@ import {
 } from "./draftSecurity";
 
 const db = getFirestore();
-
-function requireAuth(req: { auth?: { uid: string } }): string {
-  if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  return req.auth.uid;
-}
-
-async function assertMember(uid: string): Promise<void> {
-  const snap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
-  if (!snap.exists) throw new HttpsError("permission-denied", "League members only.");
-}
-
-function asHttpsError(error: DraftSecurityError): HttpsError {
-  return new HttpsError(error.code, error.message);
-}
 
 function nullableNum(v: unknown): number | null {
   if (v === null || v === undefined) return null;
@@ -55,7 +43,7 @@ function fieldsEdited(
 }
 
 export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
-  const uid = requireAuth(req);
+  const { uid } = requireAuth(req);
   await assertMember(uid);
 
   const {

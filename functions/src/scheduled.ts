@@ -1,11 +1,12 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { LEAGUE_ID } from "./config";
 import { calculateSeason } from "./elo";
 import { sendPush } from "./notify";
 import { isStaleUnsubmittedDraft } from "./extract/draftLifecycle";
 import type { DraftState } from "./extract/draftSecurity";
+import { dateMillis } from "./utils";
 
 const db = getFirestore();
 const storage = getStorage();
@@ -17,15 +18,6 @@ function getWeekKey(ms: number): string {
   const jan1 = new Date(d.getFullYear(), 0, 1);
   const weekNum = Math.ceil(((d.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7);
   return `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
-}
-
-function dateMillis(value: unknown): number {
-  if (value instanceof Timestamp) return value.toMillis();
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return 0;
 }
 
 /**

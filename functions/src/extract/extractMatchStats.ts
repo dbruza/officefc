@@ -2,9 +2,10 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { LEAGUE_ID } from "../config";
+import { requireAuth, assertMember } from "../auth";
 import { extractMatchFromImage } from "./core/extract.mjs";
 import {
+  asHttpsError,
   assertValidDraftId,
   DraftSecurityError,
   evaluateDraftClaim,
@@ -24,16 +25,6 @@ const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_EDGE = 1568;
 
-function requireAuth(req: { auth?: { uid: string; token: { email?: string } } }): string {
-  if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  return req.auth.uid;
-}
-
-async function assertMember(uid: string): Promise<void> {
-  const snap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
-  if (!snap.exists) throw new HttpsError("permission-denied", "League members only.");
-}
-
 function validateStoragePath(uid: string, draftId: string, storagePath: string): void {
   const prefix = `match-photos/${uid}/${draftId}/`;
   if (!storagePath.startsWith(prefix)) {
@@ -42,10 +33,6 @@ function validateStoragePath(uid: string, draftId: string, storagePath: string):
       "Storage path does not belong to the authenticated user.",
     );
   }
-}
-
-function asHttpsError(error: DraftSecurityError): HttpsError {
-  return new HttpsError(error.code, error.message);
 }
 
 function responseFromDraft(draftId: string, data: DraftState & Record<string, unknown>) {
@@ -105,7 +92,7 @@ function isImageType(contentType: string | undefined): boolean {
 export const extractMatchStats = onCall(
   { cors: true, secrets: [ANTHROPIC_API_KEY] },
   async (req) => {
-    const uid = requireAuth(req);
+    const { uid } = requireAuth(req);
     await assertMember(uid);
 
     const { draftId, storagePath, force } = req.data as {

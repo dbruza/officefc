@@ -93,7 +93,8 @@ function perspective(match: ConfirmedMatchInput, uid: string): Perspective {
   };
 }
 
-export function pairKeyFor(aId: string, bId: string): string {
+/** Order-independent key for a pair of players (a__b, sorted). */
+function pairKeyFor(aId: string, bId: string): string {
   return [aId, bId].sort().join("__");
 }
 
@@ -255,3 +256,6 @@ export function deriveLeagueStats(
   }));
   return { players, headToHead };
 }
+
+/** Internal helpers exposed only for unit tests. */
+export const _internals = { pairKeyFor };
