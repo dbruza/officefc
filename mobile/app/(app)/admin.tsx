@@ -27,13 +27,16 @@ import {
   type AdminPendingMatch,
 } from "@/lib/league";
 import { colors, radius, spacing } from "@/theme";
-import { withAlpha } from "@/lib/color";
 
 type Section = "seasons" | "teams" | "pending";
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Something went wrong.";
+}
+
 export default function AdminScreen() {
   const router = useRouter();
-  const { profile, membership } = useAuth();
+  const { membership } = useAuth();
   const [section, setSection] = useState<Section>("seasons");
   const [loading, setLoading] = useState(true);
   const [seasons, setSeasons] = useState<
@@ -52,7 +55,7 @@ export default function AdminScreen() {
       setSeasons(s);
       setTeamsList(t);
       setPending(p.map((m) => ({ ...m })));
-    } catch (e) {
+    } catch {
       setError("Failed to load admin data.");
     } finally {
       setLoading(false);
@@ -76,18 +79,6 @@ export default function AdminScreen() {
         </View>
       </SafeAreaView>
     );
-  }
-
-  async function handleCreateSeason() {
-    const name = `Season ${new Date().getFullYear()}`;
-    const start = new Date().toISOString();
-    const end = new Date(Date.now() + 90 * 86400000).toISOString();
-    try {
-      await createSeason(name, start, end);
-      load();
-    } catch (e: any) {
-      setError(e.message);
-    }
   }
 
   return (
@@ -161,8 +152,8 @@ function SeasonsSection({
       setNewStart("");
       setNewEnd("");
       onReload();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
+    } catch (error: unknown) {
+      Alert.alert("Error", errorMessage(error));
     }
   }
 
@@ -285,8 +276,8 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
               const { seeded, removed } = await seedTeams();
               Alert.alert("Catalogue synced", `${seeded} teams synced · ${removed} removed.`);
               onReload();
-            } catch (e: any) {
-              Alert.alert("Error", e.message);
+            } catch (error: unknown) {
+              Alert.alert("Error", errorMessage(error));
             } finally {
               setSyncing(false);
             }
@@ -303,8 +294,8 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
       setAdding(false);
       setNewTeamName("");
       onReload();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
+    } catch (error: unknown) {
+      Alert.alert("Error", errorMessage(error));
     }
   }
 
@@ -314,8 +305,8 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
       await manageTeam("rename", teamId, renameName);
       setRenaming(null);
       onReload();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
+    } catch (error: unknown) {
+      Alert.alert("Error", errorMessage(error));
     }
   }
 
@@ -456,8 +447,8 @@ function PendingSection({
     try {
       await resolveMatch(matchId, action);
       onReload();
-    } catch (e: any) {
-      Alert.alert("Error", e.message);
+    } catch (error: unknown) {
+      Alert.alert("Error", errorMessage(error));
     }
   }
 

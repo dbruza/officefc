@@ -268,6 +268,6 @@ For each platform, record:
 - Match confirmation and final ELO values.
 - Any console, Functions, or Crash logs.
 
-Do not call M4 device-complete until real images meet the eval gate in
+Do not call AI device validation complete until real images meet the eval gate in
 `eval/README.md`: at least 20 readable images, 5 unreadable/non-stats images, and at
 least 90% exact two-sided score accuracy.

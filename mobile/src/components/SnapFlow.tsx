@@ -154,6 +154,7 @@ export function SnapFlow({
     } catch (err) {
       throw new Error(
         err instanceof Error ? err.message : "Could not remove the abandoned upload.",
+        { cause: err },
       );
     }
   }

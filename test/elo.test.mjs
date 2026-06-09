@@ -5,13 +5,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  performanceScore,
-  calculateSeason,
-  BASE_ELO,
-  ELO_K,
-  expectedScore,
-} from "../functions/lib/elo.js";
+import { performanceScore, calculateSeason } from "../functions/lib/elo.js";
 
 // ---------------------------------------------------------------------------
 // performanceScore — unit tests
