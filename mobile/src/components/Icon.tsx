@@ -82,11 +82,19 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
         <Circle cx="12" cy="13" r="3.5" {...common} />
       </G>
     ),
-    flame: <Path d="M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3 3 6a5 5 0 0 1-10 0c0-4 5-6 5-13Z" {...common} />,
+    flame: (
+      <Path
+        d="M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3 3 6a5 5 0 0 1-10 0c0-4 5-6 5-13Z"
+        {...common}
+      />
+    ),
     trophy: (
       <G {...common}>
         <Path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" {...common} />
-        <Path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 19h6M10 15.5V19M14 15.5V19" {...common} />
+        <Path
+          d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M9 19h6M10 15.5V19M14 15.5V19"
+          {...common}
+        />
       </G>
     ),
     crown: <Path d="M4 8l3 8h10l3-8-4.5 3.5L12 5 8.5 11.5 4 8Z" {...common} />,

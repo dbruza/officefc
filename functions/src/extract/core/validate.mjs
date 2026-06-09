@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — validation & normalization of the raw model output.
    This is the trust layer: it turns whatever the model returned into a normalized,
    human-reviewable suggestion and decides when a human MUST review before submit.
@@ -31,7 +32,8 @@ function normalizeSide(side, label, flags) {
   let shots = toCount(s.shots);
   let sot = toCount(s.shots_on_target);
   const possession = toPct(s.possession);
-  const team_name = typeof s.team_name === "string" && s.team_name.trim() ? s.team_name.trim() : null;
+  const team_name =
+    typeof s.team_name === "string" && s.team_name.trim() ? s.team_name.trim() : null;
 
   if (goals === null) flags.push(`${label}_goals_unreadable`);
   // shots on target cannot exceed total shots

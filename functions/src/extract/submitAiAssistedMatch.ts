@@ -1,7 +1,9 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "../config";
+import { requireAuth, assertMember } from "../auth";
 import {
+  asHttpsError,
   assertValidDraftId,
   DraftSecurityError,
   evaluateDraftSubmission,
@@ -10,20 +12,6 @@ import {
 } from "./draftSecurity";
 
 const db = getFirestore();
-
-function requireAuth(req: { auth?: { uid: string } }): string {
-  if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  return req.auth.uid;
-}
-
-async function assertMember(uid: string): Promise<void> {
-  const snap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
-  if (!snap.exists) throw new HttpsError("permission-denied", "League members only.");
-}
-
-function asHttpsError(error: DraftSecurityError): HttpsError {
-  return new HttpsError(error.code, error.message);
-}
 
 function nullableNum(v: unknown): number | null {
   if (v === null || v === undefined) return null;
@@ -40,8 +28,10 @@ function fieldsEdited(
   function check(field: string, rawHome: unknown, rawAway: unknown): void {
     const subHome = submitted[`my${field}`];
     const subAway = submitted[`opponent${field}`];
-    if (rawHome !== null && rawHome !== undefined && rawHome !== subHome) edited.push(`home_${field.toLowerCase()}`);
-    if (rawAway !== null && rawAway !== undefined && rawAway !== subAway) edited.push(`away_${field.toLowerCase()}`);
+    if (rawHome !== null && rawHome !== undefined && rawHome !== subHome)
+      edited.push(`home_${field.toLowerCase()}`);
+    if (rawAway !== null && rawAway !== undefined && rawAway !== subAway)
+      edited.push(`away_${field.toLowerCase()}`);
   }
   const home = (raw.home ?? {}) as Record<string, unknown>;
   const away = (raw.away ?? {}) as Record<string, unknown>;
@@ -53,7 +43,7 @@ function fieldsEdited(
 }
 
 export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
-  const uid = requireAuth(req);
+  const { uid } = requireAuth(req);
   await assertMember(uid);
 
   const {
@@ -87,7 +77,11 @@ export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
     throw new HttpsError("invalid-argument", "mySide must be 'home' or 'away'.");
   if (!myTeamId || !opponentTeamId)
     throw new HttpsError("invalid-argument", "Both team ids are required.");
-  if (!submittedGoalsAndStats || submittedGoalsAndStats.myGoals == null || submittedGoalsAndStats.opponentGoals == null)
+  if (
+    !submittedGoalsAndStats ||
+    submittedGoalsAndStats.myGoals == null ||
+    submittedGoalsAndStats.opponentGoals == null
+  )
     throw new HttpsError("invalid-argument", "Goals are required.");
   if (uid === opponentId) throw new HttpsError("invalid-argument", "You cannot play yourself.");
 
@@ -112,7 +106,9 @@ export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
     const memberSnap = await tx.get(opponentMemberRef);
     const myTeamSnap = await tx.get(myTeamRef);
     const opponentTeamSnap = await tx.get(opponentTeamRef);
-    const draft = draftSnap.exists ? (draftSnap.data() as DraftState & Record<string, unknown>) : null;
+    const draft = draftSnap.exists
+      ? (draftSnap.data() as DraftState & Record<string, unknown>)
+      : null;
     const match = matchSnap.exists ? (matchSnap.data() as MatchState) : null;
 
     let action;
@@ -143,8 +139,12 @@ export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
       bId: isHomeSide ? opponentId : uid,
       aTeamId: isHomeSide ? myTeamId : opponentTeamId,
       bTeamId: isHomeSide ? opponentTeamId : myTeamId,
-      aTeam: isHomeSide ? (myTeamSnap.get("name") as string) : (opponentTeamSnap.get("name") as string),
-      bTeam: isHomeSide ? (opponentTeamSnap.get("name") as string) : (myTeamSnap.get("name") as string),
+      aTeam: isHomeSide
+        ? (myTeamSnap.get("name") as string)
+        : (opponentTeamSnap.get("name") as string),
+      bTeam: isHomeSide
+        ? (opponentTeamSnap.get("name") as string)
+        : (myTeamSnap.get("name") as string),
       aGoals: isHomeSide ? myGoals : oppGoals,
       bGoals: isHomeSide ? oppGoals : myGoals,
       status: "pending_confirmation",
@@ -157,12 +157,24 @@ export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
       extractionModel: draft?.model ?? null,
       extractionEditedByHuman: editedFields.length > 0 ? editedFields : null,
       extractedAt: draft?.extractedAt ?? null,
-      aPossession: isHomeSide ? nullableNum(submittedGoalsAndStats.myPossession) : nullableNum(submittedGoalsAndStats.opponentPossession),
-      bPossession: isHomeSide ? nullableNum(submittedGoalsAndStats.opponentPossession) : nullableNum(submittedGoalsAndStats.myPossession),
-      aShots: isHomeSide ? nullableNum(submittedGoalsAndStats.myShots) : nullableNum(submittedGoalsAndStats.opponentShots),
-      bShots: isHomeSide ? nullableNum(submittedGoalsAndStats.opponentShots) : nullableNum(submittedGoalsAndStats.myShots),
-      aShotsOnTarget: isHomeSide ? nullableNum(submittedGoalsAndStats.myShotsOnTarget) : nullableNum(submittedGoalsAndStats.opponentShotsOnTarget),
-      bShotsOnTarget: isHomeSide ? nullableNum(submittedGoalsAndStats.opponentShotsOnTarget) : nullableNum(submittedGoalsAndStats.myShotsOnTarget),
+      aPossession: isHomeSide
+        ? nullableNum(submittedGoalsAndStats.myPossession)
+        : nullableNum(submittedGoalsAndStats.opponentPossession),
+      bPossession: isHomeSide
+        ? nullableNum(submittedGoalsAndStats.opponentPossession)
+        : nullableNum(submittedGoalsAndStats.myPossession),
+      aShots: isHomeSide
+        ? nullableNum(submittedGoalsAndStats.myShots)
+        : nullableNum(submittedGoalsAndStats.opponentShots),
+      bShots: isHomeSide
+        ? nullableNum(submittedGoalsAndStats.opponentShots)
+        : nullableNum(submittedGoalsAndStats.myShots),
+      aShotsOnTarget: isHomeSide
+        ? nullableNum(submittedGoalsAndStats.myShotsOnTarget)
+        : nullableNum(submittedGoalsAndStats.opponentShotsOnTarget),
+      bShotsOnTarget: isHomeSide
+        ? nullableNum(submittedGoalsAndStats.opponentShotsOnTarget)
+        : nullableNum(submittedGoalsAndStats.myShotsOnTarget),
       rawExtraction: extraction ?? null,
     };
 

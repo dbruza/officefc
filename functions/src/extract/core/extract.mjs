@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — extraction orchestrator: image bytes -> normalized suggestion.
    `caller` is injectable so tests/eval can run the full pipeline offline with a
    deterministic mock, while the Edge Function injects the real Anthropic call. */
@@ -17,12 +18,17 @@ import { DEFAULT_MODEL } from "./schema.mjs";
  * @returns normalized result from validate.normalizeExtraction
  */
 export async function extractMatchFromImage(opts) {
-  const { imageBase64, mediaType = "image/png", model = DEFAULT_MODEL, apiKey, baseUrl, caller } = opts;
+  const {
+    imageBase64,
+    mediaType = "image/png",
+    model = DEFAULT_MODEL,
+    apiKey,
+    baseUrl,
+    caller,
+  } = opts;
   const request = buildRequest({ imageBase64, mediaType, model });
 
-  const response = caller
-    ? await caller(request)
-    : await callClaude({ apiKey, baseUrl, request });
+  const response = caller ? await caller(request) : await callClaude({ apiKey, baseUrl, request });
 
   const toolInput = extractToolInput(response);
   return normalizeExtraction(toolInput);

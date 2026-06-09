@@ -11,3 +11,8 @@ export function daysUntil(iso: string, now: Date = new Date()): number {
   const end = new Date(iso + "T23:59:59").getTime();
   return Math.max(0, Math.ceil((end - now.getTime()) / 86400000));
 }
+
+/** "Alex Morgan" → "Alex". */
+export function firstName(name: string): string {
+  return name.split(" ")[0];
+}

@@ -1,28 +1,18 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { LEAGUE_ID } from "../config";
+import { requireAuth, assertMember } from "../auth";
 
 const db = getFirestore();
 const storage = getStorage();
 const SIGNED_URL_TTL_MS = 10 * 60 * 1000; // 10 minutes
-
-function requireAuth(req: { auth?: { uid: string } }): string {
-  if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  return req.auth.uid;
-}
-
-async function assertMember(uid: string): Promise<void> {
-  const snap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
-  if (!snap.exists) throw new HttpsError("permission-denied", "League members only.");
-}
 
 /**
  * Return a short-lived signed read URL for a match's private photo.
  * The client must be a league member; the photo path must be stored on the match doc.
  */
 export const getMatchPhotoUrl = onCall({ cors: true }, async (req) => {
-  const uid = requireAuth(req);
+  const { uid } = requireAuth(req);
   await assertMember(uid);
 
   const matchId = String(req.data?.matchId ?? "").trim();

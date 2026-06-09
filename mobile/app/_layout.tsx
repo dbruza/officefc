@@ -49,7 +49,14 @@ function RootNavigator() {
 
   if (!ready) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.bg,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <ActivityIndicator color={colors.accent} />
       </View>
     );

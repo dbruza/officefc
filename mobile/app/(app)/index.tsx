@@ -2,19 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import {
-  AppTabBar,
-  Avatar,
-  Button,
-  Card,
-  Icon,
-  PlayerRow,
-  SectionLabel,
-  Txt,
-} from "@/components";
+import { AppTabBar, Avatar, Button, Card, Icon, PlayerRow, SectionLabel, Txt } from "@/components";
+import { AdminInvite } from "@/components/AdminInvite";
 import { useAuth } from "@/lib/auth";
-import { createInvite } from "@/lib/membership";
-import { authErrorMessage } from "@/lib/authErrors";
 import {
   ensureLeagueSetup,
   getActiveSeason,
@@ -112,9 +102,7 @@ export default function Home() {
       }
     : null;
   const myStanding = standings.find((row) => row.uid === user?.uid);
-  const nemesis = playerStats?.nemesis
-    ? players.get(playerStats.nemesis.opponentId)
-    : null;
+  const nemesis = playerStats?.nemesis ? players.get(playerStats.nemesis.opponentId) : null;
   const daysLeft = useMemo(() => {
     if (!season) return 0;
     return Math.max(0, Math.ceil((season.end.getTime() - Date.now()) / 86_400_000));
@@ -135,13 +123,20 @@ export default function Home() {
           {me ? <Avatar player={me} size={44} ring jersey /> : null}
         </View>
 
-        {loading ? <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.x2 }} /> : null}
+        {loading ? (
+          <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.x2 }} />
+        ) : null}
 
         {!loading ? (
           <Card style={styles.hero} padded onPress={() => router.push("/(app)/profile")}>
             <View style={styles.heroTop}>
               <View>
-                <Txt variant="head" size={10.5} color={colors.textDim} style={{ letterSpacing: 1.4 }}>
+                <Txt
+                  variant="head"
+                  size={10.5}
+                  color={colors.textDim}
+                  style={{ letterSpacing: 1.4 }}
+                >
                   YOUR SEASON
                 </Txt>
                 <Txt variant="monoBold" size={40} color={colors.accent} style={{ marginTop: 4 }}>
@@ -194,10 +189,7 @@ export default function Home() {
               Log match
             </Button>
           </View>
-          <Pressable
-            onPress={() => router.push("/(app)/confirmations")}
-            style={styles.inboxButton}
-          >
+          <Pressable onPress={() => router.push("/(app)/confirmations")} style={styles.inboxButton}>
             <Icon name="check" size={20} color={pendingCount ? colors.accent : colors.textDim} />
             {pendingCount ? (
               <View style={styles.badge}>
@@ -334,54 +326,6 @@ function Record({ value, label, color }: { value: number; label: string; color: 
   );
 }
 
-function AdminInvite() {
-  const [code, setCode] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function generate() {
-    setError(null);
-    setBusy(true);
-    try {
-      const res = await createInvite("member", 14);
-      setCode(res.code);
-    } catch (e) {
-      setError(authErrorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <View style={{ marginTop: spacing.x2 }}>
-      <SectionLabel>Invite the office</SectionLabel>
-      <Card padded>
-        <Txt size={13.5} color={colors.textDim} style={{ lineHeight: 20 }}>
-          Generate a one-use code for another player.
-        </Txt>
-        {code ? (
-          <View style={styles.codeBox}>
-            <Txt variant="monoBold" size={22} color={colors.accent} style={{ letterSpacing: 2 }}>
-              {code}
-            </Txt>
-            <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 4 }}>
-              Valid for 14 days · one use
-            </Txt>
-          </View>
-        ) : null}
-        {error ? (
-          <Txt size={13} color={colors.loss} style={{ marginTop: spacing.sm }}>
-            {error}
-          </Txt>
-        ) : null}
-        <Button full icon="plus" style={{ marginTop: spacing.md }} onPress={generate}>
-          {busy ? "Generating…" : code ? "Generate another" : "Generate invite code"}
-        </Button>
-      </Card>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.x3 },
@@ -467,14 +411,5 @@ const styles = StyleSheet.create({
     borderColor: withAlpha(colors.loss, 0.2),
     borderRadius: radius.lg,
     backgroundColor: mix(colors.surface, colors.loss, 5),
-  },
-  codeBox: {
-    marginTop: spacing.md,
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: withAlpha(colors.accent, 0.3),
-    paddingVertical: spacing.lg,
-    alignItems: "center",
   },
 });

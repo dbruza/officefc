@@ -3,6 +3,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import {
   DraftSecurityError,
+  asHttpsError,
   assertValidDraftId,
   type DraftState,
 } from "./draftSecurity";
@@ -10,10 +11,6 @@ import { evaluateDraftAbandonment } from "./draftLifecycle";
 
 const db = getFirestore();
 const storage = getStorage();
-
-function asHttpsError(error: DraftSecurityError): HttpsError {
-  return new HttpsError(error.code, error.message);
-}
 
 async function deleteIfPresent(storagePath: string): Promise<void> {
   const file = storage.bucket().file(storagePath);

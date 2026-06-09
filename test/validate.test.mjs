@@ -44,27 +44,33 @@ test("low confidence forces review", () => {
 });
 
 test("possession that doesn't sum to ~100 is flagged", () => {
-  const r = normalizeExtraction(cleanRaw({
-    home: { ...cleanRaw().home, possession: 60 },
-    away: { ...cleanRaw().away, possession: 45 },
-  }));
+  const r = normalizeExtraction(
+    cleanRaw({
+      home: { ...cleanRaw().home, possession: 60 },
+      away: { ...cleanRaw().away, possession: 45 },
+    }),
+  );
   assert.ok(r.flags.includes("possession_sum_off"));
   assert.equal(r.requiresReview, true);
 });
 
 test("shots-on-target above total shots is clamped + flagged", () => {
-  const r = normalizeExtraction(cleanRaw({
-    home: { ...cleanRaw().home, shots: 5, shots_on_target: 9 },
-  }));
+  const r = normalizeExtraction(
+    cleanRaw({
+      home: { ...cleanRaw().home, shots: 5, shots_on_target: 9 },
+    }),
+  );
   assert.ok(r.flags.includes("home_sot_gt_shots"));
   assert.equal(r.suggestion.home.shots_on_target, 5);
 });
 
 test("numeric strings are coerced; possession clamps to 0–100", () => {
-  const r = normalizeExtraction(cleanRaw({
-    home: { team_name: "X", goals: "2", possession: "120", shots: "10", shots_on_target: "3" },
-    away: { team_name: "Y", goals: "2", possession: "-5", shots: "7", shots_on_target: "2" },
-  }));
+  const r = normalizeExtraction(
+    cleanRaw({
+      home: { team_name: "X", goals: "2", possession: "120", shots: "10", shots_on_target: "3" },
+      away: { team_name: "Y", goals: "2", possession: "-5", shots: "7", shots_on_target: "2" },
+    }),
+  );
   assert.equal(r.suggestion.home.goals, 2);
   assert.equal(r.suggestion.home.possession, 100);
   assert.equal(r.suggestion.away.possession, 0);

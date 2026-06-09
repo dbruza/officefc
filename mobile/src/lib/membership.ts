@@ -12,7 +12,7 @@ export interface Membership {
 
 export async function getMembership(uid: string): Promise<Membership | null> {
   const snap = await getDoc(doc(db, "leagues", LEAGUE_ID, "members", uid));
-  return snap.exists() ? ({ uid, role: snap.data().role as Role }) : null;
+  return snap.exists() ? { uid, role: snap.data().role as Role } : null;
 }
 
 export interface RedeemResult {
@@ -23,8 +23,9 @@ export interface RedeemResult {
 }
 
 /**
- * Redeem an invite code to join the league. Allowlisted admins may pass an empty code
- * (the function admits + promotes them). All validation/consumption is server-side.
+ * Redeem a season join code to join the league. Allowlisted admins may pass an empty code
+ * (the function admits + promotes them). The code is the current season's shared, multi-use
+ * code; all validation is server-side.
  */
 export async function redeemInvite(code: string): Promise<RedeemResult> {
   const callable = httpsCallable<{ code: string }, RedeemResult>(functions, "redeemInvite");
@@ -32,18 +33,27 @@ export async function redeemInvite(code: string): Promise<RedeemResult> {
   return res.data;
 }
 
-export interface CreateInviteResult {
+export interface SeasonJoinCodeResult {
+  seasonId: string;
   code: string;
-  role: Role;
-  expiresAt: number | null;
 }
 
-/** Admin-only: mint a new invite code. */
-export async function createInvite(role: Role = "member", ttlDays = 14): Promise<CreateInviteResult> {
-  const callable = httpsCallable<{ role: Role; ttlDays: number }, CreateInviteResult>(
+/** Admin-only: get (or generate) the shared join code for a season (defaults to the active one). */
+export async function getSeasonJoinCode(seasonId?: string): Promise<SeasonJoinCodeResult> {
+  const callable = httpsCallable<{ seasonId?: string }, SeasonJoinCodeResult>(
     functions,
-    "createInvite",
+    "getSeasonJoinCode",
   );
-  const res = await callable({ role, ttlDays });
+  const res = await callable(seasonId ? { seasonId } : {});
+  return res.data;
+}
+
+/** Admin-only: rotate a season's join code; the previous code stops working immediately. */
+export async function rotateSeasonJoinCode(seasonId: string): Promise<SeasonJoinCodeResult> {
+  const callable = httpsCallable<{ seasonId: string }, SeasonJoinCodeResult>(
+    functions,
+    "rotateSeasonJoinCode",
+  );
+  const res = await callable({ seasonId });
   return res.data;
 }

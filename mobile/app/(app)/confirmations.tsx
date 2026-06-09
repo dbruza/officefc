@@ -51,10 +51,8 @@ export default function Confirmations() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = subscribePendingConfirmations(
-      user.uid,
-      setMatches,
-      () => setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
+    const unsubscribe = subscribePendingConfirmations(user.uid, setMatches, () =>
+      setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
     );
     const appState = AppState.addEventListener("change", (state) => {
       if (state === "active") {
@@ -177,7 +175,11 @@ function MatchCard({
           </Txt>
           {opponentGoals}
         </Txt>
-        <Side player={opponent} label={opponent?.name.split(" ")[0] ?? "Opponent"} team={opponentTeam} />
+        <Side
+          player={opponent}
+          label={opponent?.name.split(" ")[0] ?? "Opponent"}
+          team={opponentTeam}
+        />
       </View>
       <View style={styles.actions}>
         <View style={{ flex: 1 }}>

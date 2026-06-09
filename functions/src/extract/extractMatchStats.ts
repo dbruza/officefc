@@ -2,9 +2,10 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { LEAGUE_ID } from "../config";
+import { requireAuth, assertMember } from "../auth";
 import { extractMatchFromImage } from "./core/extract.mjs";
 import {
+  asHttpsError,
   assertValidDraftId,
   DraftSecurityError,
   evaluateDraftClaim,
@@ -24,16 +25,6 @@ const MAX_FILE_SIZE = 12 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_EDGE = 1568;
 
-function requireAuth(req: { auth?: { uid: string; token: { email?: string } } }): string {
-  if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
-  return req.auth.uid;
-}
-
-async function assertMember(uid: string): Promise<void> {
-  const snap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
-  if (!snap.exists) throw new HttpsError("permission-denied", "League members only.");
-}
-
 function validateStoragePath(uid: string, draftId: string, storagePath: string): void {
   const prefix = `match-photos/${uid}/${draftId}/`;
   if (!storagePath.startsWith(prefix)) {
@@ -42,10 +33,6 @@ function validateStoragePath(uid: string, draftId: string, storagePath: string):
       "Storage path does not belong to the authenticated user.",
     );
   }
-}
-
-function asHttpsError(error: DraftSecurityError): HttpsError {
-  return new HttpsError(error.code, error.message);
 }
 
 function responseFromDraft(draftId: string, data: DraftState & Record<string, unknown>) {
@@ -67,9 +54,7 @@ async function checkRateLimit(uid: string): Promise<void> {
   const windowStart = now - RATE_LIMIT_WINDOW_MS;
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
-    const timestamps: number[] = snap.exists
-      ? (snap.get("timestamps") ?? [])
-      : [];
+    const timestamps: number[] = snap.exists ? (snap.get("timestamps") ?? []) : [];
     const recent = timestamps.filter((t: number) => t > windowStart);
     if (recent.length >= RATE_LIMIT_MAX) {
       throw new HttpsError(
@@ -107,7 +92,7 @@ function isImageType(contentType: string | undefined): boolean {
 export const extractMatchStats = onCall(
   { cors: true, secrets: [ANTHROPIC_API_KEY] },
   async (req) => {
-    const uid = requireAuth(req);
+    const { uid } = requireAuth(req);
     await assertMember(uid);
 
     const { draftId, storagePath, force } = req.data as {
@@ -182,16 +167,16 @@ export const extractMatchStats = onCall(
         throw new HttpsError("invalid-argument", "Not a supported image type.");
       }
       if (fileSize > MAX_FILE_SIZE) {
-        throw new HttpsError("invalid-argument", `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB).`);
+        throw new HttpsError(
+          "invalid-argument",
+          `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB).`,
+        );
       }
 
       await checkRateLimit(uid);
 
       const [rawBuffer] = await file.download();
-      const { buffer, contentType: processedType } = await downscaleImage(
-        rawBuffer,
-        contentType,
-      );
+      const { buffer, contentType: processedType } = await downscaleImage(rawBuffer, contentType);
       const imageBase64 = buffer.toString("base64");
       const extractionResult = await extractMatchFromImage({
         imageBase64,
@@ -211,16 +196,20 @@ export const extractMatchStats = onCall(
         ) {
           throw new HttpsError("failed-precondition", "This AI draft is no longer active.");
         }
-        tx.set(draftRef, {
-          status: "done",
-          raw: extractionResult,
-          confidence: extractionResult.confidence,
-          requiresReview: extractionResult.requiresReview,
-          flags: extractionResult.flags,
-          model: ANTHROPIC_MODEL,
-          extractedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
+        tx.set(
+          draftRef,
+          {
+            status: "done",
+            raw: extractionResult,
+            confidence: extractionResult.confidence,
+            requiresReview: extractionResult.requiresReview,
+            flags: extractionResult.flags,
+            model: ANTHROPIC_MODEL,
+            extractedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
       });
 
       return responseFromDraft(draftId, { raw: extractionResult });

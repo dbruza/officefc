@@ -1,3 +1,4 @@
+// ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
 /* OfficeFC — extraction tool schema.
    Runtime-agnostic (plain ESM): imported by the Cloud Function AND by the
    Node test/eval harness. Defines the single tool Claude must call so it returns
@@ -8,11 +9,23 @@
 const SIDE_SCHEMA = {
   type: "object",
   properties: {
-    team_name: { type: ["string", "null"], description: "Team name printed on this side, or null if unreadable." },
-    goals: { type: ["integer", "null"], description: "Goals/score for this side. null ONLY if not clearly legible — never guess." },
-    possession: { type: ["number", "null"], description: "Possession percentage for this side, 0–100, or null." },
+    team_name: {
+      type: ["string", "null"],
+      description: "Team name printed on this side, or null if unreadable.",
+    },
+    goals: {
+      type: ["integer", "null"],
+      description: "Goals/score for this side. null ONLY if not clearly legible — never guess.",
+    },
+    possession: {
+      type: ["number", "null"],
+      description: "Possession percentage for this side, 0–100, or null.",
+    },
     shots: { type: ["integer", "null"], description: "Total shots for this side, or null." },
-    shots_on_target: { type: ["integer", "null"], description: "Shots on target for this side, or null." },
+    shots_on_target: {
+      type: ["integer", "null"],
+      description: "Shots on target for this side, or null.",
+    },
   },
   required: ["team_name", "goals", "possession", "shots", "shots_on_target"],
   additionalProperties: false,

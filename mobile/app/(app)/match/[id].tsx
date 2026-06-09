@@ -25,6 +25,7 @@ import {
 } from "@/lib/league";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
+import { firstName } from "@/lib/format";
 
 export default function MatchDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -125,7 +126,9 @@ export default function MatchDetailRoute() {
                   {match.bGoals}
                 </Txt>
                 <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
-                  {match.status === "confirmed" ? "FULL TIME" : match.status.replace("_", " ").toUpperCase()}
+                  {match.status === "confirmed"
+                    ? "FULL TIME"
+                    : match.status.replace("_", " ").toUpperCase()}
                 </Txt>
               </View>
               <PlayerSide
@@ -165,12 +168,24 @@ export default function MatchDetailRoute() {
 
             {photoUrl ? (
               <View style={{ marginTop: spacing.x2 }}>
-                <SectionLabel action={
-                  <Button variant="dark" size="sm" onPress={handleDeletePhoto} disabled={deleting}>{deleting ? "Deleting…" : "Delete photo"}</Button>
-                }>Stats photo</SectionLabel>
+                <SectionLabel
+                  action={
+                    <Button
+                      variant="dark"
+                      size="sm"
+                      onPress={handleDeletePhoto}
+                      disabled={deleting}
+                    >
+                      {deleting ? "Deleting…" : "Delete photo"}
+                    </Button>
+                  }
+                >
+                  Stats photo
+                </SectionLabel>
                 <Image source={{ uri: photoUrl }} style={styles.photo} resizeMode="contain" />
                 <Txt size={10} color={colors.textDim} style={{ marginTop: 4 }}>
-                  Signed URL expires {new Date(photoExpires).toLocaleTimeString()}. Open again to refresh.
+                  Signed URL expires {new Date(photoExpires).toLocaleTimeString()}. Open again to
+                  refresh.
                 </Txt>
               </View>
             ) : null}
@@ -232,7 +247,11 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
   if (!hasStats) {
     return (
       <Card style={styles.noStats}>
-        <Icon name={match.source === "ai_assisted" ? "photo" : "edit"} size={24} color={colors.textDim} />
+        <Icon
+          name={match.source === "ai_assisted" ? "photo" : "edit"}
+          size={24}
+          color={colors.textDim}
+        />
         <View style={{ flex: 1 }}>
           <Txt variant="head" size={14}>
             {match.source === "ai_assisted" ? "Photo processed" : "Manual result"}
@@ -256,9 +275,18 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
       </View>
       {possession !== null ? (
         <View style={{ marginBottom: spacing.md }}>
-          <StatsRow label="Possession" a={`${possession}%`} b={`${b?.possession ?? 100 - possession}%`} />
+          <StatsRow
+            label="Possession"
+            a={`${possession}%`}
+            b={`${b?.possession ?? 100 - possession}%`}
+          />
           <View style={styles.possessionTrack}>
-            <View style={[styles.possessionFill, { width: `${Math.max(0, Math.min(100, possession))}%` }]} />
+            <View
+              style={[
+                styles.possessionFill,
+                { width: `${Math.max(0, Math.min(100, possession))}%` },
+              ]}
+            />
           </View>
         </View>
       ) : null}
@@ -285,10 +313,6 @@ function StatsRow({ label, a, b }: { label: string; a: string | number; b: strin
       </Txt>
     </View>
   );
-}
-
-function firstName(name: string): string {
-  return name.split(" ")[0];
 }
 
 function formatDate(date: Date | null): string {

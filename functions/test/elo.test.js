@@ -2,7 +2,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { BASE_ELO, calculateSeason } = require("../lib/elo.js");
 
-test("equal-rated win moves both players by 16", () => {
+// Stats-aware ELO: the delta scales with goal margin, not just win/draw/loss.
+// A 3–1 win (margin 2) gives a 0.75 performance score → round(32 * (0.75 - 0.5)) = 8.
+test("equal-rated 3–1 win moves both players by 8 (goal-margin weighted)", () => {
   const result = calculateSeason(
     [
       {
@@ -18,11 +20,11 @@ test("equal-rated win moves both players by 16", () => {
     0,
   );
 
-  assert.equal(result.matches[0].aDelta, 16);
-  assert.equal(result.matches[0].bDelta, -16);
+  assert.equal(result.matches[0].aDelta, 8);
+  assert.equal(result.matches[0].bDelta, -8);
   assert.equal(result.standings[0].uid, "alice");
-  assert.equal(result.standings[0].elo, 1516);
-  assert.equal(result.standings[1].elo, 1484);
+  assert.equal(result.standings[0].elo, 1508);
+  assert.equal(result.standings[1].elo, 1492);
 });
 
 test("recalculation is chronological and excludes players without games from standings", () => {
@@ -39,7 +41,7 @@ test("recalculation is chronological and excludes players without games from sta
     result.matches.map((match) => match.id),
     ["earlier", "later"],
   );
-  assert.equal(result.matches[1].aEloBefore, 1516);
+  assert.equal(result.matches[1].aEloBefore, 1508);
   assert.equal(result.standings.length, 2);
   assert.equal(result.history.charlie.length, 1);
   assert.equal(result.history.charlie[0].rating, BASE_ELO);

@@ -18,6 +18,7 @@ import {
   activateSeason,
   finalizeSeason,
   manageTeam,
+  seedTeams,
   resolveMatch,
   listSeasons,
   getTeams,
@@ -35,7 +36,9 @@ export default function AdminScreen() {
   const { profile, membership } = useAuth();
   const [section, setSection] = useState<Section>("seasons");
   const [loading, setLoading] = useState(true);
-  const [seasons, setSeasons] = useState<Array<{ id: string; name: string; active: boolean; finalized: boolean }>>([]);
+  const [seasons, setSeasons] = useState<
+    Array<{ id: string; name: string; active: boolean; finalized: boolean }>
+  >([]);
   const [teams, setTeamsList] = useState<Team[]>([]);
   const [pending, setPending] = useState<AdminPendingMatch[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -56,14 +59,20 @@ export default function AdminScreen() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (!isAdmin) {
     return (
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={styles.center}>
-          <Txt variant="head" size={18}>Admin only</Txt>
-          <Txt color={colors.textDim} style={{ marginTop: spacing.sm }}>You need admin privileges.</Txt>
+          <Txt variant="head" size={18}>
+            Admin only
+          </Txt>
+          <Txt color={colors.textDim} style={{ marginTop: spacing.sm }}>
+            You need admin privileges.
+          </Txt>
         </View>
       </SafeAreaView>
     );
@@ -76,7 +85,9 @@ export default function AdminScreen() {
     try {
       await createSeason(name, start, end);
       load();
-    } catch (e: any) { setError(e.message); }
+    } catch (e: any) {
+      setError(e.message);
+    }
   }
 
   return (
@@ -85,7 +96,9 @@ export default function AdminScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconBtn}>
           <Icon name="x" size={20} stroke={2.5} />
         </Pressable>
-        <Txt variant="head" size={18}>Admin</Txt>
+        <Txt variant="head" size={18}>
+          Admin
+        </Txt>
       </View>
 
       <View style={styles.tabs}>
@@ -113,7 +126,9 @@ export default function AdminScreen() {
           {section === "pending" ? <PendingSection matches={pending} onReload={load} /> : null}
 
           {error ? (
-            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg }}>{error}</Txt>
+            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg }}>
+              {error}
+            </Txt>
           ) : null}
         </ScrollView>
       )}
@@ -121,7 +136,13 @@ export default function AdminScreen() {
   );
 }
 
-function SeasonsSection({ seasons, onReload }: { seasons: Array<{ id: string; name: string; active: boolean; finalized: boolean }>; onReload: () => void }) {
+function SeasonsSection({
+  seasons,
+  onReload,
+}: {
+  seasons: Array<{ id: string; name: string; active: boolean; finalized: boolean }>;
+  onReload: () => void;
+}) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newStart, setNewStart] = useState("");
@@ -130,54 +151,108 @@ function SeasonsSection({ seasons, onReload }: { seasons: Array<{ id: string; na
   async function doCreate() {
     if (!newName) return;
     try {
-      await createSeason(newName, newStart || new Date().toISOString(), newEnd || new Date(Date.now() + 90 * 86400000).toISOString());
+      await createSeason(
+        newName,
+        newStart || new Date().toISOString(),
+        newEnd || new Date(Date.now() + 90 * 86400000).toISOString(),
+      );
       setCreating(false);
-      setNewName(""); setNewStart(""); setNewEnd("");
+      setNewName("");
+      setNewStart("");
+      setNewEnd("");
       onReload();
-    } catch (e: any) { Alert.alert("Error", e.message); }
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    }
   }
 
   return (
     <View>
-      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>Seasons</Txt>
+      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>
+        Seasons
+      </Txt>
 
       {creating ? (
         <Card style={{ marginBottom: spacing.lg }}>
-          <Txt variant="head" size={13} style={{ marginBottom: spacing.md }}>New Season</Txt>
-          <TextInput value={newName} onChangeText={setNewName} placeholder="Name (e.g. Summer 2027)" placeholderTextColor={colors.textFaint} style={styles.input} />
-          <TextInput value={newStart} onChangeText={setNewStart} placeholder="Start (ISO date)" placeholderTextColor={colors.textFaint} style={styles.input} />
-          <TextInput value={newEnd} onChangeText={setNewEnd} placeholder="End (ISO date)" placeholderTextColor={colors.textFaint} style={styles.input} />
+          <Txt variant="head" size={13} style={{ marginBottom: spacing.md }}>
+            New Season
+          </Txt>
+          <TextInput
+            value={newName}
+            onChangeText={setNewName}
+            placeholder="Name (e.g. Summer 2027)"
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+          />
+          <TextInput
+            value={newStart}
+            onChangeText={setNewStart}
+            placeholder="Start (ISO date)"
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+          />
+          <TextInput
+            value={newEnd}
+            onChangeText={setNewEnd}
+            placeholder="End (ISO date)"
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+          />
           <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
-            <Button size="sm" onPress={doCreate}>Create</Button>
-            <Button size="sm" variant="ghost" onPress={() => setCreating(false)}>Cancel</Button>
+            <Button size="sm" onPress={doCreate}>
+              Create
+            </Button>
+            <Button size="sm" variant="ghost" onPress={() => setCreating(false)}>
+              Cancel
+            </Button>
           </View>
         </Card>
       ) : (
-        <Button size="md" icon="plus" onPress={() => setCreating(true)} style={{ marginBottom: spacing.lg }}>
+        <Button
+          size="md"
+          icon="plus"
+          onPress={() => setCreating(true)}
+          style={{ marginBottom: spacing.lg }}
+        >
           New Season
         </Button>
       )}
 
       {seasons.map((s) => (
         <Card key={s.id} style={{ marginBottom: spacing.sm }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+          >
             <View>
-              <Txt variant="bodyMedium" size={14}>{s.name}</Txt>
+              <Txt variant="bodyMedium" size={14}>
+                {s.name}
+              </Txt>
               <Txt size={11} color={colors.textDim} style={{ marginTop: 2 }}>
                 {s.active ? "Active" : s.finalized ? "Finalized" : "Inactive"}
               </Txt>
             </View>
             <View style={{ flexDirection: "row", gap: spacing.sm }}>
               {!s.active && !s.finalized ? (
-                <Button size="sm" variant="dark" onPress={async () => { await activateSeason(s.id); onReload(); }}>
+                <Button
+                  size="sm"
+                  variant="dark"
+                  onPress={async () => {
+                    await activateSeason(s.id);
+                    onReload();
+                  }}
+                >
                   Activate
                 </Button>
               ) : null}
               {s.active ? (
-                <Button size="sm" variant="dark" onPress={async () => {
-                  await finalizeSeason(s.id);
-                  onReload();
-                }}>
+                <Button
+                  size="sm"
+                  variant="dark"
+                  onPress={async () => {
+                    await finalizeSeason(s.id);
+                    onReload();
+                  }}
+                >
                   Finalize
                 </Button>
               ) : null}
@@ -194,47 +269,121 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
   const [newTeamName, setNewTeamName] = useState("");
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameName, setRenameName] = useState("");
+  const [syncing, setSyncing] = useState(false);
+
+  function confirmSync() {
+    Alert.alert(
+      "Sync team catalogue",
+      "Import every catalogue team and remove legacy placeholder teams?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sync",
+          onPress: async () => {
+            setSyncing(true);
+            try {
+              const { seeded, removed } = await seedTeams();
+              Alert.alert("Catalogue synced", `${seeded} teams synced · ${removed} removed.`);
+              onReload();
+            } catch (e: any) {
+              Alert.alert("Error", e.message);
+            } finally {
+              setSyncing(false);
+            }
+          },
+        },
+      ],
+    );
+  }
 
   async function doAdd() {
     if (!newTeamName) return;
-    try { await manageTeam("add", newTeamName); setAdding(false); setNewTeamName(""); onReload(); } catch (e: any) { Alert.alert("Error", e.message); }
+    try {
+      await manageTeam("add", newTeamName);
+      setAdding(false);
+      setNewTeamName("");
+      onReload();
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    }
   }
 
   async function doRename(teamId: string) {
     if (!renameName) return;
-    try { await manageTeam("rename", teamId, renameName); setRenaming(null); onReload(); } catch (e: any) { Alert.alert("Error", e.message); }
+    try {
+      await manageTeam("rename", teamId, renameName);
+      setRenaming(null);
+      onReload();
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    }
   }
 
   async function doDeactivate(teamId: string, name: string) {
     Alert.alert("Deactivate", `Deactivate ${name}?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Deactivate", style: "destructive", onPress: async () => { await manageTeam("deactivate", teamId); onReload(); } },
+      {
+        text: "Deactivate",
+        style: "destructive",
+        onPress: async () => {
+          await manageTeam("deactivate", teamId);
+          onReload();
+        },
+      },
     ]);
   }
 
   return (
     <View>
-      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>Teams</Txt>
+      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>
+        Teams
+      </Txt>
 
       {adding ? (
         <Card style={{ marginBottom: spacing.lg }}>
-          <TextInput value={newTeamName} onChangeText={setNewTeamName} placeholder="Team name" placeholderTextColor={colors.textFaint} style={styles.input} />
+          <TextInput
+            value={newTeamName}
+            onChangeText={setNewTeamName}
+            placeholder="Team name"
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+          />
           <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
-            <Button size="sm" onPress={doAdd}>Add</Button>
-            <Button size="sm" variant="ghost" onPress={() => setAdding(false)}>Cancel</Button>
+            <Button size="sm" onPress={doAdd}>
+              Add
+            </Button>
+            <Button size="sm" variant="ghost" onPress={() => setAdding(false)}>
+              Cancel
+            </Button>
           </View>
         </Card>
       ) : (
-        <Button size="md" icon="plus" onPress={() => setAdding(true)} style={{ marginBottom: spacing.lg }}>
+        <Button
+          size="md"
+          icon="plus"
+          onPress={() => setAdding(true)}
+          style={{ marginBottom: spacing.sm }}
+        >
           Add Team
         </Button>
       )}
+
+      <Button
+        size="md"
+        variant="dark"
+        icon="bolt"
+        onPress={confirmSync}
+        disabled={syncing}
+        style={{ marginBottom: spacing.lg }}
+      >
+        {syncing ? "Syncing…" : "Sync team catalogue"}
+      </Button>
 
       <FlatList
         data={teams}
         scrollEnabled={false}
         keyExtractor={(t) => t.id}
-        renderItem={({ item }) => (
+        renderItem={({ item }) =>
           renaming === item.id ? (
             <Card style={{ marginBottom: spacing.sm }}>
               <TextInput
@@ -246,44 +395,77 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
                 autoFocus
               />
               <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
-                <Button size="sm" onPress={() => doRename(item.id)}>Save</Button>
-                <Button size="sm" variant="ghost" onPress={() => setRenaming(null)}>Cancel</Button>
+                <Button size="sm" onPress={() => doRename(item.id)}>
+                  Save
+                </Button>
+                <Button size="sm" variant="ghost" onPress={() => setRenaming(null)}>
+                  Cancel
+                </Button>
               </View>
             </Card>
           ) : (
             <Card key={item.id} style={{ marginBottom: spacing.sm }}>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
                 <View>
-                  <Txt variant="bodyMedium" size={14}>{item.name}</Txt>
+                  <Txt variant="bodyMedium" size={14}>
+                    {item.name}
+                  </Txt>
                 </View>
                 <View style={{ flexDirection: "row", gap: spacing.sm }}>
-                  <Button size="sm" variant="ghost" onPress={() => { setRenaming(item.id); setRenameName(item.name); }}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onPress={() => {
+                      setRenaming(item.id);
+                      setRenameName(item.name);
+                    }}
+                  >
                     Rename
                   </Button>
-                  <Button size="sm" variant="danger" onPress={() => doDeactivate(item.id, item.name)}>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onPress={() => doDeactivate(item.id, item.name)}
+                  >
                     Deactivate
                   </Button>
                 </View>
               </View>
             </Card>
           )
-        )}
+        }
       />
     </View>
   );
 }
 
-function PendingSection({ matches, onReload }: { matches: AdminPendingMatch[]; onReload: () => void }) {
+function PendingSection({
+  matches,
+  onReload,
+}: {
+  matches: AdminPendingMatch[];
+  onReload: () => void;
+}) {
   async function doResolve(matchId: string, action: "confirm" | "void") {
     try {
       await resolveMatch(matchId, action);
       onReload();
-    } catch (e: any) { Alert.alert("Error", e.message); }
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    }
   }
 
   return (
     <View>
-      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>Pending & Disputed</Txt>
+      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>
+        Pending & Disputed
+      </Txt>
 
       {matches.length === 0 ? (
         <Txt color={colors.textDim}>No pending matches.</Txt>
@@ -317,11 +499,48 @@ function PendingSection({ matches, onReload }: { matches: AdminPendingMatch[]; o
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  header: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.sm },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
-  tabs: { flexDirection: "row", paddingHorizontal: spacing.lg, marginBottom: spacing.lg, gap: spacing.xs },
-  tab: { flex: 1, paddingVertical: spacing.sm, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tabs: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
   tabActive: { borderBottomColor: colors.accent },
   content: { padding: spacing.lg, paddingBottom: spacing.x3 },
-  input: { color: colors.text, fontSize: 14, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, marginBottom: spacing.sm },
+  input: {
+    color: colors.text,
+    fontSize: 14,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    marginBottom: spacing.sm,
+  },
 });

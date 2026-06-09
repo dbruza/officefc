@@ -32,7 +32,7 @@ export default function SignUp() {
   return (
     <FormScreen
       title="Join the league"
-      subtitle="Create an account, then enter your office's invite code."
+      subtitle="Create an account, then enter your office's join code."
       footer={
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 6 }}>
           <Txt size={13} color={colors.textDim}>

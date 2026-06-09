@@ -1,0 +1,18 @@
+node_modules
+**/node_modules
+functions/lib
+mobile/.expo
+build
+prototype
+eval
+OfficeFC.html
+package-lock.json
+**/package-lock.json
+firestore-debug.log
+
+# Prose docs are not part of the code-formatting pass
+*.md
+**/*.md
+
+# Generated, marked "do not edit"
+mobile/expo-env.d.ts

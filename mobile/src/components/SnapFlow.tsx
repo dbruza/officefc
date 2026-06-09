@@ -27,7 +27,16 @@ import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 import type { Player } from "@/types";
 
-type SnapStep = "capture" | "processing" | "side" | "opponent" | "teams" | "prefill" | "review" | "submitting" | "done";
+type SnapStep =
+  | "capture"
+  | "processing"
+  | "side"
+  | "opponent"
+  | "teams"
+  | "prefill"
+  | "review"
+  | "submitting"
+  | "done";
 
 interface ExtractionSuggestion {
   home: {
@@ -79,7 +88,14 @@ export function SnapFlow({
   onManualFallback,
   onDone,
 }: SnapFlowProps) {
-  const me: Player = { id: uid, name: profile.displayName, handle: profile.handle, jersey: profile.jersey, color: profile.color, isYou: true };
+  const me: Player = {
+    id: uid,
+    name: profile.displayName,
+    handle: profile.handle,
+    jersey: profile.jersey,
+    color: profile.color,
+    isYou: true,
+  };
   const { width } = useWindowDimensions();
   const showCameraOption = Platform.OS !== "web" || width < 768;
 
@@ -104,10 +120,7 @@ export function SnapFlow({
   const activeDraftId = useRef<string | null>(null);
   const cancelRequested = useRef(false);
 
-  const ratingByUid = useMemo(
-    () => new Map(standings.map((s) => [s.uid, s.elo])),
-    [standings],
-  );
+  const ratingByUid = useMemo(() => new Map(standings.map((s) => [s.uid, s.elo])), [standings]);
   const myElo = ratingByUid.get(uid) ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
   const myDelta = opponent ? previewElo(myElo, opponentElo, myGoals, opponentGoals) : 0;
@@ -115,23 +128,21 @@ export function SnapFlow({
 
   const usesExtraction = extraction?.suggestion != null && extraction.ok;
 
+  // Pre-fill the editable stat fields from the AI extraction, mapped to my/opponent side.
   useEffect(() => {
-    if (usesExtraction && extraction?.suggestion) {
-      const s = extraction.suggestion;
-      const isHome = mySide === "home";
-      const myExtract = isHome ? s.home : s.away;
-      const oppExtract = isHome ? s.away : s.home;
-      if (myExtract.goals != null) setMyGoals(myExtract.goals);
-      else setMyGoals(0);
-      if (oppExtract.goals != null) setOpponentGoals(oppExtract.goals);
-      else setOpponentGoals(0);
-      setMyPossession(myExtract.possession);
-      setOpponentPossession(oppExtract.possession);
-      setMyShots(myExtract.shots);
-      setOpponentShots(oppExtract.shots);
-      setMyShotsOnTarget(myExtract.shots_on_target);
-      setOpponentShotsOnTarget(oppExtract.shots_on_target);
-    }
+    if (!usesExtraction || !extraction?.suggestion) return;
+    const s = extraction.suggestion;
+    const isHome = mySide === "home";
+    const myExtract = isHome ? s.home : s.away;
+    const oppExtract = isHome ? s.away : s.home;
+    setMyGoals(myExtract.goals ?? 0);
+    setOpponentGoals(oppExtract.goals ?? 0);
+    setMyPossession(myExtract.possession);
+    setOpponentPossession(oppExtract.possession);
+    setMyShots(myExtract.shots);
+    setOpponentShots(oppExtract.shots);
+    setMyShotsOnTarget(myExtract.shots_on_target);
+    setOpponentShotsOnTarget(oppExtract.shots_on_target);
   }, [mySide, extraction]);
 
   async function cleanupDraft(id = activeDraftId.current): Promise<void> {
@@ -139,9 +150,11 @@ export function SnapFlow({
     try {
       await abandonMatchDraft(id);
       if (activeDraftId.current === id) activeDraftId.current = null;
-      setDraftId((current) => current === id ? null : current);
+      setDraftId((current) => (current === id ? null : current));
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "Could not remove the abandoned upload.");
+      throw new Error(
+        err instanceof Error ? err.message : "Could not remove the abandoned upload.",
+      );
     }
   }
 
@@ -203,7 +216,11 @@ export function SnapFlow({
         setStep("capture");
         return;
       }
-      if (ext.suggestion && ext.suggestion.home.goals == null && ext.suggestion.away.goals == null) {
+      if (
+        ext.suggestion &&
+        ext.suggestion.home.goals == null &&
+        ext.suggestion.away.goals == null
+      ) {
         setError("Couldn't read the score from this image. Try a clearer photo, or log manually.");
         setStep("capture");
         return;
@@ -248,6 +265,7 @@ export function SnapFlow({
     }
   }
 
+  // Maps the review flags returned by the AI extraction backend to human-readable copy.
   function flagLabel(field: string): string {
     const map: Record<string, string> = {
       low_confidence: "AI confidence is low — please double-check these values",
@@ -272,17 +290,36 @@ export function SnapFlow({
           <Pressable onPress={() => void handleLeave("cancel")} style={styles.iconBtn}>
             <Icon name="x" size={20} stroke={2.5} />
           </Pressable>
-          <Txt variant="head" size={18}>Upload match photo</Txt>
+          <Txt variant="head" size={18}>
+            Upload match photo
+          </Txt>
         </View>
         <View style={styles.centerContent}>
           <Icon name="camera" size={48} color={colors.textDim} />
           <Txt variant="head" size={20} style={{ marginTop: spacing.lg }}>
             Upload or take a photo
           </Txt>
-          <Txt color={colors.textDim} size={13} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.x2, lineHeight: 19 }}>
-            Use the full-time stats screen. AI Beta will suggest the score and key stats, but you must verify every value.
+          <Txt
+            color={colors.textDim}
+            size={13}
+            style={{
+              marginTop: spacing.sm,
+              textAlign: "center",
+              paddingHorizontal: spacing.x2,
+              lineHeight: 19,
+            }}
+          >
+            Use the full-time stats screen. AI Beta will suggest the score and key stats, but you
+            must verify every value.
           </Txt>
-          <View style={{ gap: spacing.md, marginTop: spacing.x2, width: "100%", paddingHorizontal: spacing.x2 }}>
+          <View
+            style={{
+              gap: spacing.md,
+              marginTop: spacing.x2,
+              width: "100%",
+              paddingHorizontal: spacing.x2,
+            }}
+          >
             {showCameraOption ? (
               <Button full size="lg" icon="camera" onPress={() => void handleSelect("camera")}>
                 Take a photo
@@ -297,17 +334,29 @@ export function SnapFlow({
             >
               {Platform.OS === "web" && width >= 768 ? "Choose image file" : "Choose from library"}
             </Button>
-            <Button full size="md" variant="ghost" icon="edit" onPress={() => void handleLeave("manual")}>
+            <Button
+              full
+              size="md"
+              variant="ghost"
+              icon="edit"
+              onPress={() => void handleLeave("manual")}
+            >
               Enter score manually
             </Button>
           </View>
           <View style={styles.privacyNotice}>
             <Txt size={11.5} color={colors.textDim} style={{ textAlign: "center", lineHeight: 17 }}>
-              Photos stay private. Anthropic processes the image for extraction. League members can view submitted photos through temporary links, submitters can delete them, and abandoned drafts are deleted after 24 hours.
+              Photos stay private. Anthropic processes the image for extraction. League members can
+              view submitted photos through temporary links, submitters can delete them, and
+              abandoned drafts are deleted after 24 hours.
             </Txt>
           </View>
           {error ? (
-            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, textAlign: "center" }}>
+            <Txt
+              color={colors.loss}
+              size={13}
+              style={{ marginTop: spacing.lg, textAlign: "center" }}
+            >
               {error}
             </Txt>
           ) : null}
@@ -323,7 +372,9 @@ export function SnapFlow({
           <Pressable onPress={() => void handleLeave("cancel")} style={styles.iconBtn}>
             <Icon name="x" size={20} stroke={2.5} />
           </Pressable>
-          <Txt variant="head" size={18}>Processing</Txt>
+          <Txt variant="head" size={18}>
+            Processing
+          </Txt>
         </View>
         <View style={styles.centerContent}>
           {imageUri ? (
@@ -349,17 +400,30 @@ export function SnapFlow({
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.smallPreview} resizeMode="contain" />
           ) : null}
-          <Txt color={colors.textDim} size={12.5} style={{ marginTop: spacing.sm, marginBottom: spacing.lg }}>
+          <Txt
+            color={colors.textDim}
+            size={12.5}
+            style={{ marginTop: spacing.sm, marginBottom: spacing.lg }}
+          >
             The AI reads left=home, right=away. Choose your side so we map the goals correctly.
           </Txt>
           <View style={{ gap: spacing.sm }}>
             <Pressable
-              onPress={() => { setMySide("home"); setStep("opponent"); }}
+              onPress={() => {
+                setMySide("home");
+                setStep("opponent");
+              }}
               style={[styles.optionCard, mySide === "home" && styles.optionActive]}
             >
-              <Icon name="bolt" size={20} color={mySide === "home" ? colors.accent : colors.textDim} />
+              <Icon
+                name="bolt"
+                size={20}
+                color={mySide === "home" ? colors.accent : colors.textDim}
+              />
               <View style={{ flex: 1 }}>
-                <Txt variant="bodyMedium" size={14.5}>I was the Home team (left side)</Txt>
+                <Txt variant="bodyMedium" size={14.5}>
+                  I was the Home team (left side)
+                </Txt>
                 <Txt size={11.5} color={colors.textDim} style={{ marginTop: 3 }}>
                   {extraction?.suggestion?.home?.goals != null
                     ? `Goals read: ${extraction.suggestion.home.goals}`
@@ -369,12 +433,21 @@ export function SnapFlow({
               <Icon name="chevron" size={14} color={colors.textDim} />
             </Pressable>
             <Pressable
-              onPress={() => { setMySide("away"); setStep("opponent"); }}
+              onPress={() => {
+                setMySide("away");
+                setStep("opponent");
+              }}
               style={[styles.optionCard, mySide === "away" && styles.optionActive]}
             >
-              <Icon name="bolt" size={20} color={mySide === "away" ? colors.accent : colors.textDim} />
+              <Icon
+                name="bolt"
+                size={20}
+                color={mySide === "away" ? colors.accent : colors.textDim}
+              />
               <View style={{ flex: 1 }}>
-                <Txt variant="bodyMedium" size={14.5}>I was the Away team (right side)</Txt>
+                <Txt variant="bodyMedium" size={14.5}>
+                  I was the Away team (right side)
+                </Txt>
                 <Txt size={11.5} color={colors.textDim} style={{ marginTop: 3 }}>
                   {extraction?.suggestion?.away?.goals != null
                     ? `Goals read: ${extraction.suggestion.away.goals}`
@@ -402,18 +475,25 @@ export function SnapFlow({
             {players.map((player) => (
               <Pressable
                 key={player.id}
-                onPress={() => { setOpponent(player); setStep("teams"); }}
+                onPress={() => {
+                  setOpponent(player);
+                  setStep("teams");
+                }}
                 style={[styles.pickRow, opponent?.id === player.id && styles.pickRowActive]}
               >
                 <Avatar player={player} size={42} jersey />
                 <View style={{ flex: 1 }}>
-                  <Txt variant="bodyMedium" size={14.5}>{player.name}</Txt>
+                  <Txt variant="bodyMedium" size={14.5}>
+                    {player.name}
+                  </Txt>
                   <Txt variant="mono" size={11.5} color={colors.textDim} style={{ marginTop: 3 }}>
                     ELO {ratingByUid.get(player.id) ?? 1500} · @{player.handle}
                   </Txt>
                 </View>
                 {opponent?.id === player.id ? (
-                  <View style={styles.check}><Icon name="check" size={13} color={colors.onAccent} stroke={3} /></View>
+                  <View style={styles.check}>
+                    <Icon name="check" size={13} color={colors.onAccent} stroke={3} />
+                  </View>
                 ) : null}
               </Pressable>
             ))}
@@ -435,19 +515,31 @@ export function SnapFlow({
           <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }}>
             Which teams did you use?
           </Txt>
-          <TeamPicker label="Your team" player={me} teams={teams} value={myTeam} onChange={(t) => { setMyTeam(t); if (opponentTeam) setStep("prefill"); }} />
+          <TeamPicker
+            label="Your team"
+            player={me}
+            teams={teams}
+            value={myTeam}
+            onChange={(t) => {
+              setMyTeam(t);
+              if (opponentTeam) setStep("prefill");
+            }}
+          />
           <View style={{ height: spacing.lg }} />
           <TeamPicker
             label={`${opponent?.name?.split(" ")[0] ?? "Opponent"}'s team`}
             player={opponent}
             teams={teams}
             value={opponentTeam}
-            onChange={(t) => { setOpponentTeam(t); if (myTeam) setStep("prefill"); }}
+            onChange={(t) => {
+              setOpponentTeam(t);
+              if (myTeam) setStep("prefill");
+            }}
           />
         </ScrollView>
         <FlowFooter
           onBack={() => setStep("opponent")}
-          onSkip={() => myTeam && opponentTeam ? setStep("prefill") : null}
+          onSkip={() => (myTeam && opponentTeam ? setStep("prefill") : null)}
           nextDisabled={!myTeam || !opponentTeam}
         />
       </View>
@@ -457,7 +549,8 @@ export function SnapFlow({
   if (step === "prefill") {
     const s = extraction?.suggestion;
     const conf = extraction?.confidence ?? 0;
-    const confLabel = conf >= 0.8 ? "High confidence" : conf >= 0.6 ? "Review needed" : "Low confidence";
+    const confLabel =
+      conf >= 0.8 ? "High confidence" : conf >= 0.6 ? "Review needed" : "Low confidence";
 
     return (
       <View style={styles.full}>
@@ -480,14 +573,24 @@ export function SnapFlow({
             <View style={styles.flagBox}>
               {extraction.flags.map((f) => (
                 <Txt key={f} size={11.5} color={colors.draw} style={{ lineHeight: 18 }}>
-                  <Txt size={11.5} color={colors.accent}>!</Txt> {flagLabel(f)}
+                  <Txt size={11.5} color={colors.accent}>
+                    !
+                  </Txt>{" "}
+                  {flagLabel(f)}
                 </Txt>
               ))}
             </View>
           ) : null}
 
           <View style={{ marginTop: spacing.lg }}>
-            <Txt variant="head" size={11} color={colors.textDim} style={{ marginBottom: spacing.sm }}>SCORE</Txt>
+            <Txt
+              variant="head"
+              size={11}
+              color={colors.textDim}
+              style={{ marginBottom: spacing.sm }}
+            >
+              SCORE
+            </Txt>
             <View style={styles.scoreRow}>
               <ScoreBox
                 label="You"
@@ -495,18 +598,30 @@ export function SnapFlow({
                 color={statColor(myGoals, mySide === "home" ? s?.home?.goals : s?.away?.goals)}
                 onChange={setMyGoals}
               />
-              <Txt variant="monoBold" size={28} color={colors.textFaint}>:</Txt>
+              <Txt variant="monoBold" size={28} color={colors.textFaint}>
+                :
+              </Txt>
               <ScoreBox
                 label={opponent?.name?.split(" ")[0] ?? "Opp"}
                 value={opponentGoals}
-                color={statColor(opponentGoals, mySide === "home" ? s?.away?.goals : s?.home?.goals)}
+                color={statColor(
+                  opponentGoals,
+                  mySide === "home" ? s?.away?.goals : s?.home?.goals,
+                )}
                 onChange={setOpponentGoals}
               />
             </View>
           </View>
 
           <View style={{ marginTop: spacing.lg }}>
-            <Txt variant="head" size={11} color={colors.textDim} style={{ marginBottom: spacing.sm }}>KEY STATS</Txt>
+            <Txt
+              variant="head"
+              size={11}
+              color={colors.textDim}
+              style={{ marginBottom: spacing.sm }}
+            >
+              KEY STATS
+            </Txt>
             <View style={{ gap: spacing.sm }}>
               <StatEditRow
                 label="Possession %"
@@ -558,13 +673,19 @@ export function SnapFlow({
             <View style={styles.reviewScore}>
               <View style={{ flex: 1, alignItems: "center" }}>
                 <Avatar player={me} size={44} jersey />
-                <Txt variant="bodyMedium" size={13} style={{ marginTop: spacing.sm }}>You</Txt>
+                <Txt variant="bodyMedium" size={13} style={{ marginTop: spacing.sm }}>
+                  You
+                </Txt>
                 <Txt size={10.5} color={colors.textDim} numberOfLines={1} style={{ marginTop: 2 }}>
                   {myTeam?.name ?? ""}
                 </Txt>
               </View>
               <Txt variant="monoBold" size={38}>
-                {myGoals}<Txt variant="monoBold" size={38} color={colors.textFaint}>:</Txt>{opponentGoals}
+                {myGoals}
+                <Txt variant="monoBold" size={38} color={colors.textFaint}>
+                  :
+                </Txt>
+                {opponentGoals}
               </Txt>
               <View style={{ flex: 1, alignItems: "center" }}>
                 <Avatar player={opponent ?? undefined} size={44} jersey />
@@ -583,20 +704,32 @@ export function SnapFlow({
                 <View style={styles.statsGrid}>
                   {(myPossession ?? opponentPossession) != null ? (
                     <View style={styles.statPair}>
-                      <Txt size={11} color={colors.textDim}>POSSESSION</Txt>
-                      <Txt variant="mono" size={13}>{myPossession ?? "-"}% / {opponentPossession ?? "-"}%</Txt>
+                      <Txt size={11} color={colors.textDim}>
+                        POSSESSION
+                      </Txt>
+                      <Txt variant="mono" size={13}>
+                        {myPossession ?? "-"}% / {opponentPossession ?? "-"}%
+                      </Txt>
                     </View>
                   ) : null}
                   {(myShots ?? opponentShots) != null ? (
                     <View style={styles.statPair}>
-                      <Txt size={11} color={colors.textDim}>SHOTS</Txt>
-                      <Txt variant="mono" size={13}>{myShots ?? "-"} / {opponentShots ?? "-"}</Txt>
+                      <Txt size={11} color={colors.textDim}>
+                        SHOTS
+                      </Txt>
+                      <Txt variant="mono" size={13}>
+                        {myShots ?? "-"} / {opponentShots ?? "-"}
+                      </Txt>
                     </View>
                   ) : null}
                   {(myShotsOnTarget ?? opponentShotsOnTarget) != null ? (
                     <View style={styles.statPair}>
-                      <Txt size={11} color={colors.textDim}>ON TARGET</Txt>
-                      <Txt variant="mono" size={13}>{myShotsOnTarget ?? "-"} / {opponentShotsOnTarget ?? "-"}</Txt>
+                      <Txt size={11} color={colors.textDim}>
+                        ON TARGET
+                      </Txt>
+                      <Txt variant="mono" size={13}>
+                        {myShotsOnTarget ?? "-"} / {opponentShotsOnTarget ?? "-"}
+                      </Txt>
                     </View>
                   ) : null}
                 </View>
@@ -606,7 +739,9 @@ export function SnapFlow({
             <View style={styles.divider} />
             <View style={styles.reviewBottom}>
               <View>
-                <Txt variant="head" size={10.5} color={colors.textDim}>ELO CHANGE</Txt>
+                <Txt variant="head" size={10.5} color={colors.textDim}>
+                  ELO CHANGE
+                </Txt>
                 <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 3 }}>
                   Applies after opponent confirmation
                 </Txt>
@@ -614,7 +749,8 @@ export function SnapFlow({
               <View style={{ alignItems: "flex-end" }}>
                 <EloDelta delta={myDelta} />
                 <Txt variant="mono" size={11} color={colors.textDim} style={{ marginTop: 3 }}>
-                  opponent {opponentDelta >= 0 ? "+" : ""}{opponentDelta}
+                  opponent {opponentDelta >= 0 ? "+" : ""}
+                  {opponentDelta}
                 </Txt>
               </View>
             </View>
@@ -622,7 +758,9 @@ export function SnapFlow({
 
           <View style={styles.sourceTag}>
             <Icon name="bolt" size={12} color={colors.accent} />
-            <Txt size={11} color={colors.textDim}>AI-assisted · {mySide === "home" ? "Home" : "Away"} side</Txt>
+            <Txt size={11} color={colors.textDim}>
+              AI-assisted · {mySide === "home" ? "Home" : "Away"} side
+            </Txt>
           </View>
         </ScrollView>
         <FlowFooter
@@ -647,26 +785,47 @@ export function SnapFlow({
             Result sent for confirmation.
           </Txt>
           <Txt variant="monoBold" size={56} style={{ marginVertical: spacing.sm }}>
-            {myGoals}<Txt variant="monoBold" size={56} color={colors.textFaint}>:</Txt>{opponentGoals}
+            {myGoals}
+            <Txt variant="monoBold" size={56} color={colors.textFaint}>
+              :
+            </Txt>
+            {opponentGoals}
           </Txt>
           <Txt color={colors.textDim} style={{ textAlign: "center", lineHeight: 20 }}>
-            {opponent?.name?.split(" ")[0] ?? "Opponent"} needs to confirm before this affects the table.
+            {opponent?.name?.split(" ")[0] ?? "Opponent"} needs to confirm before this affects the
+            table.
           </Txt>
-          <Card style={{ marginTop: spacing.x2, width: "100%", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Card
+            style={{
+              marginTop: spacing.x2,
+              width: "100%",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <View>
-              <Txt variant="head" size={10.5} color={colors.textDim}>ELO PREVIEW</Txt>
+              <Txt variant="head" size={10.5} color={colors.textDim}>
+                ELO PREVIEW
+              </Txt>
               <Txt variant="monoBold" size={19} style={{ marginTop: 4 }}>
                 {myElo + myDelta} <EloDelta delta={myDelta} />
               </Txt>
             </View>
-            <Txt size={12} color={colors.textFaint}>pending</Txt>
+            <Txt size={12} color={colors.textFaint}>
+              pending
+            </Txt>
           </Card>
           {error ? (
-            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg }}>{error}</Txt>
+            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg }}>
+              {error}
+            </Txt>
           ) : null}
         </View>
         <View style={styles.footer}>
-          <Button full size="lg" onPress={onDone}>Back to dashboard</Button>
+          <Button full size="lg" onPress={onDone}>
+            Back to dashboard
+          </Button>
         </View>
       </View>
     );
@@ -679,7 +838,9 @@ function ProgressBar({ current, total, label }: { current: number; total: number
   return (
     <View>
       <View style={styles.progressHeader}>
-        <Txt size={11.5} color={colors.textDim}>Step {current + 1} of {total} · {label}</Txt>
+        <Txt size={11.5} color={colors.textDim}>
+          Step {current + 1} of {total} · {label}
+        </Txt>
       </View>
       <View style={styles.track}>
         {Array.from({ length: total }).map((_, i) => (
@@ -724,26 +885,57 @@ function FlowFooter({
   );
 }
 
-function ScoreBox({ label, value, color, onChange }: { label: string; value: number; color: string; onChange: (v: number) => void }) {
+function ScoreBox({
+  label,
+  value,
+  color,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  onChange: (v: number) => void;
+}) {
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
-      <Txt size={11} color={colors.textDim} numberOfLines={1}>{label}</Txt>
+      <Txt size={11} color={colors.textDim} numberOfLines={1}>
+        {label}
+      </Txt>
       <View style={styles.stepper}>
-        <Pressable onPress={() => onChange(Math.max(0, value - 1))} disabled={value === 0} style={[styles.stepBtn, value === 0 && { opacity: 0.35 }]}>
-          <Txt variant="monoBold" size={22}>-</Txt>
+        <Pressable
+          onPress={() => onChange(Math.max(0, value - 1))}
+          disabled={value === 0}
+          style={[styles.stepBtn, value === 0 && { opacity: 0.35 }]}
+        >
+          <Txt variant="monoBold" size={22}>
+            -
+          </Txt>
         </Pressable>
-        <Txt variant="monoBold" size={34} color={color} style={{ minWidth: 44, textAlign: "center" }}>
+        <Txt
+          variant="monoBold"
+          size={34}
+          color={color}
+          style={{ minWidth: 44, textAlign: "center" }}
+        >
           {value}
         </Txt>
         <Pressable onPress={() => onChange(Math.min(99, value + 1))} style={styles.stepBtn}>
-          <Txt variant="monoBold" size={22}>+</Txt>
+          <Txt variant="monoBold" size={22}>
+            +
+          </Txt>
         </Pressable>
       </View>
     </View>
   );
 }
 
-function StatEditRow({ label, myValue, oppValue, onChangeMy, onChangeOpp }: {
+function StatEditRow({
+  label,
+  myValue,
+  oppValue,
+  onChangeMy,
+  onChangeOpp,
+}: {
   label: string;
   myValue: number | null;
   oppValue: number | null;
@@ -752,7 +944,9 @@ function StatEditRow({ label, myValue, oppValue, onChangeMy, onChangeOpp }: {
 }) {
   return (
     <View style={styles.statEditRow}>
-      <Txt size={12} color={colors.textDim} style={{ width: 110 }}>{label}</Txt>
+      <Txt size={12} color={colors.textDim} style={{ width: 110 }}>
+        {label}
+      </Txt>
       <View style={styles.statEditFields}>
         <TextInput
           value={myValue != null ? String(myValue) : ""}
@@ -762,7 +956,9 @@ function StatEditRow({ label, myValue, oppValue, onChangeMy, onChangeOpp }: {
           keyboardType="numeric"
           style={styles.statInput}
         />
-        <Txt size={12} color={colors.textFaint}>vs</Txt>
+        <Txt size={12} color={colors.textFaint}>
+          vs
+        </Txt>
         <TextInput
           value={oppValue != null ? String(oppValue) : ""}
           onChangeText={(t) => onChangeOpp(t ? Number(t) || null : null)}
@@ -796,11 +992,18 @@ function TeamPicker({
     <View>
       <View style={styles.fieldLabel}>
         <Avatar player={player} size={20} />
-        <Txt variant="head" size={11} color={colors.textDim}>{label.toUpperCase()}</Txt>
+        <Txt variant="head" size={11} color={colors.textDim}>
+          {label.toUpperCase()}
+        </Txt>
       </View>
-      <Pressable onPress={() => setOpen((c) => !c)} style={[styles.teamField, value && styles.teamFieldFilled]}>
+      <Pressable
+        onPress={() => setOpen((c) => !c)}
+        style={[styles.teamField, value && styles.teamFieldFilled]}
+      >
         <Icon name="jersey" size={17} color={value ? player?.color : colors.textDim} />
-        <Txt color={value ? colors.text : colors.textDim} style={{ flex: 1 }}>{value?.name ?? "Search teams…"}</Txt>
+        <Txt color={value ? colors.text : colors.textDim} style={{ flex: 1 }}>
+          {value?.name ?? "Search teams…"}
+        </Txt>
         <Icon name={open ? "up" : "search"} size={16} color={colors.textDim} />
       </Pressable>
       {open ? (
@@ -820,12 +1023,20 @@ function TeamPicker({
             {filtered.map((team) => (
               <Pressable
                 key={team.id}
-                onPress={() => { onChange(team); setOpen(false); setSearch(""); }}
+                onPress={() => {
+                  onChange(team);
+                  setOpen(false);
+                  setSearch("");
+                }}
                 style={[styles.teamOption, value?.id === team.id && styles.teamOptionActive]}
               >
                 <Icon name="jersey" size={15} color={colors.textDim} />
-                <Txt size={13.5} style={{ flex: 1 }}>{team.name}</Txt>
-                {value?.id === team.id ? <Icon name="check" size={14} color={colors.accent} /> : null}
+                <Txt size={13.5} style={{ flex: 1 }}>
+                  {team.name}
+                </Txt>
+                {value?.id === team.id ? (
+                  <Icon name="check" size={14} color={colors.accent} />
+                ) : null}
               </Pressable>
             ))}
           </View>
@@ -838,15 +1049,27 @@ function TeamPicker({
 const styles = StyleSheet.create({
   full: { flex: 1, backgroundColor: colors.bg },
   headerRow: {
-    flexDirection: "row", alignItems: "center", gap: spacing.md,
-    paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
   },
   iconBtn: {
-    width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: colors.line,
-    backgroundColor: colors.surface, alignItems: "center", justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   centerContent: {
-    flex: 1, alignItems: "center", justifyContent: "center",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing.x2,
   },
   privacyNotice: {
@@ -859,49 +1082,105 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   content: { padding: spacing.lg, paddingBottom: spacing.x3 },
-  previewImage: { width: "100%", height: 220, borderRadius: radius.md, backgroundColor: colors.surface2 },
-  smallPreview: { width: "100%", height: 140, borderRadius: radius.md, backgroundColor: colors.surface2 },
-  reviewImage: { width: "100%", height: 180, borderRadius: radius.md, backgroundColor: colors.surface2, marginBottom: spacing.sm },
+  previewImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface2,
+  },
+  smallPreview: {
+    width: "100%",
+    height: 140,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface2,
+  },
+  reviewImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface2,
+    marginBottom: spacing.sm,
+  },
   optionCard: {
-    flexDirection: "row", alignItems: "center", gap: spacing.md,
-    padding: spacing.lg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
     backgroundColor: colors.surface,
   },
-  optionActive: { borderColor: withAlpha(colors.accent, 0.55), backgroundColor: withAlpha(colors.accent, 0.07) },
-  pickRow: {
-    flexDirection: "row", alignItems: "center", gap: spacing.md,
-    padding: spacing.md, borderWidth: 1, borderColor: colors.line,
-    borderRadius: radius.md, backgroundColor: colors.surface,
+  optionActive: {
+    borderColor: withAlpha(colors.accent, 0.55),
+    backgroundColor: withAlpha(colors.accent, 0.07),
   },
-  pickRowActive: { borderColor: withAlpha(colors.accent, 0.55), backgroundColor: withAlpha(colors.accent, 0.07) },
+  pickRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  pickRowActive: {
+    borderColor: withAlpha(colors.accent, 0.55),
+    backgroundColor: withAlpha(colors.accent, 0.07),
+  },
   check: {
-    width: 24, height: 24, borderRadius: 12, backgroundColor: colors.accent,
-    alignItems: "center", justifyContent: "center",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
   },
   confBadge: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    backgroundColor: withAlpha(colors.accent, 0.08), borderRadius: radius.sm,
-    alignSelf: "flex-start", marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: withAlpha(colors.accent, 0.08),
+    borderRadius: radius.sm,
+    alignSelf: "flex-start",
+    marginTop: spacing.sm,
   },
   flagBox: {
-    marginTop: spacing.md, padding: spacing.md,
-    backgroundColor: withAlpha(colors.draw, 0.08), borderRadius: radius.sm,
-    borderWidth: 1, borderColor: withAlpha(colors.draw, 0.2),
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: withAlpha(colors.draw, 0.08),
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.draw, 0.2),
   },
   scoreRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   stepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
   stepBtn: {
-    width: 38, height: 38, borderRadius: 12, borderWidth: 1,
-    borderColor: colors.line, backgroundColor: colors.surface2,
-    alignItems: "center", justifyContent: "center",
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   statEditRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   statEditFields: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   statInput: {
-    flex: 1, color: colors.text, fontSize: 13.5, fontFamily: "JetBrainsMono_500Medium",
-    backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.line,
-    borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 8,
+    flex: 1,
+    color: colors.text,
+    fontSize: 13.5,
+    fontFamily: "JetBrainsMono_500Medium",
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
     textAlign: "center",
   },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
@@ -910,41 +1189,78 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: colors.line, marginVertical: spacing.lg },
   reviewBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sourceTag: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.md,
     alignSelf: "center",
   },
   resultBurst: {
-    width: 88, height: 88, borderRadius: 44, alignItems: "center", justifyContent: "center",
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   progressHeader: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   track: { flexDirection: "row", gap: 5, paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
   trackSeg: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.surface2 },
   trackSegOn: { backgroundColor: colors.accent },
   footer: {
-    flexDirection: "row", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm,
-    borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.bg,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    backgroundColor: colors.bg,
   },
-  fieldLabel: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
+  fieldLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   teamField: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    borderWidth: 1, borderColor: colors.line, borderRadius: radius.md,
-    backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
   },
   teamFieldFilled: { borderColor: withAlpha(colors.accent, 0.35) },
   teamPopover: {
-    marginTop: spacing.sm, padding: spacing.sm, borderWidth: 1,
-    borderColor: colors.line, borderRadius: radius.md, backgroundColor: colors.surface,
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
   },
   searchBox: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    borderWidth: 1, borderColor: colors.line, borderRadius: radius.sm,
-    backgroundColor: colors.bg, paddingHorizontal: spacing.md, marginBottom: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
   },
   searchInput: { flex: 1, color: colors.text, fontSize: 13.5, paddingVertical: 10 },
   teamOption: {
-    flexDirection: "row", alignItems: "center", gap: spacing.sm,
-    paddingHorizontal: spacing.sm, paddingVertical: 9, borderRadius: radius.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 9,
+    borderRadius: radius.sm,
   },
   teamOptionActive: { backgroundColor: withAlpha(colors.accent, 0.08) },
 });

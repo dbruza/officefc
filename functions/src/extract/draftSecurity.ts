@@ -1,3 +1,5 @@
+import { HttpsError } from "firebase-functions/v2/https";
+
 export type DraftSecurityCode =
   | "already-exists"
   | "failed-precondition"
@@ -12,6 +14,11 @@ export class DraftSecurityError extends Error {
     super(message);
     this.name = "DraftSecurityError";
   }
+}
+
+/** Translate a draft-security failure into the callable's HttpsError wire form. */
+export function asHttpsError(error: DraftSecurityError): HttpsError {
+  return new HttpsError(error.code, error.message);
 }
 
 export interface DraftState {
@@ -51,10 +58,7 @@ export function evaluateDraftClaim(input: {
 }): DraftClaimAction {
   const { draft, matchExists, uid, storagePath, force } = input;
   if (matchExists) {
-    throw new DraftSecurityError(
-      "already-exists",
-      "That draft id is already used by a match.",
-    );
+    throw new DraftSecurityError("already-exists", "That draft id is already used by a match.");
   }
   if (!draft) return "claim";
   if (draft.ownerUid !== uid) {
@@ -109,10 +113,7 @@ export function evaluateDraftSubmission(input: {
     throw new DraftSecurityError("failed-precondition", "AI extraction is not complete.");
   }
   if (match) {
-    throw new DraftSecurityError(
-      "already-exists",
-      "That draft id is already used by a match.",
-    );
+    throw new DraftSecurityError("already-exists", "That draft id is already used by a match.");
   }
   return "create";
 }

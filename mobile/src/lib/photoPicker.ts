@@ -120,10 +120,12 @@ function loadWebImage(file: File): Promise<HTMLImageElement> {
     };
     image.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new PhotoPickerError(
-        "unsupported",
-        "This browser could not read that image. Try a JPEG, PNG, or WebP file.",
-      ));
+      reject(
+        new PhotoPickerError(
+          "unsupported",
+          "This browser could not read that image. Try a JPEG, PNG, or WebP file.",
+        ),
+      );
     };
     image.src = url;
   });
@@ -132,9 +134,10 @@ function loadWebImage(file: File): Promise<HTMLImageElement> {
 function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => blob
-        ? resolve(blob)
-        : reject(new PhotoPickerError("processing_failed", "Could not prepare that image.")),
+      (blob) =>
+        blob
+          ? resolve(blob)
+          : reject(new PhotoPickerError("processing_failed", "Could not prepare that image.")),
       "image/jpeg",
       JPEG_QUALITY,
     );
@@ -145,7 +148,8 @@ function blobToDataUri(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new PhotoPickerError("processing_failed", "Could not read that image."));
+    reader.onerror = () =>
+      reject(new PhotoPickerError("processing_failed", "Could not read that image."));
     reader.readAsDataURL(blob);
   });
 }

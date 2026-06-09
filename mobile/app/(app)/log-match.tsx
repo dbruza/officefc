@@ -79,12 +79,8 @@ export default function LogMatch() {
   );
   const myElo = ratingByUid.get(user?.uid ?? "") ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
-  const myDelta = opponent
-    ? previewElo(myElo, opponentElo, myGoals, opponentGoals)
-    : 0;
-  const opponentDelta = opponent
-    ? previewElo(opponentElo, myElo, opponentGoals, myGoals)
-    : 0;
+  const myDelta = opponent ? previewElo(myElo, opponentElo, myGoals, opponentGoals) : 0;
+  const opponentDelta = opponent ? previewElo(opponentElo, myElo, opponentGoals, myGoals) : 0;
   const canContinue =
     (step === 0 && !!opponent) ||
     (step === 1 && !!myTeam && !!opponentTeam) ||
@@ -158,11 +154,19 @@ export default function LogMatch() {
           <Pressable onPress={() => router.back()} style={styles.iconButton}>
             <Icon name="x" size={20} stroke={2.5} />
           </Pressable>
-          <Txt variant="head" size={18}>Log a match</Txt>
+          <Txt variant="head" size={18}>
+            Log a match
+          </Txt>
         </View>
         <ScrollView contentContainerStyle={[styles.content, { flex: 1, justifyContent: "center" }]}>
-          <Txt variant="head" size={24}>How would you like to log this match?</Txt>
-          <Txt color={colors.textDim} size={13} style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}>
+          <Txt variant="head" size={24}>
+            How would you like to log this match?
+          </Txt>
+          <Txt
+            color={colors.textDim}
+            size={13}
+            style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}
+          >
             Upload or take a photo for AI-assisted auto-fill, or enter the score manually.
           </Txt>
           <View style={{ gap: spacing.md }}>
@@ -171,9 +175,12 @@ export default function LogMatch() {
                 <Icon name="camera" size={28} color={colors.accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Txt variant="head" size={16}>Upload match photo</Txt>
+                <Txt variant="head" size={16}>
+                  Upload match photo
+                </Txt>
                 <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                  Upload the end-of-match screen. AI Beta suggests the score and stats for you to verify.
+                  Upload the end-of-match screen. AI Beta suggests the score and stats for you to
+                  verify.
                 </Txt>
               </View>
               <Icon name="chevron" size={16} color={colors.textDim} />
@@ -183,7 +190,9 @@ export default function LogMatch() {
                 <Icon name="edit" size={28} color={colors.textDim} />
               </View>
               <View style={{ flex: 1 }}>
-                <Txt variant="head" size={16}>Enter manually</Txt>
+                <Txt variant="head" size={16}>
+                  Enter manually
+                </Txt>
                 <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
                   Pick opponent, teams, and score step-by-step the classic way.
                 </Txt>
@@ -192,7 +201,9 @@ export default function LogMatch() {
             </Pressable>
           </View>
           {error ? (
-            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, lineHeight: 19 }}>{error}</Txt>
+            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, lineHeight: 19 }}>
+              {error}
+            </Txt>
           ) : null}
         </ScrollView>
       </SafeAreaView>
@@ -320,7 +331,13 @@ export default function LogMatch() {
         {step === 1 && opponent ? (
           <>
             <StepTitle>Which teams did you use?</StepTitle>
-            <TeamPicker label="Your team" player={me} teams={teams} value={myTeam} onChange={setMyTeam} />
+            <TeamPicker
+              label="Your team"
+              player={me}
+              teams={teams}
+              value={myTeam}
+              onChange={setMyTeam}
+            />
             <View style={{ height: spacing.lg }} />
             <TeamPicker
               label={`${opponent.name.split(" ")[0]}'s team`}
@@ -498,7 +515,9 @@ function TeamPicker({
                 <Txt size={13.5} style={{ flex: 1 }}>
                   {team.name}
                 </Txt>
-                {value?.id === team.id ? <Icon name="check" size={14} color={colors.accent} /> : null}
+                {value?.id === team.id ? (
+                  <Icon name="check" size={14} color={colors.accent} />
+                ) : null}
               </Pressable>
             ))}
           </View>
@@ -522,7 +541,12 @@ function ScoreStepper({
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
       <Avatar player={player} size={44} jersey />
-      <Txt size={11} color={colors.textDim} numberOfLines={1} style={{ marginVertical: spacing.sm }}>
+      <Txt
+        size={11}
+        color={colors.textDim}
+        numberOfLines={1}
+        style={{ marginVertical: spacing.sm }}
+      >
         {team}
       </Txt>
       <View style={styles.stepper}>

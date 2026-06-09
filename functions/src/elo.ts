@@ -67,9 +67,12 @@ function share(a: number | null | undefined, b: number | null | undefined): numb
 }
 
 export function performanceScore(m: {
-  aGoals: number; bGoals: number;
-  aShotsOnTarget?: number | null; bShotsOnTarget?: number | null;
-  aPossession?: number | null; bPossession?: number | null;
+  aGoals: number;
+  bGoals: number;
+  aShotsOnTarget?: number | null;
+  bShotsOnTarget?: number | null;
+  aPossession?: number | null;
+  bPossession?: number | null;
 }): number {
   const parts: Array<[number, number]> = [[W_GOALS, goalScore(m.aGoals, m.bGoals)]];
   const sot = share(m.aShotsOnTarget, m.bShotsOnTarget);
@@ -124,7 +127,7 @@ export function calculateSeason(
     const bEloBefore = ratings.get(match.bId) ?? BASE_ELO;
     const perfA = performanceScore(match);
     const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEloBefore, bEloBefore)));
-    const bDelta = Math.round(ELO_K * ((1 - perfA) - expectedScore(bEloBefore, aEloBefore)));
+    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bEloBefore, aEloBefore)));
     const aEloAfter = aEloBefore + aDelta;
     const bEloAfter = bEloBefore + bDelta;
 
@@ -189,4 +192,71 @@ export function calculateSeason(
   });
 
   return { matches: calculated, standings, history };
+}
+
+const POTM_MIN_GAMES = 3;
+
+function getMonthKey(ms: number): string {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+type MonthlyGains = Map<string, { totalGain: number; games: number; endingElo: number }>;
+
+/** Player of the month per calendar month: the largest total ELO gain among players with at
+ *  least POTM_MIN_GAMES games that month. Ties break by ending ELO, then lexical uid. */
+export function computePOTM(
+  matches: SeasonMatchInput[],
+): Array<{ month: string; playerId: string; gain: number; games: number }> {
+  const sorted = [...matches].sort(
+    (a, b) => a.dateMillis - b.dateMillis || a.id.localeCompare(b.id),
+  );
+  const ratings = new Map<string, number>();
+  const months = new Map<string, MonthlyGains>();
+  const result: Array<{ month: string; playerId: string; gain: number; games: number }> = [];
+
+  for (const match of sorted) {
+    const aBefore = ratings.get(match.aId) ?? BASE_ELO;
+    const bBefore = ratings.get(match.bId) ?? BASE_ELO;
+    const perfA = performanceScore(match);
+    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aBefore, bBefore)));
+    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bBefore, aBefore)));
+    const aAfter = aBefore + aDelta;
+    const bAfter = bBefore + bDelta;
+    ratings.set(match.aId, aAfter);
+    ratings.set(match.bId, bAfter);
+
+    const month = getMonthKey(match.dateMillis);
+    if (!months.has(month)) months.set(month, new Map());
+    const gains = months.get(month)!;
+    for (const [id, delta, rating] of [
+      [match.aId, aDelta, aAfter],
+      [match.bId, bDelta, bAfter],
+    ] as const) {
+      const prev = gains.get(id) ?? { totalGain: 0, games: 0, endingElo: 0 };
+      prev.totalGain += delta;
+      prev.games += 1;
+      prev.endingElo = rating;
+      gains.set(id, prev);
+    }
+  }
+
+  for (const [month, gains] of months) {
+    let best: { id: string; gain: number; games: number; endingElo: number } | null = null;
+    for (const [uid, info] of gains) {
+      if (info.games < POTM_MIN_GAMES) continue;
+      if (
+        !best ||
+        info.totalGain > best.gain ||
+        (info.totalGain === best.gain && info.endingElo > best.endingElo) ||
+        (info.totalGain === best.gain && info.endingElo === best.endingElo && uid < best.id)
+      ) {
+        best = { id: uid, gain: info.totalGain, games: info.games, endingElo: info.endingElo };
+      }
+    }
+    if (best) {
+      result.push({ month, playerId: best.id, gain: best.gain, games: best.games });
+    }
+  }
+  return result;
 }

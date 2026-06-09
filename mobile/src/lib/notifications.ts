@@ -76,7 +76,7 @@ function hashToken(token: string): string {
   let hash = 0;
   for (let i = 0; i < token.length; i++) {
     const chr = token.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
+    hash = (hash << 5) - hash + chr;
     hash |= 0;
   }
   return `tok_${Math.abs(hash).toString(36)}`;
