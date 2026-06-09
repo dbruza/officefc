@@ -1,12 +1,11 @@
 # OfficeFC — mobile app (Expo)
 
 Native app (Expo / React Native + Expo Router + TypeScript) for OfficeFC, backed by
-Firebase (Auth + Firestore + Storage) and Cloud Functions. See `../implementationplan.md`
+Firebase (Auth + Firestore + Storage) and Cloud Functions. See `../docs/implementation-plan.md`
 for the full architecture and build sequence.
 
-> **Status: M5 (all phases complete).** Auth, match lifecycle, ELO, standings, AI-assisted
-> logging, season admin, and push notifications are implemented. Awaiting M6 production release
-> (Firebase deploy + EAS Build + store submission).
+> **Status:** Product functionality through season administration and push notifications is
+> implemented. Production deployment, real-device validation, and store submission remain.
 
 ## Run
 
@@ -51,10 +50,10 @@ app/                 ← Expo Router routes
     player/[id].tsx  ← player profile + ELO chart
     match/[id].tsx   ← match detail
     log-match.tsx    ← manual + AI snap flow
-    inbox.tsx        ← pending confirmations
+    confirmations.tsx ← pending confirmations
     head-to-head.tsx ← head-to-head records
     admin.tsx         ← admin panel
-    profile/edit.tsx  ← profile editing
+    profile.tsx       ← profile editing
     archive/[id].tsx  ← season archive
 src/
   theme/             ← design tokens + font loader

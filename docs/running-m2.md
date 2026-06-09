@@ -1,5 +1,9 @@
 # Running M2 locally
 
+> Historical milestone runbook. For the current setup and release state, see
+> [Firebase setup](firebase-setup.md) and the
+> [implementation overview](implementation-plan.md).
+
 M2 adds the first complete competitive loop:
 
 1. one player logs a manual result;
@@ -74,5 +78,5 @@ If the full rules command says port `8080` is already in use because the suite i
 ## Push boundary
 
 The Functions send submit/confirm/dispute messages to any Expo tokens already stored under
-`deviceTokens/{uid}/tokens/{tokenId}`. Device-token registration is intentionally deferred until
-the planned SDK upgrade/dev-build work before M4, alongside `expo-notifications`.
+`deviceTokens/{uid}/tokens/{tokenId}`. Device-token registration is implemented through the
+native development-build workflow and `expo-notifications`.

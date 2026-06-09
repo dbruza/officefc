@@ -1,100 +1,137 @@
 # OfficeFC
 
-The office FIFA league, settled by ELO. A dark, mobile-first web app for logging
-matches, tracking ratings, and arguing about who really owns whom.
+[![CI](https://github.com/dbruza/officefc/actions/workflows/ci.yml/badge.svg)](https://github.com/dbruza/officefc/actions/workflows/ci.yml)
 
-`OfficeFC.html` is the shipped app: a **single, self-contained HTML file**. Open it
-in any browser or drop it on any static host — no server, no build step required to
-run it. It loads only React + ReactDOM from a CDN; all UI and the data engine are
-inlined, and the JSX is precompiled to plain JavaScript at build time (no in-browser
-Babel).
+OfficeFC turns an office EA Sports FC league into a proper competition. Players log
+matches, opponents confirm results, and the app maintains ELO ratings, standings,
+head-to-head records, season history, and photo-backed match evidence.
 
-## Run it
+The production app is built with Expo and React Native for web, iOS, and Android. Firebase
+provides authentication, league data, private photo storage, trusted Cloud Functions, and
+scheduled jobs.
 
-Just open `OfficeFC.html` in a browser. Or serve it locally:
+<p align="center">
+  <img src="prototype/officefc/screens/01-home.png" width="320" alt="Original OfficeFC home screen design prototype">
+</p>
+
+<p align="center"><em>Original home-screen design prototype used to shape the production app.</em></p>
+
+## Highlights
+
+- Invite-only leagues with email verification and role-based administration
+- Opponent-confirmed match logging with manual and AI-assisted entry
+- Stats-aware ELO ratings, form, streaks, rankings, and player profiles
+- Head-to-head records, match detail, season archives, and player-of-the-month awards
+- Private match-photo storage with temporary signed access
+- Admin tools for seasons, teams, invites, disputes, and catalogue synchronization
+- Push reminders, weekly snapshots, and abandoned-draft cleanup
+- Responsive Expo app targeting web, iOS, and Android
+
+## Technology
+
+| Area | Stack |
+| --- | --- |
+| App | Expo 56, React Native, Expo Router, TypeScript |
+| Backend | Firebase Auth, Firestore, Storage, Cloud Functions |
+| AI assist | Anthropic vision extraction with human review |
+| Quality | Node test runner, Firebase Rules Unit Testing, ESLint, Prettier |
+| Delivery | Firebase Hosting, EAS configuration, GitHub Actions |
+
+## Architecture
+
+```text
+Expo app (web / iOS / Android)
+  |
+  +-- Firebase Auth -------- accounts and email verification
+  +-- Firestore ------------ leagues, matches, ratings, seasons, read models
+  +-- Cloud Storage -------- private match evidence
+  +-- Cloud Functions ------ trusted writes, ELO, admin actions, AI extraction
+  +-- Scheduled Functions -- reminders, snapshots, stale-draft cleanup
+```
+
+Clients can propose matches, but trusted outcomes are computed on the backend. A match
+affects ELO only after opponent confirmation or an audited admin resolution. AI extraction
+only pre-fills the form; a player reviews the values before submission.
+
+## Current Status
+
+The product implementation through season administration and notifications is complete.
+The remaining release work is production deployment, real-device validation, AI evaluation
+with a representative image set, and app-store submission.
+
+See [the implementation overview](docs/implementation-plan.md) and
+[web launch runbook](docs/web-mvp-launch.md) for the current release checklist.
+
+## Run Locally
+
+Requirements:
+
+- Node.js 20
+- npm
+- Java 21 for the Firebase Emulator Suite
+
+Install each workspace:
 
 ```bash
-npm run preview   # http://localhost:8756
+npm ci
+npm --prefix mobile ci
+npm --prefix functions ci
+npm --prefix test/rules ci
 ```
 
-## What's in it
-
-Implemented faithfully from the design prototype (`prototype/officefc/`):
-
-- **Home** — your rank, ELO, last-5 form, current win streak, nemesis, and the top of the table.
-- **Leaderboard** — season filter, player search, W-D-L, ELO, and weekly movement.
-- **Seasons / Hall of Fame** — the live season with a countdown + progress, plus past
-  seasons with champions, runners-up, and player-of-the-month history.
-- **Player profile** — big ELO number, an SVG ELO-over-time chart, record/win-rate/streak
-  stats, biggest win, and head-to-head records vs everyone.
-- **Match detail** — final score, teams, per-player ELO swing, and the end-of-match stats shot.
-- **Head-to-head** — pick any two players for their all-time record, goals, and recent meetings.
-- **Log a match** — a 5-step flow (opponent → teams → score → photo → review) with a live
-  ELO-swing preview and a result celebration screen.
-- **Profile setup / edit** — name, handle, jersey number, and avatar colour.
-
-The ratings engine is standard ELO (base 1500, K=32; win/draw/loss). Every stat in the
-app — records, form, streaks, head-to-head, standings, ELO history — is derived from one
-deterministic match list, so the whole prototype is internally consistent.
-
-## Project layout
-
-```
-OfficeFC.html          ← the shipped, self-contained app (generated)
-build/
-  build.js             ← assembles + precompiles prototype sources into OfficeFC.html
-  app-shell.jsx        ← app shell (navigation/phone frame); replaces the prototype's host-only tweaks panel
-  serve.js             ← tiny static server for `npm run preview`
-prototype/officefc/    ← original multi-file design prototype (reference / source of truth)
-mobile/                ← the production app: Expo (React Native) + Expo Router (see mobile/README.md)
-firebase.json, *.rules ← Firebase config: Firestore/Storage rules, emulators
-functions/src/extract/ ← extraction core (called by the Cloud Function; see AI-assisted logging below)
-eval/                  ← extraction eval harness + labeled fixtures
-test/                  ← offline unit/pipeline tests for the extraction core
-implementationplan.md  ← the production build plan (Expo + GCP/Firebase + AI logging)
-```
-
-## AI-assisted match logging (backend slice)
-
-The first piece of the production build: snap the end-of-match stats screen and let
-Claude vision pre-fill the score + key stats for you to confirm. It lives in
-`functions/src/extract/core/` (a Firebase Cloud Function module) with the
-correctness-critical logic — schema, prompt, parsing, and the validation guardrails —
-in dependency-free ESM under `core/`, so the same code runs in the Cloud Function
-(Node) and the test/eval harness.
+Configure the app:
 
 ```bash
-npm test          # offline: validation guardrails + a mocked end-to-end pipeline
-npm run eval      # offline (MOCK): runs the harness against the sample fixture
-ANTHROPIC_API_KEY=sk-ant-… npm run eval   # scores the real model against the labels
+cp mobile/.env.example mobile/.env
 ```
 
-It never auto-submits or auto-confirms — it only pre-fills the log form; opponent
-confirmation stays the source of truth. See
-`functions/src/extract/core/` and `eval/README.md` for details.
+Add the public Firebase web configuration to `mobile/.env`. Use
+`EXPO_PUBLIC_USE_EMULATORS=1` for local development.
 
-## Rebuild
-
-`OfficeFC.html` is generated from the prototype sources. To regenerate after editing
-anything under `prototype/officefc/` or `build/app-shell.jsx`:
+Start Firebase in one terminal and the Expo web app in another:
 
 ```bash
-npm install   # once, to get the build-time Babel transformer
-npm run build
+npx firebase emulators:start
+npm --prefix mobile run web
 ```
 
-## Beyond the prototype
+Native development is available through `npm --prefix mobile run ios` and
+`npm --prefix mobile run android`. Camera, uploads, and push notifications require the
+real-device workflow in [docs/real-device-testing.md](docs/real-device-testing.md).
 
-The data is an in-memory, deterministic mock so the app is a true standalone artifact.
-`implementationplan.md` is the production build plan: a native **Expo (React Native)** app
-backed by **GCP / Firebase** (Auth, Firestore, Cloud Functions, Storage) with accounts,
-opponent-confirmed match logging, photo proof in private storage, admin-managed
-seasons/teams, per-season ELO recalculation, and AI-assisted match logging.
+## Quality Checks
 
-The production app lives in **`mobile/`** (see `mobile/README.md`). M0–M3 now cover the scaffold,
-auth/membership, confirmed-match loop, standings, profiles, head-to-head, match detail, and seasons;
-M4 adds AI-assisted photo logging, followed by season administration and release work. The app
-runs on web, iOS, and Android.
+```bash
+npm run format:check       # formatting
+npm run lint               # zero-warning lint
+npm run typecheck:mobile   # cache-clean mobile TypeScript check
+npm run build:web          # production Expo export and environment validation
+npm run test:functions     # Cloud Functions tests
+npm test                   # extraction and ELO tests
+npm run test:rules         # Firestore and Storage security rules
+```
 
-For the invite-only web MVP deployment at `officefc.bruza.tech`, see
-[`docs/web-mvp-launch.md`](docs/web-mvp-launch.md).
+`npm run check` runs the complete local CI sequence.
+
+## Project Layout
+
+```text
+mobile/                 production Expo application
+functions/              Firebase Cloud Functions and backend tests
+test/                   extraction, ELO, and security-rules tests
+eval/                   labeled AI extraction evaluation harness
+docs/                   setup, testing, architecture, and release runbooks
+prototype/officefc/     original visual prototype and design references
+firebase.json           Hosting, Functions, and emulator configuration
+firestore.rules         Firestore authorization boundary
+storage.rules           private match-photo authorization boundary
+```
+
+The standalone HTML under `prototype/officefc/` is retained as design history. It is not
+the production architecture or deployment target.
+
+## Copyright
+
+Copyright (c) 2026 David Bruza. All rights reserved. This repository is source-available
+for portfolio review and does not grant permission to copy, modify, or redistribute the
+software.

@@ -1,5 +1,9 @@
 # Running M3 locally
 
+> Historical milestone runbook. For the current setup and release state, see
+> [Firebase setup](firebase-setup.md) and the
+> [implementation overview](implementation-plan.md).
+
 M3 adds the read-heavy league experience on top of the M2 match lifecycle:
 
 1. player profiles with current-season ELO history and all-time records;
@@ -48,8 +52,8 @@ rebuilds the all-time player and head-to-head documents.
 5. Confirm the match score, ELO changes, teams, and manual/AI stats state.
 6. Open **Seasons** and confirm the active season and archive empty state.
 
-Past-season cards and frozen archive tables become populated when M5 introduces
-season finalization.
+Past-season cards and frozen archive tables are populated by the implemented
+season-finalization snapshots.
 
 ## Verification commands
 

@@ -13,7 +13,7 @@ import {
   type LeaguePlayer,
   type PendingMatch,
 } from "@/lib/league";
-import { colors, radius, spacing } from "@/theme";
+import { colors, spacing } from "@/theme";
 import type { Player } from "@/types";
 
 export default function Confirmations() {

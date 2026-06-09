@@ -8,7 +8,6 @@
  * read league data, clients can't write trusted fields, but onboarding self-reads work.
  */
 import { test, before, after, beforeEach } from "node:test";
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";

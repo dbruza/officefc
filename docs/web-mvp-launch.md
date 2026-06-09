@@ -13,11 +13,12 @@ match before ELO changes.
 From the repository root:
 
 ```bash
-firebase login
-firebase use office-fc
-npm install
-npm --prefix mobile install
-npm --prefix functions install
+npx firebase login
+npx firebase use office-fc
+npm ci
+npm --prefix mobile ci
+npm --prefix functions ci
+npm --prefix test/rules ci
 ```
 
 Confirm `mobile/.env` contains the Firebase Web app config for `office-fc` and:
@@ -47,11 +48,7 @@ npm run deploy:backend
 ## 3. Verify before deployment
 
 ```bash
-npm test
-npm --prefix functions test
-npm run test:rules
-npm --prefix mobile run typecheck
-npm run build:web
+npm run check
 npx --yes expo-doctor@latest mobile
 ```
 

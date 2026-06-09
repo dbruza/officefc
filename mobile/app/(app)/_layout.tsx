@@ -2,11 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { colors } from "@/theme";
 import { useAuth } from "@/lib/auth";
-import {
-  requestAndRegisterToken,
-  unregisterPushToken,
-  getCachedPushToken,
-} from "@/lib/notifications";
+import { requestAndRegisterToken, unregisterPushToken } from "@/lib/notifications";
 
 export default function AppLayout() {
   const { user } = useAuth();
