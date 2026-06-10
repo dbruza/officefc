@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node build/build.js",
     "preview": "node build/serve.js",
-    "test": "npm --prefix functions run build && node --test \"test/*.test.mjs\"",
+    "test": "npm --prefix functions run build && node --test test/*.test.mjs",
     "test:functions": "npm --prefix functions test",
     "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore,storage \"npm --prefix test/rules test\"",
     "lint": "eslint . --max-warnings 0",
