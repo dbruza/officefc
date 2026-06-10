@@ -44,8 +44,8 @@ async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number
     }
   }
 
-  const { seeded } = await seedTeamCatalogue();
-  return { seasonId: activeSeasonId, teamCount: seeded };
+  const { active: activeTeamCount } = await seedTeamCatalogue();
+  return { seasonId: activeSeasonId, teamCount: activeTeamCount };
 }
 
 /**

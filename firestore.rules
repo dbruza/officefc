@@ -80,6 +80,10 @@ service cloud.firestore {
       allow read: if isMember();
       allow write: if false;
     }
+    match /teamCatalogues/{catalogueId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
 
     // Matches: members read. A member may CREATE a pending match they participate in;
     // all status/ELO mutations happen in Cloud Functions (confirm/recalc/dispute).

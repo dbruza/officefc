@@ -26,4 +26,5 @@ export { ScreenHeader } from "./ScreenHeader";
 export { AppTabBar } from "./AppTabBar";
 export type { AppTab } from "./AppTabBar";
 export { TeamPicker } from "./TeamPicker";
+export type { TeamPickerProps } from "./TeamPicker";
 export { SnapFlow } from "./SnapFlow";

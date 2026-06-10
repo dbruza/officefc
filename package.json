@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "build": "node build/build.js",
+    "import:fifa23": "node scripts/import-fifa-teams.mjs data/fifa23-team-list.txt functions/src/data/teamCatalogue.ts",
     "preview": "node build/serve.js",
     "test": "npm --prefix functions run build && node --test test/*.test.mjs",
     "test:functions": "npm --prefix functions test",

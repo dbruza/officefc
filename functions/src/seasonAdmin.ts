@@ -6,6 +6,7 @@ import { requireAuth, assertAdmin } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
 import { dateMillis, generateUniqueJoinCode, seasonMatchInputFromDoc } from "./utils";
 import { sendPush } from "./notify";
+import { rebuildTeamCatalogueSnapshot } from "./teams";
 
 const db = getFirestore();
 
@@ -141,33 +142,74 @@ export const manageTeam = onCall({ cors: true }, async (req) => {
   await assertAdmin(uid);
 
   const action = String(req.data?.action ?? "").trim();
-  if (!["add", "rename", "deactivate"].includes(action))
-    throw new HttpsError("invalid-argument", "action must be add, rename, or deactivate.");
+  if (!["add", "rename", "deactivate", "reactivate"].includes(action))
+    throw new HttpsError(
+      "invalid-argument",
+      "action must be add, rename, deactivate, or reactivate.",
+    );
 
   if (action === "add") {
     const name = String(req.data?.name ?? "").trim();
     if (!name) throw new HttpsError("invalid-argument", "name is required.");
     const teamId = `team-${Date.now()}`;
-    await db
-      .doc(`teams/${teamId}`)
-      .set({ name, active: true, createdAt: FieldValue.serverTimestamp() });
+    await db.doc(`teams/${teamId}`).set({
+      name,
+      competition: "Custom",
+      category: "custom",
+      overall: null,
+      attack: null,
+      midfield: null,
+      defence: null,
+      catalogueVersion: null,
+      source: "custom",
+      active: true,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    await rebuildTeamCatalogueSnapshot(db);
     return { ok: true, teamId, name };
   }
 
   const teamId = String(req.data?.teamId ?? "").trim();
   if (!teamId) throw new HttpsError("invalid-argument", "teamId is required.");
   const ref = db.doc(`teams/${teamId}`);
-  if (!(await ref.get()).exists) throw new HttpsError("not-found", "Team not found.");
+  const snap = await ref.get();
+  if (!snap.exists) throw new HttpsError("not-found", "Team not found.");
 
   if (action === "rename") {
     const name = String(req.data?.name ?? "").trim();
     if (!name) throw new HttpsError("invalid-argument", "name is required.");
-    await ref.update({ name, updatedAt: FieldValue.serverTimestamp() });
+    await ref.update({
+      name,
+      nameOverride: name,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    await rebuildTeamCatalogueSnapshot(db);
     return { ok: true, teamId, name };
   }
 
   if (action === "deactivate") {
-    await ref.update({ active: false, updatedAt: FieldValue.serverTimestamp() });
+    await ref.update({
+      active: false,
+      activeOverride: false,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    await rebuildTeamCatalogueSnapshot(db);
+    return { ok: true, teamId };
+  }
+
+  if (action === "reactivate") {
+    if (snap.get("source") === "catalogue" && snap.get("catalogueActive") === false) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Superseded catalogue teams cannot be reactivated.",
+      );
+    }
+    await ref.update({
+      active: true,
+      activeOverride: true,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    await rebuildTeamCatalogueSnapshot(db);
     return { ok: true, teamId };
   }
   throw new HttpsError("invalid-argument", `Unknown action: ${action}`);

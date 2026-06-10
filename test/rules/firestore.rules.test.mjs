@@ -67,6 +67,20 @@ beforeEach(async () => {
     });
     await setDoc(doc(db, "teams/team-a"), { name: "Crimson Albion", active: true });
     await setDoc(doc(db, "teams/team-b"), { name: "Royal Vega", active: true });
+    await setDoc(doc(db, "teams/chelsea-men"), { name: "Chelsea", active: true });
+    await setDoc(doc(db, "teams/chelsea-women"), { name: "Chelsea", active: true });
+    await setDoc(doc(db, "teamCatalogues/current"), {
+      version: "fifa23",
+      count: 2,
+      teams: [
+        { id: "chelsea-men", name: "Chelsea", competition: "England Premier League (1)" },
+        {
+          id: "chelsea-women",
+          name: "Chelsea",
+          competition: "England FA Women's Super League (1)",
+        },
+      ],
+    });
     await setDoc(doc(db, "invites/OFC-ABCDE"), { role: "member", usedBy: null });
   });
 });
@@ -86,6 +100,11 @@ test("member can read league matches", async () => {
 test("members can read M3 aggregate documents", async () => {
   await assertSucceeds(getDoc(doc(member(), "playerStats/alice")));
   await assertSucceeds(getDoc(doc(member(), "h2h/alice__dave")));
+});
+
+test("members can read the compact team catalogue snapshot", async () => {
+  await assertSucceeds(getDoc(doc(member(), "teamCatalogues/current")));
+  await assertFails(getDoc(doc(outsider(), "teamCatalogues/current")));
 });
 
 test("non-members cannot read M3 aggregate documents", async () => {
@@ -125,6 +144,27 @@ test("a member can create a pending match they participate in", async () => {
       bTeamId: "team-b",
       aTeam: "Crimson Albion",
       bTeam: "Royal Vega",
+      aGoals: 2,
+      bGoals: 1,
+      status: "pending_confirmation",
+      source: "manual",
+      date: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("same-name teams remain valid when their ids are distinct", async () => {
+  await assertSucceeds(
+    setDoc(doc(member(), "matches/same-name-teams"), {
+      seasonId: "s1",
+      submittedBy: "alice",
+      aId: "alice",
+      bId: "dave",
+      aTeamId: "chelsea-men",
+      bTeamId: "chelsea-women",
+      aTeam: "Chelsea",
+      bTeam: "Chelsea",
       aGoals: 2,
       bGoals: 1,
       status: "pending_confirmation",

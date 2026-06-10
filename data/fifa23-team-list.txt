@@ -1,0 +1,2584 @@
+Team	League	OVR	ATK	MID	DEF
+
+Bayern München
+Germany 1. Bundesliga (1)	85	86	85	83
+
+Manchester City
+England Premier League (1)	85	85	87	83
+
+Real Madrid
+Spain Primera División (1)	85	85	86	84
+
+Paris Saint-Germain
+France Ligue 1 (1)	84	86	79	82
+
+Liverpool
+England Premier League (1)	84	84	81	85
+
+Olympique Lyonnais
+France Division 1 Féminine (1)	84	85	84	84
+
+FC Barcelona
+Spain Primera División (1)	83	83	85	82
+
+Chelsea
+England FA Women's Super League (1)	83	91	82	83
+
+Atlético de Madrid
+Spain Primera División (1)	83	84	83	81
+
+VfL Wolfsburg
+Rest of World Women	83	83	84	83
+
+Paris Saint-Germain
+France Division 1 Féminine (1)	83	85	81	82
+
+Arsenal
+England FA Women's Super League (1)	82	84	82	79
+
+Arsenal
+England Premier League (1)	82	82	84	81
+
+Manchester United
+England Premier League (1)	82	81	84	81
+
+Inter
+Italy Serie A (1)	82	84	82	82
+
+Juventus
+Italy Serie A (1)	82	83	81	80
+
+Chelsea
+England Premier League (1)	82	82	81	82
+
+Tottenham Hotspur
+England Premier League (1)	81	84	80	79
+
+Juventus
+Rest of World Women	81	82	80	80
+
+Borussia Dortmund
+Germany 1. Bundesliga (1)	81	82	81	82
+
+RB Leipzig
+Germany 1. Bundesliga (1)	81	83	81	79
+
+Milan
+Italy Serie A (1)	81	80	80	81
+
+Napoli
+Italy Serie A (1)	80	82	81	80
+
+Roma FC
+Italy Serie A (1)	80	82	77	81
+
+Manchester United
+England FA Women's Super League (1)	80	79	81	79
+
+Villarreal CF
+Spain Primera División (1)	80	82	79	79
+
+Sevilla FC
+Spain Primera División (1)	80	80	79	79
+
+San Diego Wave FC
+USA NWSL (1)	80	90	79	79
+
+Newcastle United
+England Premier League (1)	80	79	80	80
+
+Portland Thorns FC
+USA NWSL (1)	80	87	81	79
+
+Roma
+Italy Serie A (1)	80	82	79	82
+
+AFC Richmond
+Rest of World	79	80	80	78
+
+Lazio
+Italy Serie A (1)	79	81	81	78
+
+Aston Villa
+England Premier League (1)	79	79	78	79
+
+Eintracht Frankfurt
+Rest of World Women	79	80	81	79
+
+Bayer 04 Leverkusen
+Germany 1. Bundesliga (1)	79	81	78	80
+
+Real Madrid
+Rest of World Women	79	80	79	78
+
+Benfica
+Portugal Primeira Liga (1)	79	81	78	79
+
+Athletic Club de Bilbao
+Spain Primera División (1)	79	77	79	80
+
+Real Betis Balompié
+Spain Primera División (1)	79	82	80	78
+
+Paris FC
+France Division 1 Féminine (1)	79	76	80	79
+
+OL Reign
+USA NWSL (1)	79	74	80	80
+
+Real Sociedad
+Spain Primera División (1)	79	78	80	78
+
+Kansas City Current
+USA NWSL (1)	79	75	81	77
+
+Manchester City
+England FA Women's Super League (1)	79	80	81	78
+
+Sporting CP
+Portugal Primeira Liga (1)	78	79	79	77
+
+FC Porto
+Portugal Primeira Liga (1)	78	78	79	77
+
+Montpellier HSC
+France Division 1 Féminine (1)	78	79	78	78
+
+Fiorentina
+Italy Serie A (1)	78	78	78	77
+
+Chicago Red Stars
+USA NWSL (1)	78	77	79	77
+
+Team	League	OVR	ATK	MID	DEF
+
+Montpellier HSC
+France Division 1 Féminine (1)	78	79	78	78
+
+Olympique de Marseille
+France Ligue 1 (1)	78	79	79	77
+
+FC Porto
+Portugal Primeira Liga (1)	78	78	79	77
+
+Chicago Red Stars
+USA NWSL (1)	78	77	79	77
+
+NJ / NY Gotham FC
+USA NWSL (1)	78	77	77	79
+
+Wolverhampton Wanderers
+England Premier League (1)	78	77	78	76
+
+Fiorentina
+Italy Serie A (1)	78	78	78	77
+
+Leicester City
+England Premier League (1)	78	77	80	76
+
+West Ham United
+England Premier League (1)	78	78	79	78
+
+AS Monaco
+France Ligue 1 (1)	77	80	77	77
+
+Tottenham Hotspur
+England FA Women's Super League (1)	77	78	74	77
+
+Nottingham Forest
+England Premier League (1)	77	75	76	77
+
+RCD Espanyol
+Spain Primera División (1)	77	81	77	76
+
+Ajax
+Holland Eredivisie (1)	77	78	78	73
+
+Galatasaray
+Turkey Süper Lig (1)	77	79	77	74
+
+Brighton & Hove Albion
+England Premier League (1)	77	75	77	78
+
+Olympique Lyonnais
+France Ligue 1 (1)	77	80	76	76
+
+Aston Villa
+England FA Women's Super League (1)	77	79	77	77
+
+Stade Rennais
+France Ligue 1 (1)	77	76	76	77
+
+Getafe CF
+Spain Primera División (1)	77	77	78	75
+
+Borussia M'gladbach
+Germany 1. Bundesliga (1)	77	80	78	76
+
+RC Celta de Vigo
+Spain Primera División (1)	77	78	76	78
+
+Washington Spirit
+USA NWSL (1)	77	82	77	75
+
+PSV
+Holland Eredivisie (1)	76	75	77	74
+
+OGC Nice
+France Ligue 1 (1)	76	75	76	76
+
+North Carolina Courage
+USA NWSL (1)	76	73	75	76
+
+Palmeiras
+CONMEBOL Libertadores	76	78	77	74
+
+Braga
+Portugal Primeira Liga (1)	76	78	77	75
+
+CA Osasuna
+Spain Primera División (1)	76	75	76	76
+
+Crystal Palace
+England Premier League (1)	76	76	76	76
+
+Fulham
+England Premier League (1)	76	79	76	75
+
+FC Fleury 91
+France Division 1 Féminine (1)	76	75	79	76
+
+SC Freiburg
+Germany 1. Bundesliga (1)	76	76	76	77
+
+TSG 1899 Hoffenheim
+Germany 1. Bundesliga (1)	76	76	78	76
+
+Racing Louisville FC
+USA NWSL (1)	76	75	75	78
+
+RC Lens
+France Ligue 1 (1)	76	77	76	77
+
+Everton
+England Premier League (1)	76	77	76	76
+
+Flamengo
+CONMEBOL Libertadores	76	77	75	75
+
+Rayo Vallecano
+Spain Primera División (1)	76	76	76	76
+
+VfL Wolfsburg
+Germany 1. Bundesliga (1)	76	76	77	76
+
+Valencia CF
+Spain Primera División (1)	76	78	75	76
+
+LOSC Lille
+France Ligue 1 (1)	76	78	76	76
+
+River Plate
+Argentina Primera División (1)	76	75	77	75
+
+Girona FC
+Spain Primera División (1)	75	77	76	75
+
+Cádiz CF
+Spain Primera División (1)	75	74	75	75
+
+1. FSV Mainz 05
+Germany 1. Bundesliga (1)	75	76	75	74
+
+Real Valladolid
+Spain Primera División (1)	75	74	74	73
+
+Bologna
+Italy Serie A (1)	75	77	75	73
+
+Udinese
+Italy Serie A (1)	75	75	75	75
+
+1. FC Union Berlin
+Germany 1. Bundesliga (1)	75	75	74	75
+
+Team	League	OVR	ATK	MID	DEF
+
+Atlético Mineiro
+CONMEBOL Libertadores	75	73	77	76
+
+Cádiz CF
+Spain Primera División (1)	75	74	75	75
+
+Girona FC
+Spain Primera División (1)	75	77	76	75
+
+Fenerbahçe
+Turkey Süper Lig (1)	75	76	75	74
+
+Beşiktaş
+Turkey Süper Lig (1)	75	76	75	74
+
+Trabzonspor
+Turkey Süper Lig (1)	75	75	75	73
+
+Everton
+England FA Women's Super League (1)	75	76	74	74
+
+AC Monza
+Italy Serie A (1)	75	76	75	74
+
+Sassuolo
+Italy Serie A (1)	75	77	75	71
+
+Boca Juniors
+Argentina Primera División (1)	75	74	75	75
+
+Real Valladolid
+Spain Primera División (1)	75	74	74	73
+
+1. FSV Mainz 05
+Germany 1. Bundesliga (1)	75	76	75	74
+
+RCD Mallorca
+Spain Primera División (1)	75	79	75	75
+
+Feyenoord
+Holland Eredivisie (1)	75	74	76	77
+
+Leeds United
+England Premier League (1)	75	75	76	74
+
+Club Brugge
+Belgium Pro League (1)	75	74	76	72
+
+Southampton
+England Premier League (1)	75	76	74	75
+
+Salernitana
+Italy Serie A (1)	74	76	73	71
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Elche CF
+Spain Primera División (1)	74	74	73	73
+
+UD Almería
+Spain Primera División (1)	74	75	74	72
+
+Empoli
+Italy Serie A (1)	74	73	74	74
+
+Montpellier HSC
+France Ligue 1 (1)	74	75	75	73
+
+Hellas Verona
+Italy Serie A (1)	74	72	74	74
+
+FC Nantes
+France Ligue 1 (1)	74	74	73	73
+
+AEK
+Rest of World	74	76	75	73
+
+RC Strasbourg
+France Ligue 1 (1)	74	77	74	74
+
+1. FC Köln
+Germany 1. Bundesliga (1)	74	71	75	73
+
+Hertha BSC
+Germany 1. Bundesliga (1)	74	74	75	73
+
+FC Augsburg
+Germany 1. Bundesliga (1)	74	73	73	74
+
+VfB Stuttgart
+Germany 1. Bundesliga (1)	74	72	75	75
+
+Celtic
+Scotland Premiership (1)	74	74	74	74
+
+AZ
+Holland Eredivisie (1)	74	76	74	74
+
+Slavia Praha
+Rest of World	74	72	73	74
+
+AFC Bournemouth
+England Premier League (1)	74	75	73	73
+
+Racing Club de Avellaneda
+Argentina Primera División (1)	74	73	73	74
+
+RB Bragantino
+CONMEBOL Sudamericana	74	74	74	75
+
+Girondins de Bordeaux
+France Division 1 Féminine (1)	74	75	74	73
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Athletico Paranaense
+CONMEBOL Libertadores	74	74	72	75
+
+Orlando Pride
+USA NWSL (1)	74	74	75	73
+
+Internacional
+CONMEBOL Libertadores	74	71	73	75
+
+Stade de Reims
+France Division 1 Féminine (1)	74	76	74	74
+
+UD Las Palmas
+Spain Segunda División (2)	73	73	74	73
+
+Al Nassr
+Saudi Pro League (1)	73	87	70	71
+
+En Avant Guingamp
+France Division 1 Féminine (1)	73	74	73	74
+
+Genk
+Belgium Pro League (1)	73	72	74	72
+
+Dijon FCO
+France Division 1 Féminine (1)	73	74	73	73
+
+Spezia
+Italy Serie A (1)	73	75	71	71
+
+Antwerp
+Belgium Pro League (1)	73	76	72	73
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Rangers
+Scotland Premiership (1)	73	73	73	74
+
+UD Las Palmas
+Spain Segunda División (2)	73	73	74	73
+
+Viktoria Plzeň
+Rest of World	73	73	73	72
+
+Corinthians
+CONMEBOL Libertadores	73	74	73	74
+
+Levante UD
+Spain Segunda División (2)	73	72	75	71
+
+Liverpool
+England FA Women's Super League (1)	73	74	74	71
+
+Toulouse FC
+France Ligue 1 (1)	73	72	75	72
+
+Sparta Praha
+Rest of World	73	74	72	73
+
+PAOK
+Rest of World	73	73	73	71
+
+Dijon FCO
+France Division 1 Féminine (1)	73	74	73	73
+
+Granada CF
+Spain Segunda División (2)	73	75	73	72
+
+Stade de Reims
+France Ligue 1 (1)	73	76	73	74
+
+Reading
+England FA Women's Super League (1)	73	73	73	74
+
+Burnley
+England Championship (2)	73	72	73	74
+
+Panathinaikos
+Rest of World	73	72	73	72
+
+Stade Brestois 29
+France Ligue 1 (1)	73	73	73	72
+
+Santos
+CONMEBOL Sudamericana	73	74	72	73
+
+FC Lorient
+France Ligue 1 (1)	73	74	72	73
+
+São Paulo
+CONMEBOL Sudamericana	73	72	73	73
+
+En Avant Guingamp
+France Division 1 Féminine (1)	73	74	73	74
+
+Werder Bremen
+Germany 1. Bundesliga (1)	73	76	71	74
+
+Genk
+Belgium Pro League (1)	73	72	74	72
+
+Gent
+Belgium Pro League (1)	72	73	72	72
+
+Leicester City
+England FA Women's Super League (1)	72	69	70	71
+
+Union Saint-Gilloise
+Belgium Pro League (1)	72	71	73	71
+
+Le Havre AC
+France Division 1 Féminine (1)	72	75	72	72
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Middlesbrough
+England Championship (2)	72	72	70	72
+
+Sampdoria
+Italy Serie A (1)	72	72	71	72
+
+ESTAC Troyes
+France Ligue 1 (1)	72	72	73	70
+
+Dynamo Kyiv
+Rest of World	72	65	70	69
+
+Fluminense
+CONMEBOL Libertadores	72	74	73	71
+
+Sheffield United
+England Championship (2)	72	72	72	72
+
+Watford
+England Championship (2)	72	72	72	72
+
+FC Twente
+Holland Eredivisie (1)	72	71	72	71
+
+FC København
+Denmark Superliga (1)	72	72	72	69
+
+Los Angeles FC
+USA Major League Soccer (1)	72	76	70	71
+
+RB Salzburg
+Austria Bundesliga (1)	72	74	73	72
+
+Istanbul Başakşehir FK
+Turkey Süper Lig (1)	72	73	72	71
+
+Anderlecht
+Belgium Pro League (1)	72	72	72	71
+
+Dinamo Zagreb
+Rest of World	72	72	72	71
+
+Atlético-GO
+CONMEBOL Sudamericana	72	71	71	73
+
+Ceará SC
+CONMEBOL Sudamericana	72	71	72	72
+
+FC Schalke 04
+Germany 1. Bundesliga (1)	72	73	72	72
+
+Kasımpaşa
+Turkey Süper Lig (1)	71	71	71	69
+
+Alanyaspor
+Turkey Süper Lig (1)	71	72	70	69
+
+Talleres de Córdoba
+Argentina Primera División (1)	71	72	71	70
+
+Tigre
+Argentina Primera División (1)	71	73	71	70
+
+Adana Demirspor
+Turkey Süper Lig (1)	71	72	71	70
+
+Gil Vicente FC
+Portugal Primeira Liga (1)	71	73	70	70
+Previous
+4 / 15
+
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+FC Utrecht
+Holland Eredivisie (1)	71	73	70	71
+
+BSC Young Boys
+Switzerland Super League (1)	71	73	72	67
+
+Al Ittihad
+Saudi Pro League (1)	71	76	73	68
+
+Nacional de Montevideo
+CONMEBOL Libertadores	71	71	70	70
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Libertad
+CONMEBOL Libertadores	71	71	65	71
+
+AJ Auxerre
+France Ligue 1 (1)	71	72	71	71
+
+Millonarios
+CONMEBOL Sudamericana	71	72	70	70
+
+Angers SCO
+France Ligue 1 (1)	71	71	72	70
+
+Clermont Foot
+France Ligue 1 (1)	71	70	72	70
+
+Argentinos Juniors
+Argentina Primera División (1)	71	72	69	73
+
+Cremonese
+Italy Serie A (1)	71	72	71	70
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+Barcelona SC Guayaquil
+CONMEBOL Sudamericana	71	73	71	69
+
+AS Saint-Étienne
+France Ligue 2 (2)	71	67	69	70
+
+ASJ Soyaux-Charente
+France Division 1 Féminine (1)	71	70	71	69
+
+Fortaleza
+CONMEBOL Sudamericana	71	71	71	71
+
+Philadelphia Union
+USA Major League Soccer (1)	71	71	70	71
+
+Talleres de Córdoba
+Argentina Primera División (1)	71	72	71	70
+
+Hamburger SV
+Germany 2. Bundesliga (2)	71	71	72	69
+
+Tigre
+Argentina Primera División (1)	71	73	71	70
+
+Gil Vicente FC
+Portugal Primeira Liga (1)	71	73	70	70
+
+Alanyaspor
+Turkey Süper Lig (1)	71	72	70	69
+
+Genoa
+Italy Serie B (2)	71	74	71	70
+
+Fortuna Düsseldorf
+Germany 2. Bundesliga (2)	71	71	71	71
+
+Atlético Nacional
+Rest of World	71	70	71	70
+
+Ferencvárosi TC
+Rest of World	71	65	70	68
+
+Antalyaspor
+Turkey Süper Lig (1)	71	71	72	69
+
+SV Darmstadt 98
+Germany 2. Bundesliga (2)	71	67	70	72
+
+Kasımpaşa
+Turkey Süper Lig (1)	71	71	71	69
+
+Lanús
+Argentina Primera División (1)	71	71	70	70
+
+Adana Demirspor
+Turkey Süper Lig (1)	71	72	71	70
+
+Estudiantes de La Plata
+Argentina Primera División (1)	71	72	73	70
+
+Shakhtar Donetsk
+Rest of World	71	74	70	71
+
+Deportivo Alavés
+Spain Segunda División (2)	71	71	72	71
+
+Hajduk Split
+Rest of World	70	74	70	69
+
+Coventry City
+England Championship (2)	70	72	71	69
+
+Preston North End
+England Championship (2)	70	67	71	70
+
+Stoke City
+England Championship (2)	70	70	70	69
+
+Chaves
+Portugal Primeira Liga (1)	70	69	70	70
+
+Cagliari
+Italy Serie B (2)	70	70	70	69
+
+Luton Town
+England Championship (2)	70	71	71	70
+
+Rio Ave
+Portugal Primeira Liga (1)	70	70	69	70
+
+Millwall
+England Championship (2)	70	71	71	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Al Shabab
+Saudi Pro League (1)	70	71	71	69
+
+Hull City
+England Championship (2)	70	72	70	68
+
+América Mineiro
+CONMEBOL Libertadores	70	69	69	71
+
+Real Zaragoza
+Spain Segunda División (2)	70	69	70	70
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+Real Oviedo
+Spain Segunda División (2)	70	71	69	70
+
+Godoy Cruz
+Argentina Primera División (1)	70	69	70	70
+
+Preston North End
+England Championship (2)	70	67	71	70
+
+Alianza Lima
+CONMEBOL Libertadores	70	71	70	70
+
+Stoke City
+England Championship (2)	70	70	70	69
+
+Fatih Karagümrük S.K.
+Turkey Süper Lig (1)	70	74	71	66
+
+Luton Town
+England Championship (2)	70	71	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Hull City
+England Championship (2)	70	72	70	68
+
+AC Ajaccio
+France Ligue 1 (1)	70	69	71	70
+
+Coventry City
+England Championship (2)	70	72	71	69
+
+Hajduk Split
+Rest of World	70	74	70	69
+
+Cuiabá
+CONMEBOL Sudamericana	70	69	70	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Millwall
+England Championship (2)	70	71	71	71
+
+LASK
+Austria Bundesliga (1)	70	68	72	69
+
+Ulsan Hyundai
+Korea K League 1 (1)	70	71	70	70
+
+LDU Quito
+CONMEBOL Sudamericana	70	68	70	70
+
+Konyaspor
+Turkey Süper Lig (1)	70	69	72	70
+
+Queens Park Rangers
+England Championship (2)	70	69	69	71
+
+Cagliari
+Italy Serie B (2)	70	70	70	69
+
+Frosinone
+Italy Serie B (2)	70	69	70	70
+
+Universidad Católica
+CONMEBOL Sudamericana	70	73	69	69
+
+Peñarol
+CONMEBOL Sudamericana	70	72	72	69
+
+Chaves
+Portugal Primeira Liga (1)	70	69	70	70
+
+Independiente Medellín
+CONMEBOL Sudamericana	70	71	70	69
+
+San Lorenzo de Almagro
+Argentina Primera División (1)	70	71	69	71
+
+Rio Ave
+Portugal Primeira Liga (1)	70	70	69	70
+
+D.C. United
+USA Major League Soccer (1)	70	74	70	67
+
+Al Shabab
+Saudi Pro League (1)	70	71	71	69
+
+América Mineiro
+CONMEBOL Libertadores	70	69	69	71
+
+Casa Pia
+Portugal Primeira Liga (1)	70	71	68	70
+
+Famalicão
+Portugal Primeira Liga (1)	70	69	71	70
+
+FC Cincinnati
+USA Major League Soccer (1)	70	70	71	66
+
+Arouca
+Portugal Primeira Liga (1)	70	71	70	70
+
+Vizela
+Portugal Primeira Liga (1)	70	69	70	71
+
+Portimonense
+Portugal Primeira Liga (1)	70	68	70	70
+
+Estoril
+Portugal Primeira Liga (1)	70	70	70	70
+
+FK Bodø/Glimt
+Norway Eliteserien (1)	70	68	72	70
+
+Rodez Aveyron Football
+France Division 1 Féminine (1)	70	69	71	69
+
+New England Revolution
+USA Major League Soccer (1)	70	70	69	69
+
+América de Cali
+CONMEBOL Sudamericana	70	70	70	70
+
+Blackburn Rovers
+England Championship (2)	70	70	70	69
+
+Vitória de Guimarães
+Portugal Primeira Liga (1)	70	70	71	70
+
+Junior de Barranquilla
+CONMEBOL Sudamericana	70	74	71	69
+
+Boavista
+Portugal Primeira Liga (1)	70	69	70	70
+
+Portland Timbers
+USA Major League Soccer (1)	70	70	70	68
+
+Heart of Midlothian
+Scotland Premiership (1)	70	68	68	69
+
+Newell's Old Boys
+Argentina Primera División (1)	69	67	70	70
+
+Rosario Central
+Argentina Primera División (1)	69	70	69	69
+
+Sivasspor
+Turkey Süper Lig (1)	69	69	70	66
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Reading
+England Championship (2)	69	70	69	68
+
+Marítimo
+Portugal Primeira Liga (1)	69	72	68	70
+
+Minnesota United FC
+USA Major League Soccer (1)	69	71	69	66
+
+Lech Poznań
+Poland Ekstraklasa (1)	69	65	69	69
+
+Charlotte FC
+USA Major League Soccer (1)	69	68	70	67
+
+Nashville SC
+USA Major League Soccer (1)	69	72	69	70
+
+Bristol City
+England Championship (2)	69	71	68	69
+
+Servette FC
+Switzerland Super League (1)	69	69	71	68
+
+Huddersfield Town
+England Championship (2)	69	67	66	68
+
+Real Salt Lake
+USA Major League Soccer (1)	69	70	68	64
+
+Swansea City
+England Championship (2)	69	74	69	69
+
+Universitario de Deportes
+CONMEBOL Sudamericana	69	68	69	69
+
+Inter Miami
+USA Major League Soccer (1)	69	76	66	68
+
+Santa Clara
+Portugal Primeira Liga (1)	69	69	68	69
+
+Central Córdoba
+Argentina Primera División (1)	69	69	68	70
+
+Al Ain FC (UAE)
+Rest of World	69	77	69	69
+
+Wuhan Three Towns
+China Super League (1)	69	73	67	69
+
+Águilas Doradas Rionegro
+CONMEBOL Sudamericana	69	70	70	68
+
+Sarmiento
+Argentina Primera División (1)	69	70	68	68
+
+FC Sochaux
+France Ligue 2 (2)	69	71	68	69
+
+Deportivo Pereira
+CONMEBOL Libertadores	69	70	69	70
+
+Cerro Porteño
+CONMEBOL Libertadores	69	69	69	66
+
+Independiente Santa Fe
+CONMEBOL Sudamericana	69	73	69	69
+
+sc Heerenveen
+Holland Eredivisie (1)	69	70	68	70
+
+NEC Nijmegen
+Holland Eredivisie (1)	69	68	72	68
+
+Sturm Graz
+Austria Bundesliga (1)	69	68	70	69
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Vitesse
+Holland Eredivisie (1)	69	68	69	69
+
+MKE Ankaragücü
+Turkey Süper Lig (1)	69	69	70	68
+
+Paris FC
+France Ligue 2 (2)	69	69	70	68
+
+Jeonbuk Hyundai Motors
+Korea K League 1 (1)	69	72	69	69
+
+1. FC Kaiserslautern
+Germany 2. Bundesliga (2)	69	71	68	68
+
+Deportes Tolima
+CONMEBOL Sudamericana	69	69	69	68
+
+Burgos CF
+Spain Segunda División (2)	69	69	69	68
+
+Arminia Bielefeld
+Germany 2. Bundesliga (2)	69	69	70	68
+
+Kayserispor
+Turkey Süper Lig (1)	69	73	69	67
+
+1. FC Nürnberg
+Germany 2. Bundesliga (2)	69	69	69	67
+
+Hannover 96
+Germany 2. Bundesliga (2)	69	70	70	69
+
+Sporting Cristal
+CONMEBOL Libertadores	69	69	69	69
+
+Karlsruher SC
+Germany 2. Bundesliga (2)	69	69	69	68
+
+APOEL Nicosia FC
+Rest of World	69	70	69	68
+
+Newell's Old Boys
+Argentina Primera División (1)	69	67	70	70
+
+Real Sporting de Gijón
+Spain Segunda División (2)	69	68	68	70
+
+Pisa
+Italy Serie B (2)	69	70	69	71
+
+CD Tenerife
+Spain Segunda División (2)	69	69	69	69
+
+FC Basel
+Switzerland Super League (1)	69	69	68	69
+
+Cercle Brugge
+Belgium Pro League (1)	69	70	69	66
+
+Columbus Crew
+USA Major League Soccer (1)	69	74	67	65
+
+FC Midtjylland
+Denmark Superliga (1)	69	69	67	70
+
+San Jose Earthquakes
+USA Major League Soccer (1)	69	69	70	70
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+1. FC Heidenheim
+Germany 2. Bundesliga (2)	69	74	69	70
+
+Lech Poznań
+Poland Ekstraklasa (1)	69	65	69	69
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Parma
+Italy Serie B (2)	69	72	68	67
+
+Brøndby IF
+Denmark Superliga (1)	69	70	70	67
+
+Los Angeles Galaxy
+USA Major League Soccer (1)	69	74	69	67
+
+FC Dallas
+USA Major League Soccer (1)	69	73	69	63
+
+CD Tenerife
+Spain Segunda División (2)	69	69	69	69
+
+Pisa
+Italy Serie B (2)	69	70	69	71
+
+Burgos CF
+Spain Segunda División (2)	69	69	69	68
+
+Bari
+Italy Serie B (2)	69	71	69	69
+
+Toronto FC
+USA Major League Soccer (1)	69	66	71	67
+
+Sporting KC
+USA Major League Soccer (1)	69	72	70	64
+
+Charlotte FC
+USA Major League Soccer (1)	69	68	70	67
+
+San Jose Earthquakes
+USA Major League Soccer (1)	69	69	70	70
+
+Minnesota United FC
+USA Major League Soccer (1)	69	71	69	66
+
+Palermo
+Italy Serie B (2)	69	69	68	68
+
+Ascoli
+Italy Serie B (2)	69	68	70	66
+
+Nashville SC
+USA Major League Soccer (1)	69	72	69	70
+
+Orlando City SC
+USA Major League Soccer (1)	69	72	70	66
+
+New York City FC
+USA Major League Soccer (1)	69	72	70	67
+
+Como
+Italy Serie B (2)	69	70	68	68
+
+Real Salt Lake
+USA Major League Soccer (1)	69	70	68	64
+
+Real Sporting de Gijón
+Spain Segunda División (2)	69	68	68	70
+
+SD Huesca
+Spain Segunda División (2)	69	68	70	68
+
+Inter Miami
+USA Major League Soccer (1)	69	76	66	68
+
+Venezia
+Italy Serie B (2)	69	71	68	68
+
+Sarmiento
+Argentina Primera División (1)	69	70	68	68
+
+Molde FK
+Norway Eliteserien (1)	68	69	68	69
+
+Al Fateh
+Saudi Pro League (1)	68	68	68	66
+
+Ternana
+Italy Serie B (2)	68	70	67	68
+
+Liverpool Fútbol Club Uruguay
+CONMEBOL Sudamericana	68	69	68	68
+
+Raków Częstochowa
+Poland Ekstraklasa (1)	68	68	68	67
+
+Hatayspor
+Turkey Süper Lig (1)	68	70	68	67
+
+FC Metz
+France Ligue 2 (2)	68	69	67	69
+
+Goiás
+CONMEBOL Sudamericana	68	68	68	69
+
+Colorado Rapids
+USA Major League Soccer (1)	68	68	67	68
+
+CFR Cluj
+Romania Liga I (1)	68	67	67	68
+
+Platense
+Argentina Primera División (1)	68	67	69	68
+
+Wigan Athletic
+England Championship (2)	68	67	69	68
+
+Djurgårdens IF
+Sweden Allsvenskan (1)	68	68	67	68
+
+Vancouver Whitecaps
+USA Major League Soccer (1)	68	70	68	66
+
+Kaizer Chiefs
+Rest of World	68	67	65	66
+
+Shandong Taishan
+China Super League (1)	68	72	67	67
+
+BK Häcken
+Sweden Allsvenskan (1)	68	65	69	67
+
+FCSB
+Romania Liga I (1)	68	68	69	67
+
+Rapid Wien
+Austria Bundesliga (1)	68	71	68	66
+
+SpVgg Greuther Fürth
+Germany 2. Bundesliga (2)	68	67	69	68
+
+Houston Dynamo
+USA Major League Soccer (1)	68	66	67	67
+
+Unión de Santa Fe
+Argentina Primera División (1)	68	65	68	69
+
+Pogoń Szczecin
+Poland Ekstraklasa (1)	68	67	68	67
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Reggina
+Italy Serie B (2)	68	68	68	67
+
+FC Metz
+France Ligue 2 (2)	68	69	67	69
+
+Ternana
+Italy Serie B (2)	68	70	67	68
+
+Pogoń Szczecin
+Poland Ekstraklasa (1)	68	67	68	67
+
+Legia Warszawa
+Poland Ekstraklasa (1)	68	67	70	68
+
+New York Red Bulls
+USA Major League Soccer (1)	68	66	68	68
+
+Molde FK
+Norway Eliteserien (1)	68	69	68	69
+
+Djurgårdens IF
+Sweden Allsvenskan (1)	68	68	67	68
+
+Hansa Rostock
+Germany 2. Bundesliga (2)	68	67	67	68
+
+BK Häcken
+Sweden Allsvenskan (1)	68	65	69	67
+
+Atlanta United FC
+USA Major League Soccer (1)	68	68	67	69
+
+Fortuna Sittard
+Holland Eredivisie (1)	68	65	67	69
+
+Holstein Kiel
+Germany 2. Bundesliga (2)	68	70	68	68
+
+Kortrijk
+Belgium Pro League (1)	68	66	68	65
+
+Melgar FBC
+CONMEBOL Libertadores	68	69	68	68
+
+AGF
+Denmark Superliga (1)	68	68	67	67
+
+Chicago Fire FC
+USA Major League Soccer (1)	68	69	68	69
+
+SpVgg Greuther Fürth
+Germany 2. Bundesliga (2)	68	67	69	68
+
+Girondins de Bordeaux
+France Ligue 2 (2)	68	68	68	69
+
+Zulte Waregem
+Belgium Pro League (1)	68	70	68	66
+
+Cardiff City
+England Championship (2)	68	68	69	68
+
+Colorado Rapids
+USA Major League Soccer (1)	68	68	67	68
+
+1. FC Magdeburg
+Germany 2. Bundesliga (2)	68	68	68	68
+
+Wigan Athletic
+England Championship (2)	68	67	69	68
+
+Houston Dynamo
+USA Major League Soccer (1)	68	66	67	67
+
+Sint-Truiden
+Belgium Pro League (1)	68	68	68	66
+
+Westerlo
+Belgium Pro League (1)	68	65	67	68
+
+Oostende
+Belgium Pro League (1)	68	68	68	66
+
+Vancouver Whitecaps
+USA Major League Soccer (1)	68	70	68	66
+
+Al Raed
+Saudi Pro League (1)	67	72	65	65
+
+Gimnasia y Esgrima La Plata
+Argentina Primera División (1)	67	70	66	69
+
+Nîmes Olympique
+France Ligue 2 (2)	67	68	65	65
+
+Spal
+Italy Serie B (2)	67	68	65	65
+
+FC St. Gallen
+Switzerland Super League (1)	67	66	68	65
+
+Grasshopper Club Zürich
+Switzerland Super League (1)	67	65	67	67
+
+Suwon FC
+Korea K League 1 (1)	67	71	66	66
+
+River Plate Montevideo
+CONMEBOL Sudamericana	67	68	68	67
+
+Incheon United
+Korea K League 1 (1)	67	69	69	66
+
+Le Havre AC
+France Ligue 2 (2)	67	66	65	69
+
+Guaraní (Paraguay)
+CONMEBOL Sudamericana	67	71	67	66
+
+CF Montréal
+USA Major League Soccer (1)	67	67	66	67
+
+Melbourne Victory
+Australia A-League (1)	67	68	67	67
+
+Ñublense
+CONMEBOL Sudamericana	67	66	68	66
+
+Aberdeen
+Scotland Premiership (1)	67	67	66	66
+
+U. Católica
+CONMEBOL Sudamericana	67	69	66	67
+
+Hibernian
+Scotland Premiership (1)	67	68	65	65
+
+Al Ettifaq
+Saudi Pro League (1)	67	68	66	65
+
+Derby County
+England League One (3)	67	67	67	66
+
+Al Taawoun
+Saudi Pro League (1)	67	72	70	63
+
+Ipswich Town
+England League One (3)	67	67	68	67
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Suwon FC
+Korea K League 1 (1)	67	71	66	66
+
+Incheon United
+Korea K League 1 (1)	67	69	69	66
+
+Jeju United
+Korea K League 1 (1)	67	66	63	67
+
+Academia Puerto Cabello
+CONMEBOL Sudamericana	67	66	66	67
+
+Beijing Guoan
+China Super League (1)	67	70	68	67
+
+Pohang Steelers
+Korea K League 1 (1)	67	69	67	67
+
+Al Ettifaq
+Saudi Pro League (1)	67	68	66	65
+
+AaB
+Denmark Superliga (1)	67	69	68	66
+
+Nîmes Olympique
+France Ligue 2 (2)	67	68	65	65
+
+Le Havre AC
+France Ligue 2 (2)	67	66	65	69
+
+Jahn Regensburg
+Germany 2. Bundesliga (2)	67	67	68	67
+
+Eintracht Braunschweig
+Germany 2. Bundesliga (2)	67	67	68	67
+
+Perugia
+Italy Serie B (2)	67	66	67	66
+
+Modena
+Italy Serie B (2)	67	69	67	65
+
+Blackpool
+England Championship (2)	67	69	67	67
+
+Rotherham United
+England Championship (2)	67	68	67	67
+
+Sparta Rotterdam
+Holland Eredivisie (1)	67	68	68	67
+
+FC Groningen
+Holland Eredivisie (1)	67	69	67	66
+
+Benevento
+Italy Serie B (2)	67	68	67	68
+
+SC Cambuur
+Holland Eredivisie (1)	67	67	67	65
+
+Cosenza
+Italy Serie B (2)	67	61	68	67
+
+Südtirol
+Italy Serie B (2)	67	67	67	68
+
+Spal
+Italy Serie B (2)	67	68	65	65
+
+CF Montréal
+USA Major League Soccer (1)	67	67	66	67
+
+Rosenborg BK
+Norway Eliteserien (1)	67	67	65	67
+
+Aberdeen
+Scotland Premiership (1)	67	67	66	66
+
+Hibernian
+Scotland Premiership (1)	67	68	65	65
+
+Racing de Santander
+Spain Segunda División (2)	67	66	68	68
+
+Málaga CF
+Spain Segunda División (2)	67	70	67	66
+
+Albacete Balompié
+Spain Segunda División (2)	67	67	68	67
+
+SD Ponferradina
+Spain Segunda División (2)	67	66	67	67
+
+CD Mirandés
+Spain Segunda División (2)	67	71	68	65
+
+AIK
+Sweden Allsvenskan (1)	67	67	66	67
+
+Derby County
+England League One (3)	67	67	67	66
+
+Ipswich Town
+England League One (3)	67	67	68	67
+
+Sheffield Wednesday
+England League One (3)	67	66	67	67
+
+Eupen
+Belgium Pro League (1)	67	70	68	64
+
+FC Nordsjælland
+Denmark Superliga (1)	67	66	68	68
+
+Suwon Bluewings
+Korea K League 1 (1)	67	64	67	66
+
+Randers FC
+Denmark Superliga (1)	67	66	66	68
+
+FC Seoul
+Korea K League 1 (1)	67	72	69	64
+
+Ümraniyespor
+Turkey Süper Lig (1)	67	68	67	67
+
+Universitatea Craiova
+Romania Liga I (1)	67	67	67	66
+
+Villarreal B
+Spain Segunda División (2)	66	68	66	66
+
+UD Ibiza
+Spain Segunda División (2)	66	67	65	65
+
+CD Lugo
+Spain Segunda División (2)	66	66	66	66
+
+Defensor Sporting
+CONMEBOL Sudamericana	66	66	66	66
+
+Giresunspor
+Turkey Süper Lig (1)	66	68	67	66
+
+FC Andorra
+Spain Segunda División (2)	66	68	66	65
+
+İstanbulspor
+Turkey Süper Lig (1)	66	67	65	65
+
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Caracas FC
+CONMEBOL Sudamericana	66	68	66	66
+
+IFK Göteborg
+Sweden Allsvenskan (1)	66	68	65	66
+
+FC Andorra
+Spain Segunda División (2)	66	68	66	65
+
+Grenoble Foot 38
+France Ligue 2 (2)	66	63	65	66
+
+Cobresal
+CONMEBOL Sudamericana	66	67	68	64
+
+Stade Lavallois MFC
+France Ligue 2 (2)	66	63	66	65
+
+Defensor Sporting
+CONMEBOL Sudamericana	66	66	66	66
+
+En Avant Guingamp
+France Ligue 2 (2)	66	69	65	65
+
+Amiens SC
+France Ligue 2 (2)	66	67	66	65
+
+İstanbulspor
+Turkey Süper Lig (1)	66	67	65	65
+
+Valenciennes FC
+France Ligue 2 (2)	66	67	66	67
+
+Dijon FCO
+France Ligue 2 (2)	66	69	65	65
+
+La Equidad
+CONMEBOL Sudamericana	66	64	66	67
+
+UD Ibiza
+Spain Segunda División (2)	66	67	65	65
+
+Metropolitanos FC
+CONMEBOL Libertadores	66	65	66	64
+
+Villarreal B
+Spain Segunda División (2)	66	68	66	66
+
+CD Lugo
+Spain Segunda División (2)	66	66	66	66
+
+Magallanes
+CONMEBOL Sudamericana	66	65	68	65
+
+Monagas Sport Club
+CONMEBOL Libertadores	66	65	66	66
+
+Deportivo Táchira
+CONMEBOL Libertadores	66	66	65	66
+
+Caracas FC
+CONMEBOL Libertadores	66	68	66	66
+
+Metropolitanos FC
+CONMEBOL Sudamericana	66	65	66	64
+
+Universidad César Vallejo
+CONMEBOL Sudamericana	66	68	65	67
+
+Plymouth Argyle
+England League One (3)	66	66	65	67
+
+Brescia
+Italy Serie B (2)	66	65	66	67
+
+The Strongest
+CONMEBOL Libertadores	66	68	65	66
+
+Deportivo Binacional
+CONMEBOL Sudamericana	66	65	66	65
+
+Peterborough United
+England League One (3)	66	71	66	66
+
+Go Ahead Eagles
+Holland Eredivisie (1)	66	66	66	66
+
+Cerro Largo
+CONMEBOL Sudamericana	66	67	65	66
+
+Deportivo Cali
+CONMEBOL Libertadores	66	65	68	66
+
+FC Emmen
+Holland Eredivisie (1)	66	66	65	65
+
+Western Sydney Wanderers
+Australia A-League (1)	66	69	65	65
+
+TSV 1860 München
+Germany 3. Liga (3)	66	66	66	65
+
+Dynamo Dresden
+Germany 3. Liga (3)	66	65	66	65
+
+Excelsior
+Holland Eredivisie (1)	66	67	65	65
+
+Piast Gliwice
+Poland Ekstraklasa (1)	66	69	64	65
+
+Cittadella
+Italy Serie B (2)	66	62	66	66
+
+1. FC Saarbrücken
+Germany 3. Liga (3)	66	65	66	66
+
+Wolfsberger AC
+Austria Bundesliga (1)	66	68	66	66
+
+Radomiak Radom
+Poland Ekstraklasa (1)	66	66	66	66
+
+FC Lugano
+Switzerland Super League (1)	66	71	66	63
+
+Viking FK
+Norway Eliteserien (1)	66	67	65	65
+
+Sepsi OSK
+Romania Liga I (1)	66	65	66	65
+
+Gangwon FC
+Korea K League 1 (1)	66	65	65	65
+
+Jagiellonia Białystok
+Poland Ekstraklasa (1)	66	69	66	64
+
+Al Wehda
+Saudi Pro League (1)	66	71	66	63
+
+Farul Constanța
+Romania Liga I (1)	66	64	65	65
+
+Al Fayha
+Saudi Pro League (1)	66	74	67	62
+
+Giresunspor
+Turkey Süper Lig (1)	66	68	67	66
+
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Caracas FC
+CONMEBOL Sudamericana	66	68	66	66
+
+Metropolitanos FC
+CONMEBOL Libertadores	66	65	66	64
+
+Sepsi OSK
+Romania Liga I (1)	66	65	66	65
+
+Damac FC
+Saudi Pro League (1)	66	66	68	66
+
+Al Fayha
+Saudi Pro League (1)	66	74	67	62
+
+Al Wehda
+Saudi Pro League (1)	66	71	66	63
+
+FC Ingolstadt 04
+Germany 3. Liga (3)	65	66	64	64
+
+Viktoria Köln
+Germany 3. Liga (3)	65	64	65	65
+
+SV Waldhof Mannheim
+Germany 3. Liga (3)	65	65	66	66
+
+SV Elversberg
+Germany 3. Liga (3)	65	65	67	65
+
+Erzgebirge Aue
+Germany 3. Liga (3)	65	64	65	63
+
+SV Wehen Wiesbaden
+Germany 3. Liga (3)	65	66	65	64
+
+VfL Osnabrück
+Germany 3. Liga (3)	65	65	65	66
+
+Chengdu Rongcheng F.C.
+China Super League (1)	65	72	63	64
+
+Henan Songshan Longmen FC
+China Super League (1)	65	64	68	64
+
+FC Volendam
+Holland Eredivisie (1)	65	68	65	65
+
+Shanghai Shenhua
+China Super League (1)	65	67	69	62
+
+Sportivo Ameliano
+CONMEBOL Sudamericana	65	63	66	65
+
+Seraing
+Belgium Pro League (1)	65	66	65	64
+
+Guaireña
+CONMEBOL Sudamericana	65	64	66	64
+
+Oxford United
+England League One (3)	65	62	65	65
+
+Delfín SC
+CONMEBOL Sudamericana	65	66	66	64
+
+Sydney FC
+Australia A-League (1)	65	64	66	65
+
+Dep. La Guaira
+CONMEBOL Sudamericana	65	64	65	64
+
+Club Nacional
+CONMEBOL Sudamericana	65	63	65	66
+
+Wycombe Wanderers
+England League One (3)	65	66	66	65
+
+Everton de Viña
+CONMEBOL Sudamericana	65	63	64	70
+
+Barnsley
+England League One (3)	65	64	66	66
+
+Unión La Calera
+CONMEBOL Sudamericana	65	66	66	65
+
+SC Bastia
+France Ligue 2 (2)	65	64	65	64
+
+Portsmouth
+England League One (3)	65	65	65	65
+
+Górnik Zabrze
+Poland Ekstraklasa (1)	65	63	65	65
+
+Estudiantes de Mérida
+CONMEBOL Sudamericana	65	66	65	66
+
+Cracovia
+Poland Ekstraklasa (1)	65	64	66	65
+
+Zagłębie Lubin
+Poland Ekstraklasa (1)	65	67	65	64
+
+Western United FC
+Australia A-League (1)	65	67	64	66
+
+Lechia Gdańsk
+Poland Ekstraklasa (1)	65	68	64	64
+
+Śląsk Wrocław
+Poland Ekstraklasa (1)	65	66	65	65
+
+Warta Poznań
+Poland Ekstraklasa (1)	65	64	63	67
+
+Bolton Wanderers
+England League One (3)	65	65	65	66
+
+Chamois Niortais FC
+France Ligue 2 (2)	65	61	65	64
+
+Oriente Petrolero
+CONMEBOL Sudamericana	65	68	65	61
+
+Always Ready
+CONMEBOL Libertadores	65	67	66	65
+
+Ind. Petrolero
+CONMEBOL Libertadores	65	66	65	65
+
+Audax Italiano
+CONMEBOL Sudamericana	65	66	66	64
+
+IFK Norrköping
+Sweden Allsvenskan (1)	65	66	64	63
+
+Abha Club
+Saudi Pro League (1)	65	68	65	64
+
+Pau FC
+France Ligue 2 (2)	65	65	65	65
+
+Al Tai
+Saudi Pro League (1)	65	64	67	63
+
+FC Voluntari
+Romania Liga I (1)	65	65	65	65
+
+SV Ried
+Austria Bundesliga (1)	65	62	62	65
+
+Arsenal de Sarandí
+Argentina Primera División (1)	65	65	65	66
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Caracas FC
+CONMEBOL Sudamericana	66	68	66	66
+
+Metropolitanos FC
+CONMEBOL Libertadores	66	65	66	64
+
+Abha Club
+Saudi Pro League (1)	65	68	65	64
+
+Warta Poznań
+Poland Ekstraklasa (1)	65	64	63	67
+
+FC U Craiova 1948
+Romania Liga I (1)	65	64	66	65
+
+Śląsk Wrocław
+Poland Ekstraklasa (1)	65	66	65	65
+
+Lechia Gdańsk
+Poland Ekstraklasa (1)	65	68	64	64
+
+Arsenal de Sarandí
+Argentina Primera División (1)	65	65	65	66
+
+SC Bastia
+France Ligue 2 (2)	65	64	65	64
+
+Zagłębie Lubin
+Poland Ekstraklasa (1)	65	67	65	64
+
+Cracovia
+Poland Ekstraklasa (1)	65	64	66	65
+
+Górnik Zabrze
+Poland Ekstraklasa (1)	65	63	65	65
+
+Silkeborg IF
+Denmark Superliga (1)	65	66	65	65
+
+Sydney FC
+Australia A-League (1)	65	64	66	65
+
+FC Annecy
+France Ligue 2 (2)	65	66	66	63
+
+Quevilly Rouen Métropole
+France Ligue 2 (2)	65	66	64	65
+
+Rodez Aveyron Football
+France Ligue 2 (2)	65	65	65	64
+
+FC Hermannstadt
+Romania Liga I (1)	65	64	64	65
+
+Club Nacional
+CONMEBOL Sudamericana	65	63	65	66
+
+Chindia Târgoviște
+Romania Liga I (1)	64	64	64	63
+
+SC Verl
+Germany 3. Liga (3)	64	63	64	63
+
+Ayacucho
+CONMEBOL Sudamericana	64	63	65	63
+
+Royal Pari
+CONMEBOL Sudamericana	64	63	65	63
+
+Hallescher FC
+Germany 3. Liga (3)	64	63	63	64
+
+MSV Duisburg
+Germany 3. Liga (3)	64	63	64	63
+
+FSV Zwickau
+Germany 3. Liga (3)	64	64	63	63
+
+SV Meppen
+Germany 3. Liga (3)	64	64	64	63
+
+Strømsgodset Toppfotball
+Norway Eliteserien (1)	64	63	67	64
+
+Wellington Phoenix
+Australia A-League (1)	64	65	65	63
+
+Al Batin
+Saudi Pro League (1)	64	65	64	61
+
+Sarpsborg 08
+Norway Eliteserien (1)	64	64	64	63
+
+Tacuary FBC
+CONMEBOL Sudamericana	64	64	65	64
+
+Guabirá
+CONMEBOL Sudamericana	64	61	63	64
+
+St. Johnstone
+Scotland Premiership (1)	64	63	64	65
+
+FC Botoșani
+Romania Liga I (1)	64	63	64	64
+
+Rot-Weiß Essen
+Germany 3. Liga (3)	64	65	64	64
+
+Kilmarnock
+Scotland Premiership (1)	64	64	63	63
+
+Mushuc Runa
+CONMEBOL Sudamericana	64	64	64	64
+
+Palmaflor del Trópico
+CONMEBOL Sudamericana	64	64	64	63
+
+Central Coast Mariners
+Australia A-League (1)	64	66	63	62
+
+Changchun Yatai
+China Super League (1)	64	68	63	61
+
+St. Mirren
+Scotland Premiership (1)	64	65	65	64
+
+Ross County
+Scotland Premiership (1)	64	65	63	62
+
+Adelaide United
+Australia A-League (1)	64	64	66	62
+
+Al Adalah
+Saudi Pro League (1)	64	68	65	60
+
+Zhejiang Professional FC
+China Super League (1)	64	72	62	61
+
+Livingston
+Scotland Premiership (1)	64	64	64	64
+
+General Caballero (JLM)
+CONMEBOL Sudamericana	64	61	65	64
+
+Dundee United
+Scotland Premiership (1)	64	65	65	62
+
+9 de Octubre FC
+CONMEBOL Sudamericana	64	65	65	64
+
+Motherwell
+Scotland Premiership (1)	64	65	64	63
+
+Macarthur FC
+Australia A-League (1)	64	60	64	62
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Caracas FC
+CONMEBOL Sudamericana	66	68	66	66
+
+Metropolitanos FC
+CONMEBOL Libertadores	66	65	66	64
+
+HJK Helsinki
+Rest of World	64	63	65	64
+
+Milton Keynes Dons
+England League One (3)	64	63	64	64
+
+Cheltenham Town
+England League One (3)	64	66	64	63
+
+Cambridge United
+England League One (3)	64	64	63	64
+
+Fleetwood Town
+England League One (3)	64	64	63	64
+
+SV Meppen
+Germany 3. Liga (3)	64	64	64	63
+
+Widzew Łódź
+Poland Ekstraklasa (1)	64	64	64	64
+
+Hallescher FC
+Germany 3. Liga (3)	64	63	63	64
+
+Ayacucho
+CONMEBOL Sudamericana	64	63	65	63
+
+Royal Pari
+CONMEBOL Sudamericana	64	63	65	63
+
+Wisła Płock
+Poland Ekstraklasa (1)	64	64	66	62
+
+Changchun Yatai
+China Super League (1)	64	68	63	61
+
+Zhejiang Professional FC
+China Super League (1)	64	72	62	61
+
+Guabirá
+CONMEBOL Sudamericana	64	61	63	64
+
+9 de Octubre FC
+CONMEBOL Sudamericana	64	65	65	64
+
+Mushuc Runa
+CONMEBOL Sudamericana	64	64	64	64
+
+Rot-Weiß Essen
+Germany 3. Liga (3)	64	65	64	64
+
+Palmaflor del Trópico
+CONMEBOL Sudamericana	64	64	64	63
+
+MSV Duisburg
+Germany 3. Liga (3)	64	63	64	63
+
+Stal Mielec
+Poland Ekstraklasa (1)	64	62	65	64
+
+Miedź Legnica
+Poland Ekstraklasa (1)	64	64	63	64
+
+Wilstermann
+CONMEBOL Sudamericana	64	63	64	64
+
+VfB Oldenburg
+Germany 3. Liga (3)	63	63	62	63
+
+SC Freiburg II
+Germany 3. Liga (3)	63	65	63	65
+
+Tianjin Jinmen Tiger
+China Super League (1)	63	70	65	62
+
+ATK Mohun Bagan FC
+Indian Super League (1)	63	61	64	61
+
+Borussia Dortmund II
+Germany 3. Liga (3)	63	61	64	63
+
+Shamrock Rovers
+Rep. Ireland Premier Division (1)	63	64	62	64
+
+Northampton Town
+England League Two (4)	63	60	62	61
+
+Stevenage
+England League Two (4)	63	61	63	63
+
+Leyton Orient
+England League Two (4)	63	61	63	63
+
+Accrington Stanley
+England League One (3)	63	61	63	63
+
+Burton Albion
+England League One (3)	63	62	64	63
+
+Bristol Rovers
+England League One (3)	63	65	63	61
+
+Port Vale
+England League One (3)	63	64	64	62
+
+Forest Green Rovers
+England League One (3)	63	62	63	63
+
+Morecambe
+England League One (3)	63	64	64	62
+
+Degerfors IF
+Sweden Allsvenskan (1)	63	64	63	63
+
+IK Sirius
+Sweden Allsvenskan (1)	63	63	63	62
+
+IFK Värnamo
+Sweden Allsvenskan (1)	63	68	64	62
+
+Antofagasta
+CONMEBOL Sudamericana	63	65	63	63
+
+Salford City
+England League Two (4)	63	62	63	64
+
+Sol de América
+CONMEBOL Sudamericana	63	62	64	63
+
+Lyngby BK
+Denmark Superliga (1)	63	62	64	61
+
+Tromsø IL
+Norway Eliteserien (1)	63	61	63	63
+
+Wrexham
+Rest of World	63	66	62	62
+
+AC Horsens
+Denmark Superliga (1)	63	66	63	63
+
+Korona Kielce
+Poland Ekstraklasa (1)	63	63	64	63
+
+FC Argeș
+Romania Liga I (1)	63	63	63	63
+
+CS Mioveni
+Romania Liga I (1)	63	66	63	63
+
+Team	League	OVR	ATK	MID	DEF
+
+RB Bragantino
+CONMEBOL Libertadores	74	74	74	75
+
+Internacional
+CONMEBOL Sudamericana	74	71	73	75
+
+Fluminense
+CONMEBOL Sudamericana	72	74	73	71
+
+Fortaleza
+CONMEBOL Libertadores	71	71	71	71
+
+Barcelona SC Guayaquil
+CONMEBOL Libertadores	71	73	71	69
+
+Atlético Nacional
+CONMEBOL Libertadores	71	70	71	70
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+América Mineiro
+CONMEBOL Sudamericana	70	69	69	71
+
+Deportes Tolima
+CONMEBOL Libertadores	69	69	69	68
+
+Caracas FC
+CONMEBOL Sudamericana	66	68	66	66
+
+Metropolitanos FC
+CONMEBOL Libertadores	66	65	66	64
+
+Perth Glory
+Australia A-League (1)	63	64	61	63
+
+SC Freiburg II
+Germany 3. Liga (3)	63	65	63	65
+
+Shamrock Rovers
+Rep. Ireland Premier Division (1)	63	64	62	64
+
+Salford City
+England League Two (4)	63	62	63	64
+
+Odds Ballklubb
+Norway Eliteserien (1)	62	62	60	63
+
+Mumbai City FC
+Indian Super League (1)	62	63	65	60
+
+Mansfield Town
+England League Two (4)	62	62	61	62
+
+Swindon Town
+England League Two (4)	62	63	61	62
+
+Walsall
+England League Two (4)	62	63	61	62
+
+Bradford City
+England League Two (4)	62	63	62	62
+
+Gillingham
+England League Two (4)	62	63	62	61
+
+Stockport County
+England League Two (4)	62	61	62	62
+
+Barrow
+England League Two (4)	62	63	61	62
+
+SpVgg Bayreuth
+Germany 3. Liga (3)	62	63	63	62
+
+Cangzhou Mighty Lions
+China Super League (1)	62	70	62	63
+
+Newcastle Jets
+Australia A-League (1)	62	57	64	62
+
+Brisbane Roar
+Australia A-League (1)	62	68	62	62
+
+Carlisle United
+England League Two (4)	62	61	64	61
+
+Kristiansund BK
+Norway Eliteserien (1)	62	63	62	62
+
+Sandefjord Fotball
+Norway Eliteserien (1)	62	64	61	61
+
+Varbergs BoIS
+Sweden Allsvenskan (1)	62	57	62	61
+
+Mjällby AIF
+Sweden Allsvenskan (1)	62	61	62	63
+
+Bengaluru FC
+Indian Super League (1)	61	63	59	63
+
+Sutton United
+England League Two (4)	61	60	62	61
+
+GIF Sundsvall
+Sweden Allsvenskan (1)	61	63	59	62
+
+Grimsby Town
+England League Two (4)	61	60	62	62
+
+Helsingborgs IF
+Sweden Allsvenskan (1)	61	61	62	61
+
+Crewe Alexandra
+England League Two (4)	61	62	60	61
+
+Doncaster Rovers
+England League Two (4)	61	59	60	60
+
+Derry City
+Rep. Ireland Premier Division (1)	61	61	61	59
+
+AFC Wimbledon
+England League Two (4)	61	61	62	61
+
+Newport County
+England League Two (4)	61	61	60	61
+
+Colchester United
+England League Two (4)	61	60	61	61
+
+Meizhou Hakka
+China Super League (1)	61	55	61	61
+
+Tranmere Rovers
+England League Two (4)	61	61	61	63
+
+Harrogate Town
+England League Two (4)	61	63	61	61
+
+Kerala Blasters FC
+Indian Super League (1)	61	66	62	60
+
+Dalian Professional
+China Super League (1)	61	64	63	58
+
+Shenzhen FC
+China Super League (1)	61	74	58	61
+
+Crawley Town
+England League Two (4)	61	62	61	59
+
+Seongnam FC
+Korea K League 1 (1)	61	63	59	59
+
+Rochdale
+England League Two (4)	60	59	60	61
+
+St Patrick's Athletic
+Rep. Ireland Premier Division (1)	60	60	61	60
+
+Dundalk
+Rep. Ireland Premier Division (1)	60	65	60	60
+
+Hyderabad FC
+Indian Super League (1)	60	60	64	59
+
+Bohemians
+Rep. Ireland Premier Division (1)	60	59	60	60
+
+Hartlepool United
+England League Two (4)	60	60	62	59
+
+FK Jerv
+Norway Eliteserien (1)	60	62	61	58
+
+Sligo Rovers
+Rep. Ireland Premier Division (1)	59	60	58	60
+
+Chennaiyin FC
+Indian Super League (1)	59	64	59	57

@@ -60,7 +60,7 @@ export default function AdminScreen() {
     try {
       const [s, t, p, roster] = await Promise.all([
         listSeasons(),
-        getTeams(),
+        getTeams(true),
         getAdminPendingMatches(),
         getLeaguePlayers(),
       ]);
@@ -276,17 +276,31 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameName, setRenameName] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const visibleTeams = teams.filter((team) => {
+    const query = search.trim().toLowerCase();
+    return (
+      !query ||
+      team.name.toLowerCase().includes(query) ||
+      team.competition.toLowerCase().includes(query)
+    );
+  });
 
   function confirmSync() {
     confirmAction({
-      title: "Sync team catalogue",
-      message: "Import every catalogue team and remove legacy placeholder teams?",
-      confirmLabel: "Sync",
+      title: "Update FIFA catalogue",
+      message:
+        "Update to the bundled FIFA catalogue version? Custom teams and admin overrides will be preserved.",
+      confirmLabel: "Update",
       onConfirm: async () => {
         setSyncing(true);
         try {
-          const { seeded, removed } = await seedTeams();
-          showAlert("Catalogue synced", `${seeded} teams synced · ${removed} removed.`);
+          const result = await seedTeams();
+          showAlert(
+            `Catalogue ${result.version} updated`,
+            `${result.updated} entries updated · ${result.deactivated} superseded · ${result.active} active.`,
+          );
           onReload();
         } catch (error: unknown) {
           showAlert("Error", errorMessage(error));
@@ -333,6 +347,15 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
     });
   }
 
+  async function doReactivate(teamId: string) {
+    try {
+      await manageTeam("reactivate", teamId);
+      onReload();
+    } catch (error: unknown) {
+      showAlert("Error", errorMessage(error));
+    }
+  }
+
   return (
     <View>
       <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>
@@ -376,11 +399,22 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
         disabled={syncing}
         style={{ marginBottom: spacing.lg }}
       >
-        {syncing ? "Syncing…" : "Sync team catalogue"}
+        {syncing ? "Updating…" : "Update FIFA catalogue"}
       </Button>
 
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search team or competition"
+        placeholderTextColor={colors.textFaint}
+        style={styles.input}
+      />
+      <Txt size={11.5} color={colors.textDim} style={{ marginBottom: spacing.md }}>
+        {visibleTeams.length} of {teams.length} teams
+      </Txt>
+
       <FlatList
-        data={teams}
+        data={visibleTeams}
         scrollEnabled={false}
         keyExtractor={(t) => t.id}
         renderItem={({ item }) =>
@@ -412,9 +446,21 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
                   justifyContent: "space-between",
                 }}
               >
-                <View>
+                <View style={{ flex: 1, paddingRight: spacing.sm }}>
                   <Txt variant="bodyMedium" size={14}>
                     {item.name}
+                  </Txt>
+                  <Txt size={10.5} color={colors.textDim} style={{ marginTop: 3 }}>
+                    {item.competition || "Legacy catalogue entry"}
+                  </Txt>
+                  <Txt variant="mono" size={10} color={colors.textFaint} style={{ marginTop: 4 }}>
+                    {item.source === "custom"
+                      ? "CUSTOM · UNRATED"
+                      : `${item.catalogueVersion?.toUpperCase() ?? "LEGACY"} · OVR ${
+                          item.overall ?? "N/A"
+                        }`}
+                    {" · "}
+                    {item.active ? "ACTIVE" : "INACTIVE"}
                   </Txt>
                 </View>
                 <View style={{ flexDirection: "row", gap: spacing.sm }}>
@@ -428,13 +474,23 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
                   >
                     Rename
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onPress={() => doDeactivate(item.id, item.name)}
-                  >
-                    Deactivate
-                  </Button>
+                  {item.active ? (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onPress={() => doDeactivate(item.id, item.name)}
+                    >
+                      Deactivate
+                    </Button>
+                  ) : item.catalogueActive ? (
+                    <Button size="sm" variant="dark" onPress={() => doReactivate(item.id)}>
+                      Reactivate
+                    </Button>
+                  ) : (
+                    <Txt size={10.5} color={colors.textFaint}>
+                      Superseded
+                    </Txt>
+                  )}
                 </View>
               </View>
             </Card>

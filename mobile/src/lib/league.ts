@@ -41,6 +41,16 @@ export interface PotmResult {
 export interface Team {
   id: string;
   name: string;
+  competition: string;
+  category: "men" | "women" | "custom";
+  overall: number | null;
+  attack: number | null;
+  midfield: number | null;
+  defence: number | null;
+  catalogueVersion: string | null;
+  source: "catalogue" | "custom";
+  catalogueActive: boolean;
+  active: boolean;
 }
 
 export interface LeaguePlayer extends Player {
@@ -280,11 +290,56 @@ export async function getSeason(seasonId: string): Promise<Season | null> {
   };
 }
 
-export async function getTeams(): Promise<Team[]> {
-  const snap = await getDocs(query(collection(db, "teams"), where("active", "==", true)));
-  return snap.docs
-    .map((doc) => ({ id: doc.id, name: String(doc.get("name")) }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+function nullableTeamRating(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function mapTeam(id: string, data: Record<string, unknown>): Team {
+  const source = data.source === "custom" || id.startsWith("team-") ? "custom" : "catalogue";
+  return {
+    id,
+    name: String(data.name ?? ""),
+    competition:
+      source === "custom" ? String(data.competition ?? "Custom") : String(data.competition ?? ""),
+    category: source === "custom" ? "custom" : data.category === "women" ? "women" : "men",
+    overall: nullableTeamRating(data.overall),
+    attack: nullableTeamRating(data.attack),
+    midfield: nullableTeamRating(data.midfield),
+    defence: nullableTeamRating(data.defence),
+    catalogueVersion: typeof data.catalogueVersion === "string" ? data.catalogueVersion : null,
+    source,
+    catalogueActive: source === "custom" || data.catalogueActive !== false,
+    active: data.active !== false,
+  };
+}
+
+function sortTeams(teams: Team[]): Team[] {
+  return teams.sort(
+    (a, b) =>
+      (b.overall ?? -1) - (a.overall ?? -1) ||
+      a.name.localeCompare(b.name) ||
+      a.competition.localeCompare(b.competition),
+  );
+}
+
+export async function getTeams(includeInactive = false): Promise<Team[]> {
+  if (!includeInactive) {
+    const snapshot = await getDoc(doc(db, "teamCatalogues", "current"));
+    const teams = snapshot.exists() ? snapshot.get("teams") : null;
+    if (Array.isArray(teams)) {
+      return sortTeams(
+        teams.map((team) => {
+          const data = team as Record<string, unknown>;
+          return mapTeam(String(data.id ?? ""), data);
+        }),
+      );
+    }
+  }
+
+  const snap = includeInactive
+    ? await getDocs(collection(db, "teams"))
+    : await getDocs(query(collection(db, "teams"), where("active", "==", true)));
+  return sortTeams(snap.docs.map((teamDoc) => mapTeam(teamDoc.id, teamDoc.data())));
 }
 
 export async function getLeaguePlayers(): Promise<LeaguePlayer[]> {
@@ -501,11 +556,19 @@ export async function ensureLeagueSetup(): Promise<void> {
   await callable({});
 }
 
-export async function seedTeams(): Promise<{ seeded: number; removed: number }> {
-  const callable = httpsCallable<
-    Record<string, never>,
-    { ok: boolean; seeded: number; removed: number }
-  >(functions, "seedTeams");
+export interface TeamCatalogueSyncResult {
+  version: string;
+  updated: number;
+  deactivated: number;
+  active: number;
+  skipped: boolean;
+}
+
+export async function seedTeams(): Promise<TeamCatalogueSyncResult> {
+  const callable = httpsCallable<Record<string, never>, { ok: boolean } & TeamCatalogueSyncResult>(
+    functions,
+    "seedTeams",
+  );
   const result = await callable({});
   return result.data;
 }
@@ -653,7 +716,7 @@ export async function manageTeam(
   name: string,
 ): Promise<{ teamId: string; name: string }>;
 export async function manageTeam(
-  action: "rename" | "deactivate",
+  action: "rename" | "deactivate" | "reactivate",
   teamId: string,
   name?: string,
 ): Promise<{ teamId: string }>;
