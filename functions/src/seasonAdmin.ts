@@ -1,10 +1,10 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "./config";
-import { computePOTM, type SeasonMatchInput, type Standing } from "./elo";
+import { computePOTM, type Standing } from "./elo";
 import { requireAuth, assertAdmin } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
-import { dateMillis, generateUniqueJoinCode } from "./utils";
+import { dateMillis, generateUniqueJoinCode, seasonMatchInputFromDoc } from "./utils";
 import { sendPush } from "./notify";
 
 const db = getFirestore();
@@ -39,21 +39,7 @@ export const finalizeSeason = onCall({ cors: true }, async (req) => {
   if (confirmed.empty)
     throw new HttpsError("failed-precondition", "No confirmed matches in this season.");
 
-  const matchInputs: SeasonMatchInput[] = confirmed.docs.map((doc) => {
-    const d = doc.data();
-    return {
-      id: doc.id,
-      aId: String(d.aId),
-      bId: String(d.bId),
-      aGoals: Number(d.aGoals),
-      bGoals: Number(d.bGoals),
-      aShotsOnTarget: d.aShotsOnTarget != null ? Number(d.aShotsOnTarget) : null,
-      bShotsOnTarget: d.bShotsOnTarget != null ? Number(d.bShotsOnTarget) : null,
-      aPossession: d.aPossession != null ? Number(d.aPossession) : null,
-      bPossession: d.bPossession != null ? Number(d.bPossession) : null,
-      dateMillis: dateMillis(d.date ?? d.confirmedAt ?? d.createdAt),
-    };
-  });
+  const matchInputs = confirmed.docs.map(seasonMatchInputFromDoc);
 
   const standingsSnap = await db.collection(`seasons/${seasonId}/standings`).get();
   const finalStandings: Standing[] = standingsSnap.docs

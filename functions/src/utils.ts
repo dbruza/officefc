@@ -1,5 +1,6 @@
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, Timestamp, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { randomCode } from "./config";
+import type { SeasonMatchInput } from "./elo";
 
 /** Coerce a Firestore Timestamp or ISO date string to epoch millis; unknown shapes → 0. */
 export function dateMillis(value: unknown): number {
@@ -9,6 +10,23 @@ export function dateMillis(value: unknown): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return 0;
+}
+
+/** Map a match doc to the season-calculation input; date falls back to confirmedAt → createdAt. */
+export function seasonMatchInputFromDoc(snap: QueryDocumentSnapshot): SeasonMatchInput {
+  const data = snap.data();
+  return {
+    id: snap.id,
+    aId: String(data.aId),
+    bId: String(data.bId),
+    aGoals: Number(data.aGoals),
+    bGoals: Number(data.bGoals),
+    aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
+    bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
+    aPossession: data.aPossession != null ? Number(data.aPossession) : null,
+    bPossession: data.bPossession != null ? Number(data.bPossession) : null,
+    dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
+  };
 }
 
 /** A join code no other season is using. Throws if 10 random tries all collide. */

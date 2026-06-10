@@ -1,9 +1,9 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "./config";
-import { calculateSeason, type SeasonMatchInput } from "./elo";
+import { calculateSeason } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
-import { dateMillis } from "./utils";
+import { dateMillis, seasonMatchInputFromDoc } from "./utils";
 
 /**
  * Rebuild a season's ELO, standings, and eloHistory from its confirmed matches.
@@ -26,21 +26,7 @@ export async function recalcSeasonElo(seasonId: string): Promise<void> {
   ]);
   if (!season.exists) throw new HttpsError("not-found", "Season not found.");
 
-  const matches: SeasonMatchInput[] = matchSnaps.docs.map((snap) => {
-    const data = snap.data();
-    return {
-      id: snap.id,
-      aId: String(data.aId),
-      bId: String(data.bId),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-      aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
-      bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
-      aPossession: data.aPossession != null ? Number(data.aPossession) : null,
-      bPossession: data.bPossession != null ? Number(data.bPossession) : null,
-      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
-    };
-  });
+  const matches = matchSnaps.docs.map(seasonMatchInputFromDoc);
   const result = calculateSeason(
     matches,
     members.docs.map((snap) => snap.id),
