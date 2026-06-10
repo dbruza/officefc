@@ -40,11 +40,10 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
-      let activeSeason = await getActiveSeason();
-      if (!activeSeason && isAdmin) {
+      if (isAdmin) {
         await ensureLeagueSetup();
-        activeSeason = await getActiveSeason();
       }
+      const activeSeason = await getActiveSeason();
       const [roster, table, allTime] = await Promise.all([
         getLeaguePlayers(),
         activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
