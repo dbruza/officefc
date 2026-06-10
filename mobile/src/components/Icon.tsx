@@ -17,20 +17,16 @@ export type IconName =
   | "back"
   | "chevron"
   | "up"
-  | "down"
   | "camera"
   | "flame"
   | "trophy"
   | "crown"
   | "medal"
-  | "swords"
   | "ball"
   | "jersey"
-  | "calendar"
   | "check"
   | "photo"
   | "edit"
-  | "clock"
   | "bolt"
   | "info";
 
@@ -75,7 +71,6 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
     back: <Path d="M15 5l-7 7 7 7" {...common} />,
     chevron: <Path d="M9 6l6 6-6 6" {...common} />,
     up: <Path d="M12 19V5M6 11l6-6 6 6" {...common} />,
-    down: <Path d="M12 5v14M18 13l-6 6-6-6" {...common} />,
     camera: (
       <G {...common}>
         <Path d="M3 8h3l1.5-2h9L18 8h3v11H3z" {...common} />
@@ -104,12 +99,6 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
         <Path d="M9 9 7 3h10l-2 6" {...common} />
       </G>
     ),
-    swords: (
-      <G {...common}>
-        <Path d="M4 4h3l9 9-3 3-9-9V4Z" {...common} />
-        <Path d="m14 14 6 6M20 4h-3l-4 4M15 9l5 5" {...common} />
-      </G>
-    ),
     ball: (
       <G {...common}>
         <Circle cx="12" cy="12" r="9" {...common} />
@@ -117,12 +106,6 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
       </G>
     ),
     jersey: <Path d="M8 4 4 7l1.5 3L8 9v11h8V9l2.5 1L20 7l-4-3-2 1.5h-4L8 4Z" {...common} />,
-    calendar: (
-      <G {...common}>
-        <Rect x="3" y="5" width="18" height="16" rx="2" {...common} />
-        <Path d="M3 9h18M8 3v4M16 3v4" {...common} />
-      </G>
-    ),
     check: <Path d="M5 12.5 10 17 19 7" {...common} />,
     photo: (
       <G {...common}>
@@ -132,12 +115,6 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
       </G>
     ),
     edit: <Path d="M4 20h4L18 10l-4-4L4 16v4ZM13 7l4 4" {...common} />,
-    clock: (
-      <G {...common}>
-        <Circle cx="12" cy="12" r="9" {...common} />
-        <Path d="M12 7v5l3 2" {...common} />
-      </G>
-    ),
     bolt: <Path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" {...common} />,
     info: (
       <G {...common}>

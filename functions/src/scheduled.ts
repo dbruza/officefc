@@ -6,7 +6,7 @@ import { calculateSeason } from "./elo";
 import { sendPush } from "./notify";
 import { isStaleUnsubmittedDraft } from "./extract/draftLifecycle";
 import type { DraftState } from "./extract/draftSecurity";
-import { dateMillis } from "./utils";
+import { dateMillis, seasonMatchInputFromDoc } from "./utils";
 
 const db = getFirestore();
 const storage = getStorage();
@@ -44,21 +44,7 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
     db.collection(`seasons/${seasonId}/snapshots`).get(),
   ]);
 
-  const matches = matchSnaps.docs.map((snap) => {
-    const data = snap.data();
-    return {
-      id: snap.id,
-      aId: String(data.aId),
-      bId: String(data.bId),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-      aShotsOnTarget: data.aShotsOnTarget != null ? Number(data.aShotsOnTarget) : null,
-      bShotsOnTarget: data.bShotsOnTarget != null ? Number(data.bShotsOnTarget) : null,
-      aPossession: data.aPossession != null ? Number(data.aPossession) : null,
-      bPossession: data.bPossession != null ? Number(data.bPossession) : null,
-      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
-    };
-  });
+  const matches = matchSnaps.docs.map(seasonMatchInputFromDoc);
 
   const result = calculateSeason(
     matches,

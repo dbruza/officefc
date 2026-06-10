@@ -22,8 +22,6 @@ export const colors = {
   loss: "#ff4d6d",
 } as const;
 
-export type ColorToken = keyof typeof colors;
-
 /** Result → colour, matching the prototype's W/D/L palette. */
 export const resultColor = {
   W: colors.win,
@@ -34,7 +32,6 @@ export const resultColor = {
 export const fonts = {
   /** Display / headings. */
   head: "Archivo_700Bold",
-  headSemi: "Archivo_600SemiBold",
   /** Body. */
   body: "Archivo_400Regular",
   bodyMedium: "Archivo_500Medium",
@@ -60,12 +57,3 @@ export const radius = {
   xl: 22,
   pill: 999,
 } as const;
-
-/** Phone-frame reference from the prototype (390×844). */
-export const frame = {
-  width: 390,
-  height: 844,
-} as const;
-
-export const theme = { colors, resultColor, fonts, spacing, radius, frame } as const;
-export type Theme = typeof theme;

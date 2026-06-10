@@ -6,8 +6,6 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { db } from "./firebase";
 
-let expoPushToken: string | null = null;
-
 if (Platform.OS !== "web") {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -41,7 +39,6 @@ export async function requestAndRegisterToken(uid: string): Promise<string | nul
   const options: { projectId?: string } = projectId ? { projectId } : {};
   const tokenData = await Notifications.getExpoPushTokenAsync(options);
   const token = tokenData.data;
-  expoPushToken = token;
 
   const tokenId = hashToken(token);
   await setDoc(doc(db, "deviceTokens", uid, "tokens", tokenId), {
@@ -53,24 +50,9 @@ export async function requestAndRegisterToken(uid: string): Promise<string | nul
   return token;
 }
 
-export async function registerPushToken(uid: string, token: string): Promise<void> {
-  expoPushToken = token;
-  const tokenId = hashToken(token);
-  await setDoc(doc(db, "deviceTokens", uid, "tokens", tokenId), {
-    expoPushToken: token,
-    platform: Platform.OS,
-    updatedAt: new Date().toISOString(),
-  });
-}
-
 export async function unregisterPushToken(uid: string, token: string): Promise<void> {
   const tokenId = hashToken(token);
   await deleteDoc(doc(db, "deviceTokens", uid, "tokens", tokenId));
-  expoPushToken = null;
-}
-
-export function getCachedPushToken(): string | null {
-  return expoPushToken;
 }
 
 function hashToken(token: string): string {

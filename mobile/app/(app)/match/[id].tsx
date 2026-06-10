@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/lib/league";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
+import { showAlert } from "@/lib/dialogs";
 import { firstName } from "@/lib/format";
 
 export default function MatchDetailRoute() {
@@ -69,7 +70,7 @@ export default function MatchDetailRoute() {
       setPhotoUrl(null);
       setMatch((prev) => (prev ? { ...prev, photoPath: null } : null));
     } catch {
-      Alert.alert("Could not delete photo", "Try again or ask an admin.");
+      showAlert("Could not delete photo", "Try again or ask an admin.");
     } finally {
       setDeleting(false);
     }
