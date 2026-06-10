@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import type { Href } from "expo-router";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
@@ -82,7 +83,7 @@ function hashToken(token: string): string {
   return `tok_${Math.abs(hash).toString(36)}`;
 }
 
-export function resolveNotificationRoute(data: Record<string, string>): string | null {
+export function resolveNotificationRoute(data: Record<string, string>): Href | null {
   const type = data.type;
   const matchId = data.matchId;
   if (!type) return null;

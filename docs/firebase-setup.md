@@ -24,6 +24,19 @@ or the repository scripts.
 Firebase web configuration is public client metadata, not a secret. Authorization is
 enforced by `firestore.rules`, `storage.rules`, and trusted Cloud Functions.
 
+### Storage Rules And Firestore
+
+`storage.rules` checks league membership with `firestore.exists()`. In deployed
+environments, the Firebase Storage service account
+`service-PROJECT_NUMBER@gcp-sa-firebasestorage.iam.gserviceaccount.com` must have the
+**Firebase Rules Firestore Service Agent**
+(`roles/firebaserules.firestoreServiceAgent`) role. Without it, valid member uploads fail
+with `storage/unauthorized` even though the same rules pass in the local emulators.
+
+The Firebase console or CLI normally offers to enable this permission when cross-service
+Storage Rules are first deployed. You can verify the grant in Google Cloud IAM by enabling
+**Include Google-provided role grants**.
+
 ## Connect The CLI
 
 From the repository root:

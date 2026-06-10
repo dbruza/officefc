@@ -6,7 +6,6 @@ import {
   getDocs,
   limit,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   Timestamp,
@@ -707,7 +706,7 @@ export async function listSeasons(): Promise<
 
 export interface AdminPendingMatch {
   id: string;
-  status: string;
+  status: "pending_confirmation" | "disputed";
   submittedBy: string;
   aId: string;
   bId: string;
@@ -716,34 +715,43 @@ export interface AdminPendingMatch {
   aTeam: string;
   bTeam: string;
   date: Date | null;
+  source: "manual" | "ai_assisted";
+  photoPath: string | null;
+  disputedBy: string | null;
+  disputeReason: string | null;
 }
 
+/** Matches awaiting admin action — disputed first, then pending, newest first. */
 export async function getAdminPendingMatches(): Promise<AdminPendingMatch[]> {
   const matchesCol = collection(db, "matches");
   const [pendingSnap, disputedSnap] = await Promise.all([
-    getDocs(
-      query(
-        matchesCol,
-        where("status", "==", "pending_confirmation"),
-        orderBy("createdAt", "desc"),
-      ),
-    ),
-    getDocs(query(matchesCol, where("status", "==", "disputed"), orderBy("createdAt", "desc"))),
+    getDocs(query(matchesCol, where("status", "==", "pending_confirmation"))),
+    getDocs(query(matchesCol, where("status", "==", "disputed"))),
   ]);
-  const all = [...pendingSnap.docs, ...disputedSnap.docs];
-  return all.map((d) => {
-    const data = d.data();
-    return {
-      id: d.id,
-      status: String(data.status),
-      submittedBy: String(data.submittedBy),
-      aId: String(data.aId),
-      bId: String(data.bId),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-      aTeam: String(data.aTeam ?? ""),
-      bTeam: String(data.bTeam ?? ""),
-      date: data.date?.toDate() ?? null,
-    };
-  });
+  return [...pendingSnap.docs, ...disputedSnap.docs]
+    .map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        status:
+          data.status === "disputed" ? ("disputed" as const) : ("pending_confirmation" as const),
+        submittedBy: String(data.submittedBy),
+        aId: String(data.aId),
+        bId: String(data.bId),
+        aGoals: Number(data.aGoals),
+        bGoals: Number(data.bGoals),
+        aTeam: String(data.aTeam ?? ""),
+        bTeam: String(data.bTeam ?? ""),
+        date: asNullableDate(data.date),
+        source: data.source === "ai_assisted" ? ("ai_assisted" as const) : ("manual" as const),
+        photoPath: typeof data.photoPath === "string" ? data.photoPath : null,
+        disputedBy: typeof data.disputedBy === "string" ? data.disputedBy : null,
+        disputeReason:
+          typeof data.disputeReason === "string" && data.disputeReason ? data.disputeReason : null,
+      };
+    })
+    .sort((a, b) => {
+      if (a.status !== b.status) return a.status === "disputed" ? -1 : 1;
+      return (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0);
+    });
 }
