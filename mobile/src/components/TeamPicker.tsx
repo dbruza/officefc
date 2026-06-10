@@ -12,8 +12,8 @@ import { Txt } from "./Txt";
 
 const CATEGORY_FILTERS: Array<{ value: TeamCategoryFilter; label: string }> = [
   { value: "all", label: "All" },
-  { value: "men", label: "Men" },
-  { value: "women", label: "Women" },
+  { value: "men", label: "Clubs" },
+  { value: "international", label: "International" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -100,143 +100,162 @@ export function TeamPicker({ label, player, teams, value, onChange }: TeamPicker
       <Modal
         visible={open}
         animationType="slide"
-        presentationStyle="fullScreen"
+        transparent
+        statusBarTranslucent
         onRequestClose={closePicker}
       >
-        <SafeAreaView style={styles.modal} edges={["top", "bottom"]}>
-          <View style={styles.header}>
-            <Pressable
-              onPress={() => (choosingCompetition ? setChoosingCompetition(false) : closePicker())}
-              style={styles.iconButton}
-            >
-              <Icon name={choosingCompetition ? "back" : "x"} size={20} stroke={2.5} />
-            </Pressable>
-            <View style={{ flex: 1 }}>
-              <Txt variant="head" size={18}>
-                {choosingCompetition ? "Choose competition" : label}
-              </Txt>
-              <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
-                {choosingCompetition
-                  ? `${competitions.length} competitions`
-                  : `${results.length} teams`}
-              </Txt>
-            </View>
-          </View>
-
-          {choosingCompetition ? (
-            <FlatList
-              data={["all", ...competitions]}
-              keyExtractor={(item) => item}
-              contentContainerStyle={styles.listContent}
-              renderItem={({ item }) => {
-                const selected = competition === item;
-                return (
-                  <Pressable
-                    onPress={() => {
-                      setCompetition(item);
-                      setChoosingCompetition(false);
-                    }}
-                    style={[styles.competitionRow, selected && styles.selectedRow]}
-                  >
-                    <Txt style={{ flex: 1 }}>{item === "all" ? "All competitions" : item}</Txt>
-                    {selected ? <Icon name="check" size={16} color={colors.accent} /> : null}
-                  </Pressable>
-                );
-              }}
-            />
-          ) : (
-            <>
-              <View style={styles.filters}>
-                <View style={styles.searchBox}>
-                  <Icon name="search" size={16} color={colors.textDim} />
-                  <TextInput
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder="Search team or competition"
-                    placeholderTextColor={colors.textFaint}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    style={styles.searchInput}
-                  />
-                  {query ? (
-                    <Pressable onPress={() => setQuery("")}>
-                      <Icon name="x" size={16} color={colors.textDim} />
-                    </Pressable>
-                  ) : null}
-                </View>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipRow}
-                >
-                  {CATEGORY_FILTERS.map((filter) => (
-                    <FilterChip
-                      key={filter.value}
-                      label={filter.label}
-                      selected={category === filter.value}
-                      onPress={() => setCategory(filter.value)}
-                    />
-                  ))}
-                </ScrollView>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipRow}
-                >
-                  {OVERALL_FILTERS.map((filter) => (
-                    <FilterChip
-                      key={filter.value}
-                      label={filter.label}
-                      selected={overall === filter.value}
-                      onPress={() => setOverall(filter.value)}
-                    />
-                  ))}
-                </ScrollView>
-
+        <View style={styles.modalOverlay}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close team picker"
+            onPress={closePicker}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.sheet}>
+            <SafeAreaView style={styles.sheetSafe} edges={["bottom"]}>
+              <View style={styles.handle} />
+              <View style={styles.header}>
                 <Pressable
-                  onPress={() => setChoosingCompetition(true)}
-                  style={[styles.competitionButton, competition !== "all" && styles.activeFilter]}
+                  onPress={() =>
+                    choosingCompetition ? setChoosingCompetition(false) : closePicker()
+                  }
+                  style={styles.iconButton}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Txt size={10.5} color={colors.textDim}>
-                      COMPETITION
-                    </Txt>
-                    <Txt size={13} numberOfLines={1} style={{ marginTop: 2 }}>
-                      {competition === "all" ? "All competitions" : competition}
-                    </Txt>
-                  </View>
-                  <Icon name="chevron" size={16} color={colors.textDim} />
+                  <Icon name={choosingCompetition ? "back" : "x"} size={20} stroke={2.5} />
                 </Pressable>
+                <View style={{ flex: 1 }}>
+                  <Txt variant="head" size={18}>
+                    {choosingCompetition ? "Choose competition" : label}
+                  </Txt>
+                  <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
+                    {choosingCompetition
+                      ? `${competitions.length} competitions`
+                      : `${results.length} teams`}
+                  </Txt>
+                </View>
               </View>
 
-              <FlatList
-                data={results}
-                keyExtractor={(team) => team.id}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={
-                  <View style={styles.empty}>
-                    <Txt variant="head" size={16}>
-                      No teams found
-                    </Txt>
-                    <Txt color={colors.textDim} size={12.5} style={{ marginTop: spacing.sm }}>
-                      Try clearing a filter or using a broader search.
-                    </Txt>
+              {choosingCompetition ? (
+                <FlatList
+                  style={{ flex: 1 }}
+                  data={["all", ...competitions]}
+                  keyExtractor={(item) => item}
+                  contentContainerStyle={styles.listContent}
+                  renderItem={({ item }) => {
+                    const selected = competition === item;
+                    return (
+                      <Pressable
+                        onPress={() => {
+                          setCompetition(item);
+                          setChoosingCompetition(false);
+                        }}
+                        style={[styles.competitionRow, selected && styles.selectedRow]}
+                      >
+                        <Txt style={{ flex: 1 }}>{item === "all" ? "All competitions" : item}</Txt>
+                        {selected ? <Icon name="check" size={16} color={colors.accent} /> : null}
+                      </Pressable>
+                    );
+                  }}
+                />
+              ) : (
+                <>
+                  <View style={styles.filters}>
+                    <View style={styles.searchBox}>
+                      <Icon name="search" size={16} color={colors.textDim} />
+                      <TextInput
+                        value={query}
+                        onChangeText={setQuery}
+                        placeholder="Search team or competition"
+                        placeholderTextColor={colors.textFaint}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        style={styles.searchInput}
+                      />
+                      {query ? (
+                        <Pressable onPress={() => setQuery("")}>
+                          <Icon name="x" size={16} color={colors.textDim} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.chipRow}
+                    >
+                      {CATEGORY_FILTERS.map((filter) => (
+                        <FilterChip
+                          key={filter.value}
+                          label={filter.label}
+                          selected={category === filter.value}
+                          onPress={() => setCategory(filter.value)}
+                        />
+                      ))}
+                    </ScrollView>
+
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.chipRow}
+                    >
+                      {OVERALL_FILTERS.map((filter) => (
+                        <FilterChip
+                          key={filter.value}
+                          label={filter.label}
+                          selected={overall === filter.value}
+                          onPress={() => setOverall(filter.value)}
+                        />
+                      ))}
+                    </ScrollView>
+
+                    <Pressable
+                      onPress={() => setChoosingCompetition(true)}
+                      style={[
+                        styles.competitionButton,
+                        competition !== "all" && styles.activeFilter,
+                      ]}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Txt size={10.5} color={colors.textDim}>
+                          COMPETITION
+                        </Txt>
+                        <Txt size={13} numberOfLines={1} style={{ marginTop: 2 }}>
+                          {competition === "all" ? "All competitions" : competition}
+                        </Txt>
+                      </View>
+                      <Icon name="chevron" size={16} color={colors.textDim} />
+                    </Pressable>
                   </View>
-                }
-                renderItem={({ item }) => (
-                  <TeamResult
-                    team={item}
-                    selected={item.id === value?.id}
-                    onPress={() => selectTeam(item)}
+
+                  <FlatList
+                    style={{ flex: 1 }}
+                    data={results}
+                    keyExtractor={(team) => team.id}
+                    keyboardShouldPersistTaps="handled"
+                    contentContainerStyle={styles.listContent}
+                    ListEmptyComponent={
+                      <View style={styles.empty}>
+                        <Txt variant="head" size={16}>
+                          No teams found
+                        </Txt>
+                        <Txt color={colors.textDim} size={12.5} style={{ marginTop: spacing.sm }}>
+                          Try clearing a filter or using a broader search.
+                        </Txt>
+                      </View>
+                    }
+                    renderItem={({ item }) => (
+                      <TeamResult
+                        team={item}
+                        selected={item.id === value?.id}
+                        onPress={() => selectTeam(item)}
+                      />
+                    )}
                   />
-                )}
-              />
-            </>
-          )}
-        </SafeAreaView>
+                </>
+              )}
+            </SafeAreaView>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -287,9 +306,11 @@ function TeamResult({
           {team.competition}
         </Txt>
         <Txt variant="mono" size={10} color={colors.textFaint} style={{ marginTop: 5 }}>
-          {team.overall == null
+          {team.category === "custom"
             ? "CUSTOM TEAM"
-            : `ATK ${team.attack}  MID ${team.midfield}  DEF ${team.defence}`}
+            : team.overall == null
+              ? "RATINGS UNAVAILABLE"
+              : `ATK ${team.attack}  MID ${team.midfield}  DEF ${team.defence}`}
         </Txt>
       </View>
       {selected ? <Icon name="check" size={17} color={colors.accent} /> : null}
@@ -317,7 +338,31 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   teamFieldFilled: { borderColor: withAlpha(colors.accent, 0.35) },
-  modal: { flex: 1, backgroundColor: colors.bg },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.58)",
+  },
+  sheet: {
+    height: "78%",
+    maxHeight: 680,
+    backgroundColor: colors.bg,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    borderColor: colors.line,
+    overflow: "hidden",
+  },
+  sheetSafe: { flex: 1 },
+  handle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    marginTop: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.textFaint,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",

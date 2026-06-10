@@ -299,7 +299,7 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
           const result = await seedTeams();
           showAlert(
             `Catalogue ${result.version} updated`,
-            `${result.updated} entries updated · ${result.deactivated} superseded · ${result.active} active.`,
+            `${result.updated} updated · ${result.deleted} removed · ${result.deactivated} superseded · ${result.active} active.`,
           );
           onReload();
         } catch (error: unknown) {

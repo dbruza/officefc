@@ -11,11 +11,11 @@ const teams = [
     overall: 82,
   },
   {
-    id: "women-chelsea",
-    name: "Chelsea",
-    competition: "England FA Women's Super League (1)",
-    category: "women",
-    overall: 83,
+    id: "nt-england",
+    name: "England",
+    competition: "National Teams",
+    category: "international",
+    overall: null,
   },
   {
     id: "bayern",
@@ -48,16 +48,16 @@ test("search is accent-insensitive and prioritizes name matches", () => {
   );
   assert.deepEqual(
     search.filterTeams(teams, { ...defaults, query: "chelsea" }).map((team) => team.id),
-    ["women-chelsea", "men-chelsea"],
+    ["men-chelsea"],
   );
 });
 
 test("category, competition, and OVR filters compose", () => {
   assert.deepEqual(
     search
-      .filterTeams(teams, { ...defaults, category: "women", overall: "80+" })
+      .filterTeams(teams, { ...defaults, category: "international", overall: "unrated" })
       .map((team) => team.id),
-    ["women-chelsea"],
+    ["nt-england"],
   );
   assert.deepEqual(
     search
@@ -70,6 +70,6 @@ test("category, competition, and OVR filters compose", () => {
 test("unfiltered results sort by OVR then name", () => {
   assert.deepEqual(
     search.filterTeams(teams, defaults).map((team) => team.id),
-    ["bayern", "women-chelsea", "men-chelsea", "custom"],
+    ["bayern", "men-chelsea", "nt-england", "custom"],
   );
 });

@@ -4,6 +4,7 @@ const {
   catalogueTeamData,
   isCustomTeam,
   isSupersededCatalogueTeam,
+  isWomenTeam,
   rebuildTeamCatalogueSnapshot,
   seedTeamCatalogue,
   teamSummary,
@@ -55,6 +56,12 @@ test("custom teams survive while missing catalogue teams are superseded", () => 
   assert.equal(isSupersededCatalogueTeam(catalogueTeam.id, {}, ids), false);
 });
 
+test("women's catalogue documents are identified for deletion", () => {
+  assert.equal(isWomenTeam({ category: "women" }), true);
+  assert.equal(isWomenTeam({ competition: "USA NWSL (1)" }), true);
+  assert.equal(isWomenTeam({ competition: "National Teams", category: "international" }), false);
+});
+
 test("team summaries retain duplicate-name identity and nullable custom ratings", () => {
   assert.deepEqual(teamSummary("team-123", { name: "Office XI", source: "custom", active: true }), {
     id: "team-123",
@@ -80,7 +87,7 @@ test("current catalogue version skips collection rewrites", async () => {
           return {
             exists: true,
             get(field) {
-              return field === "version" ? "fifa23" : 648;
+              return field === "version" ? "fifa23-men-v2" : 647;
             },
           };
         },
@@ -89,10 +96,11 @@ test("current catalogue version skips collection rewrites", async () => {
   };
   const result = await seedTeamCatalogue({ db });
   assert.deepEqual(result, {
-    version: "fifa23",
+    version: "fifa23-men-v2",
     updated: 0,
     deactivated: 0,
-    active: 648,
+    deleted: 0,
+    active: 647,
     skipped: true,
   });
 });
@@ -125,11 +133,11 @@ test("snapshot rebuild writes active team summaries in picker order", async () =
       };
     },
   };
-  const teams = await rebuildTeamCatalogueSnapshot(db, "fifa23");
+  const teams = await rebuildTeamCatalogueSnapshot(db, "fifa23-men-v2");
   assert.deepEqual(
     teams.map((team) => team.id),
     [catalogueTeam.id, "custom"],
   );
   assert.equal(written.count, 2);
-  assert.equal(written.version, "fifa23");
+  assert.equal(written.version, "fifa23-men-v2");
 });

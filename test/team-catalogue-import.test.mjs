@@ -2,7 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  buildCatalogue,
   categoryForCompetition,
+  NATIONAL_TEAMS,
   parseTeamDump,
   stableTeamId,
 } from "../scripts/import-fifa-teams.mjs";
@@ -58,9 +60,36 @@ test("malformed and out-of-range rows are rejected", () => {
 
 test("the committed FIFA 23 dump produces the expected catalogue", () => {
   const source = readFileSync(new URL("../data/fifa23-team-list.txt", import.meta.url), "utf8");
-  const teams = parseTeamDump(source);
-  assert.equal(teams.length, 648);
-  assert.equal(new Set(teams.map((team) => team.competition)).size, 40);
-  assert.equal(Math.min(...teams.map((team) => team.overall)), 59);
-  assert.equal(Math.max(...teams.map((team) => team.overall)), 85);
+  const rawTeams = parseTeamDump(source);
+  const teams = buildCatalogue(source);
+  assert.equal(rawTeams.length, 648);
+  assert.equal(rawTeams.filter((team) => team.category === "women").length, 36);
+  assert.equal(teams.length, 647);
+  assert.equal(teams.filter((team) => team.category === "women").length, 0);
+  assert.equal(teams.filter((team) => team.category === "international").length, 35);
+  assert.equal(NATIONAL_TEAMS.length, 35);
+  assert.equal(new Set(teams.map((team) => team.competition)).size, 37);
+  assert.equal(
+    teams.find((team) => team.name === "Bayern München")?.id,
+    stableTeamId("Bayern München", "Germany 1. Bundesliga (1)"),
+  );
+  const ratings = teams.flatMap((team) => (team.overall == null ? [] : [team.overall]));
+  assert.equal(Math.min(...ratings), 59);
+  assert.equal(Math.max(...ratings), 85);
+});
+
+test("national teams retain their legacy ids and have no fabricated ratings", () => {
+  const teams = buildCatalogue(fixture);
+  const argentina = teams.find((team) => team.id === "nt-argentina");
+  assert.deepEqual(argentina, {
+    id: "nt-argentina",
+    name: "Argentina",
+    competition: "National Teams",
+    category: "international",
+    overall: null,
+    attack: null,
+    midfield: null,
+    defence: null,
+    catalogueVersion: "fifa23-men-v2",
+  });
 });

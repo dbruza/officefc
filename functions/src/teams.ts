@@ -4,7 +4,7 @@ import { requireAuth, assertAdmin } from "./auth";
 import { TEAM_CATALOGUE, TEAM_CATALOGUE_VERSION, type CatalogueTeam } from "./data/teamCatalogue";
 
 export type TeamSource = "catalogue" | "custom";
-export type TeamCategory = "men" | "women" | "custom";
+export type TeamCategory = "men" | "international" | "custom";
 
 export interface TeamSummary {
   id: string;
@@ -23,6 +23,13 @@ export interface TeamSummary {
 
 export function isCustomTeam(id: string, data: Record<string, unknown>): boolean {
   return data.source === "custom" || id.startsWith("team-");
+}
+
+export function isWomenTeam(data: Record<string, unknown>): boolean {
+  return (
+    data.category === "women" ||
+    /women|féminine|feminine|nwsl/i.test(String(data.competition ?? ""))
+  );
 }
 
 export function isSupersededCatalogueTeam(
@@ -72,7 +79,8 @@ export function teamSummary(id: string, data: Record<string, unknown>): TeamSumm
     name: String(data.name ?? ""),
     competition:
       source === "custom" ? String(data.competition ?? "Custom") : String(data.competition ?? ""),
-    category: source === "custom" ? "custom" : data.category === "women" ? "women" : "men",
+    category:
+      source === "custom" ? "custom" : data.category === "international" ? "international" : "men",
     overall: nullableRating(data.overall),
     attack: nullableRating(data.attack),
     midfield: nullableRating(data.midfield),
@@ -121,6 +129,7 @@ export interface CatalogueSyncResult {
   version: string;
   updated: number;
   deactivated: number;
+  deleted: number;
   active: number;
   skipped: boolean;
 }
@@ -144,6 +153,7 @@ export async function seedTeamCatalogue(
       version: TEAM_CATALOGUE_VERSION,
       updated: 0,
       deactivated: 0,
+      deleted: 0,
       active: Number(currentSnapshot.get("count") ?? 0),
       skipped: true,
     };
@@ -167,7 +177,13 @@ export async function seedTeamCatalogue(
   }
 
   let deactivated = 0;
+  let deleted = 0;
   for (const doc of existing.docs) {
+    if (isWomenTeam(doc.data())) {
+      writer.delete(doc.ref);
+      deleted += 1;
+      continue;
+    }
     if (isSupersededCatalogueTeam(doc.id, doc.data(), catalogueIds)) {
       writer.set(
         doc.ref,
@@ -190,6 +206,7 @@ export async function seedTeamCatalogue(
     version: TEAM_CATALOGUE_VERSION,
     updated: TEAM_CATALOGUE.length,
     deactivated,
+    deleted,
     active,
     skipped: false,
   };

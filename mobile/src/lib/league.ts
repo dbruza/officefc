@@ -42,7 +42,7 @@ export interface Team {
   id: string;
   name: string;
   competition: string;
-  category: "men" | "women" | "custom";
+  category: "men" | "international" | "custom";
   overall: number | null;
   attack: number | null;
   midfield: number | null;
@@ -301,7 +301,8 @@ function mapTeam(id: string, data: Record<string, unknown>): Team {
     name: String(data.name ?? ""),
     competition:
       source === "custom" ? String(data.competition ?? "Custom") : String(data.competition ?? ""),
-    category: source === "custom" ? "custom" : data.category === "women" ? "women" : "men",
+    category:
+      source === "custom" ? "custom" : data.category === "international" ? "international" : "men",
     overall: nullableTeamRating(data.overall),
     attack: nullableTeamRating(data.attack),
     midfield: nullableTeamRating(data.midfield),
@@ -328,10 +329,12 @@ export async function getTeams(includeInactive = false): Promise<Team[]> {
     const teams = snapshot.exists() ? snapshot.get("teams") : null;
     if (Array.isArray(teams)) {
       return sortTeams(
-        teams.map((team) => {
-          const data = team as Record<string, unknown>;
-          return mapTeam(String(data.id ?? ""), data);
-        }),
+        teams
+          .filter((team) => (team as Record<string, unknown>).category !== "women")
+          .map((team) => {
+            const data = team as Record<string, unknown>;
+            return mapTeam(String(data.id ?? ""), data);
+          }),
       );
     }
   }
@@ -339,7 +342,11 @@ export async function getTeams(includeInactive = false): Promise<Team[]> {
   const snap = includeInactive
     ? await getDocs(collection(db, "teams"))
     : await getDocs(query(collection(db, "teams"), where("active", "==", true)));
-  return sortTeams(snap.docs.map((teamDoc) => mapTeam(teamDoc.id, teamDoc.data())));
+  return sortTeams(
+    snap.docs
+      .filter((teamDoc) => teamDoc.get("category") !== "women")
+      .map((teamDoc) => mapTeam(teamDoc.id, teamDoc.data())),
+  );
 }
 
 export async function getLeaguePlayers(): Promise<LeaguePlayer[]> {
@@ -560,6 +567,7 @@ export interface TeamCatalogueSyncResult {
   version: string;
   updated: number;
   deactivated: number;
+  deleted: number;
   active: number;
   skipped: boolean;
 }
