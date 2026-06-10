@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,10 +23,16 @@ import {
   listSeasons,
   getTeams,
   getAdminPendingMatches,
+  getLeaguePlayers,
+  getMatchPhotoUrl,
   type Team,
   type AdminPendingMatch,
+  type LeaguePlayer,
 } from "@/lib/league";
 import { colors, radius, spacing } from "@/theme";
+import { withAlpha } from "@/lib/color";
+import { firstName } from "@/lib/format";
+import { confirmAction, showAlert } from "@/lib/dialogs";
 
 type Section = "seasons" | "teams" | "pending";
 
@@ -44,6 +50,7 @@ export default function AdminScreen() {
   >([]);
   const [teams, setTeamsList] = useState<Team[]>([]);
   const [pending, setPending] = useState<AdminPendingMatch[]>([]);
+  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
   const isAdmin = membership?.role === "admin";
@@ -51,10 +58,16 @@ export default function AdminScreen() {
   const load = async () => {
     setLoading(true);
     try {
-      const [s, t, p] = await Promise.all([listSeasons(), getTeams(), getAdminPendingMatches()]);
+      const [s, t, p, roster] = await Promise.all([
+        listSeasons(),
+        getTeams(),
+        getAdminPendingMatches(),
+        getLeaguePlayers(),
+      ]);
       setSeasons(s);
       setTeamsList(t);
-      setPending(p.map((m) => ({ ...m })));
+      setPending(p);
+      setPlayers(new Map(roster.map((player) => [player.id, player])));
     } catch {
       setError("Failed to load admin data.");
     } finally {
@@ -114,7 +127,9 @@ export default function AdminScreen() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
           {section === "seasons" ? <SeasonsSection seasons={seasons} onReload={load} /> : null}
           {section === "teams" ? <TeamsSection teams={teams} onReload={load} /> : null}
-          {section === "pending" ? <PendingSection matches={pending} onReload={load} /> : null}
+          {section === "pending" ? (
+            <PendingSection matches={pending} players={players} onReload={load} />
+          ) : null}
 
           {error ? (
             <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg }}>
@@ -153,7 +168,7 @@ function SeasonsSection({
       setNewEnd("");
       onReload();
     } catch (error: unknown) {
-      Alert.alert("Error", errorMessage(error));
+      showAlert("Error", errorMessage(error));
     }
   }
 
@@ -263,28 +278,23 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
   const [syncing, setSyncing] = useState(false);
 
   function confirmSync() {
-    Alert.alert(
-      "Sync team catalogue",
-      "Import every catalogue team and remove legacy placeholder teams?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sync",
-          onPress: async () => {
-            setSyncing(true);
-            try {
-              const { seeded, removed } = await seedTeams();
-              Alert.alert("Catalogue synced", `${seeded} teams synced · ${removed} removed.`);
-              onReload();
-            } catch (error: unknown) {
-              Alert.alert("Error", errorMessage(error));
-            } finally {
-              setSyncing(false);
-            }
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: "Sync team catalogue",
+      message: "Import every catalogue team and remove legacy placeholder teams?",
+      confirmLabel: "Sync",
+      onConfirm: async () => {
+        setSyncing(true);
+        try {
+          const { seeded, removed } = await seedTeams();
+          showAlert("Catalogue synced", `${seeded} teams synced · ${removed} removed.`);
+          onReload();
+        } catch (error: unknown) {
+          showAlert("Error", errorMessage(error));
+        } finally {
+          setSyncing(false);
+        }
+      },
+    });
   }
 
   async function doAdd() {
@@ -295,7 +305,7 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
       setNewTeamName("");
       onReload();
     } catch (error: unknown) {
-      Alert.alert("Error", errorMessage(error));
+      showAlert("Error", errorMessage(error));
     }
   }
 
@@ -306,22 +316,21 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
       setRenaming(null);
       onReload();
     } catch (error: unknown) {
-      Alert.alert("Error", errorMessage(error));
+      showAlert("Error", errorMessage(error));
     }
   }
 
   async function doDeactivate(teamId: string, name: string) {
-    Alert.alert("Deactivate", `Deactivate ${name}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Deactivate",
-        style: "destructive",
-        onPress: async () => {
-          await manageTeam("deactivate", teamId);
-          onReload();
-        },
+    confirmAction({
+      title: "Deactivate",
+      message: `Deactivate ${name}?`,
+      confirmLabel: "Deactivate",
+      destructive: true,
+      onConfirm: async () => {
+        await manageTeam("deactivate", teamId);
+        onReload();
       },
-    ]);
+    });
   }
 
   return (
@@ -438,20 +447,13 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
 
 function PendingSection({
   matches,
+  players,
   onReload,
 }: {
   matches: AdminPendingMatch[];
+  players: Map<string, LeaguePlayer>;
   onReload: () => void;
 }) {
-  async function doResolve(matchId: string, action: "confirm" | "void") {
-    try {
-      await resolveMatch(matchId, action);
-      onReload();
-    } catch (error: unknown) {
-      Alert.alert("Error", errorMessage(error));
-    }
-  }
-
   return (
     <View>
       <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>
@@ -462,28 +464,213 @@ function PendingSection({
         <Txt color={colors.textDim}>No pending matches.</Txt>
       ) : (
         matches.map((m) => (
-          <Card key={m.id} style={{ marginBottom: spacing.sm }}>
-            <Txt variant="monoBold" size={16} style={{ marginBottom: spacing.sm }}>
-              {m.aGoals}:{m.bGoals}
-            </Txt>
-            <Txt size={12} color={colors.textDim}>
-              {m.aTeam} vs {m.bTeam}
-            </Txt>
-            <Txt size={11} color={colors.textFaint} style={{ marginTop: 4 }}>
-              ID: {m.id.slice(0, 8)}… · Submitted: {m.date?.toLocaleDateString() ?? "?"}
-            </Txt>
-            <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
-              <Button size="sm" onPress={() => doResolve(m.id, "confirm")}>
-                Confirm
-              </Button>
-              <Button size="sm" variant="danger" onPress={() => doResolve(m.id, "void")}>
-                Void
-              </Button>
-            </View>
-          </Card>
+          <AdminMatchCard key={m.id} match={m} players={players} onReload={onReload} />
         ))
       )}
     </View>
+  );
+}
+
+function AdminMatchCard({
+  match: m,
+  players,
+  onReload,
+}: {
+  match: AdminPendingMatch;
+  players: Map<string, LeaguePlayer>;
+  onReload: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [aScore, setAScore] = useState(String(m.aGoals));
+  const [bScore, setBScore] = useState(String(m.bGoals));
+  const [reason, setReason] = useState("");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoLoading, setPhotoLoading] = useState(false);
+
+  const nameOf = (uid: string | null) => {
+    const name = uid ? players.get(uid)?.name : undefined;
+    return name ? firstName(name) : "Unknown";
+  };
+  const aName = nameOf(m.aId);
+  const bName = nameOf(m.bId);
+  const disputed = m.status === "disputed";
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    try {
+      await action();
+      onReload();
+    } catch (error: unknown) {
+      showAlert("Error", errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function doVoid() {
+    confirmAction({
+      title: "Void match",
+      message: `Void the ${m.aGoals}:${m.bGoals} between ${aName} and ${bName}? It will never count toward the table.`,
+      confirmLabel: "Void",
+      destructive: true,
+      onConfirm: () => run(() => resolveMatch(m.id, "void")),
+    });
+  }
+
+  function saveCorrected() {
+    const aGoals = Number(aScore);
+    const bGoals = Number(bScore);
+    if (
+      !Number.isInteger(aGoals) ||
+      !Number.isInteger(bGoals) ||
+      aGoals < 0 ||
+      aGoals > 99 ||
+      bGoals < 0 ||
+      bGoals > 99
+    ) {
+      showAlert("Invalid score", "Goals must be whole numbers from 0 to 99.");
+      return;
+    }
+    run(() =>
+      resolveMatch(m.id, "correct_confirm", { aGoals, bGoals }, reason.trim() || undefined),
+    );
+  }
+
+  async function togglePhoto() {
+    if (photoUrl) {
+      setPhotoUrl(null);
+      return;
+    }
+    setPhotoLoading(true);
+    try {
+      const { url } = await getMatchPhotoUrl(m.id);
+      setPhotoUrl(url);
+    } catch (error: unknown) {
+      showAlert("Photo unavailable", errorMessage(error));
+    } finally {
+      setPhotoLoading(false);
+    }
+  }
+
+  return (
+    <Card style={{ marginBottom: spacing.md }}>
+      <View style={styles.matchTop}>
+        <View style={[styles.badge, disputed ? styles.badgeDisputed : styles.badgePending]}>
+          <Txt variant="head" size={10} color={disputed ? colors.loss : colors.accent}>
+            {disputed ? "DISPUTED" : "PENDING"}
+          </Txt>
+        </View>
+        <Txt size={11} color={colors.textFaint}>
+          {m.date?.toLocaleDateString() ?? "Date unknown"}
+        </Txt>
+      </View>
+
+      <Txt variant="monoBold" size={20} style={{ marginTop: spacing.md }}>
+        {aName} {m.aGoals} : {m.bGoals} {bName}
+      </Txt>
+      <Txt size={12} color={colors.textDim} style={{ marginTop: 2 }}>
+        {m.aTeam} vs {m.bTeam} · submitted by {nameOf(m.submittedBy)}
+      </Txt>
+
+      {disputed ? (
+        <View style={styles.disputeBox}>
+          <Txt size={12} color={colors.loss}>
+            Disputed by {nameOf(m.disputedBy)}
+            {m.disputeReason ? `: “${m.disputeReason}”` : "."}
+          </Txt>
+        </View>
+      ) : null}
+
+      {m.photoPath ? (
+        <>
+          <Button
+            size="sm"
+            variant="dark"
+            icon="photo"
+            disabled={photoLoading}
+            onPress={togglePhoto}
+            style={{ marginTop: spacing.md }}
+          >
+            {photoLoading ? "Loading…" : photoUrl ? "Hide photo" : "View photo"}
+          </Button>
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.matchPhoto} resizeMode="contain" />
+          ) : null}
+        </>
+      ) : null}
+
+      {editing ? (
+        <View style={{ marginTop: spacing.md }}>
+          <View style={styles.scoreInputs}>
+            <View style={{ flex: 1, alignItems: "center" }}>
+              <Txt size={11} color={colors.textDim} style={{ marginBottom: 4 }}>
+                {aName}
+              </Txt>
+              <TextInput
+                value={aScore}
+                onChangeText={setAScore}
+                keyboardType="number-pad"
+                maxLength={2}
+                style={[styles.input, styles.scoreInput]}
+              />
+            </View>
+            <Txt variant="monoBold" size={20} color={colors.textFaint}>
+              :
+            </Txt>
+            <View style={{ flex: 1, alignItems: "center" }}>
+              <Txt size={11} color={colors.textDim} style={{ marginBottom: 4 }}>
+                {bName}
+              </Txt>
+              <TextInput
+                value={bScore}
+                onChangeText={setBScore}
+                keyboardType="number-pad"
+                maxLength={2}
+                style={[styles.input, styles.scoreInput]}
+              />
+            </View>
+          </View>
+          <TextInput
+            value={reason}
+            onChangeText={setReason}
+            placeholder="Reason (optional)"
+            placeholderTextColor={colors.textFaint}
+            style={styles.input}
+          />
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Button size="sm" disabled={busy} onPress={saveCorrected}>
+              {busy ? "Saving…" : "Save & confirm"}
+            </Button>
+            <Button size="sm" variant="ghost" disabled={busy} onPress={() => setEditing(false)}>
+              Cancel
+            </Button>
+          </View>
+        </View>
+      ) : (
+        <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
+          <Button
+            size="sm"
+            disabled={busy}
+            onPress={() => run(() => resolveMatch(m.id, "confirm"))}
+          >
+            Confirm
+          </Button>
+          <Button
+            size="sm"
+            variant="dark"
+            icon="edit"
+            disabled={busy}
+            onPress={() => setEditing(true)}
+          >
+            Edit score
+          </Button>
+          <Button size="sm" variant="danger" disabled={busy} onPress={doVoid}>
+            Void
+          </Button>
+        </View>
+      )}
+    </Card>
   );
 }
 
@@ -534,4 +721,41 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: spacing.sm,
   },
+  matchTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  badge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  badgeDisputed: {
+    borderColor: withAlpha(colors.loss, 0.4),
+    backgroundColor: withAlpha(colors.loss, 0.08),
+  },
+  badgePending: {
+    borderColor: withAlpha(colors.accent, 0.4),
+    backgroundColor: withAlpha(colors.accent, 0.08),
+  },
+  disputeBox: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.loss, 0.25),
+    backgroundColor: withAlpha(colors.loss, 0.06),
+  },
+  matchPhoto: {
+    width: "100%",
+    aspectRatio: 900 / 1280,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bg,
+    marginTop: spacing.sm,
+  },
+  scoreInputs: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  scoreInput: { width: 64, textAlign: "center", marginBottom: 0 },
 });
