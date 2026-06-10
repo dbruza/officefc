@@ -32,7 +32,6 @@ function filterTeams(teams, filters) {
   const query = normalizeTeamSearch(filters.query);
   return teams
     .filter((team) => filters.category === "all" || team.category === filters.category)
-    .filter((team) => filters.competition === "all" || team.competition === filters.competition)
     .filter((team) => inOverallBand(team.overall, filters.overall))
     .map((team) => ({ team, rank: searchRank(team, query) }))
     .filter((entry) => Number.isFinite(entry.rank))

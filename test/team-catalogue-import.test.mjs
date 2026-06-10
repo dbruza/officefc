@@ -78,7 +78,7 @@ test("the committed FIFA 23 dump produces the expected catalogue", () => {
   assert.equal(Math.max(...ratings), 85);
 });
 
-test("national teams retain their legacy ids and have no fabricated ratings", () => {
+test("national teams retain legacy ids and use the supplied ratings", () => {
   const teams = buildCatalogue(fixture);
   const argentina = teams.find((team) => team.id === "nt-argentina");
   assert.deepEqual(argentina, {
@@ -86,10 +86,10 @@ test("national teams retain their legacy ids and have no fabricated ratings", ()
     name: "Argentina",
     competition: "National Teams",
     category: "international",
-    overall: null,
-    attack: null,
-    midfield: null,
-    defence: null,
-    catalogueVersion: "fifa23-men-v2",
+    overall: 83,
+    attack: 84,
+    midfield: 81,
+    defence: 82,
+    catalogueVersion: "fifa23-men-v3",
   });
 });

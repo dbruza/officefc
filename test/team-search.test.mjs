@@ -15,7 +15,7 @@ const teams = [
     name: "England",
     competition: "National Teams",
     category: "international",
-    overall: null,
+    overall: 84,
   },
   {
     id: "bayern",
@@ -36,7 +36,6 @@ const teams = [
 const defaults = {
   query: "",
   category: "all",
-  competition: "all",
   overall: "all",
 };
 
@@ -52,17 +51,15 @@ test("search is accent-insensitive and prioritizes name matches", () => {
   );
 });
 
-test("category, competition, and OVR filters compose", () => {
+test("category and OVR filters compose", () => {
   assert.deepEqual(
     search
-      .filterTeams(teams, { ...defaults, category: "international", overall: "unrated" })
+      .filterTeams(teams, { ...defaults, category: "international", overall: "80+" })
       .map((team) => team.id),
     ["nt-england"],
   );
   assert.deepEqual(
-    search
-      .filterTeams(teams, { ...defaults, competition: "Custom", overall: "unrated" })
-      .map((team) => team.id),
+    search.filterTeams(teams, { ...defaults, overall: "unrated" }).map((team) => team.id),
     ["custom"],
   );
 });
@@ -70,6 +67,6 @@ test("category, competition, and OVR filters compose", () => {
 test("unfiltered results sort by OVR then name", () => {
   assert.deepEqual(
     search.filterTeams(teams, defaults).map((team) => team.id),
-    ["bayern", "men-chelsea", "nt-england", "custom"],
+    ["bayern", "nt-england", "men-chelsea", "custom"],
   );
 });

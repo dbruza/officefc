@@ -6,7 +6,6 @@ export type TeamOverallFilter = "all" | "80+" | "75-79" | "70-74" | "under70" | 
 export interface TeamFilters {
   query: string;
   category: TeamCategoryFilter;
-  competition: string;
   overall: TeamOverallFilter;
 }
 
