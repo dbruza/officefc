@@ -106,12 +106,10 @@ export default function SeasonsRoute() {
   const leader = standings[0] ?? null;
   const leadingPlayer = leader ? players.get(leader.uid) : null;
 
-  const podium: PodiumEntry[] = standings
-    .slice(0, 3)
-    .flatMap((standing) => {
-      const player = players.get(standing.uid);
-      return player ? [{ player, elo: standing.elo }] : [];
-    });
+  const podium: PodiumEntry[] = standings.slice(0, 3).flatMap((standing) => {
+    const player = players.get(standing.uid);
+    return player ? [{ player, elo: standing.elo }] : [];
+  });
   const recent = matches.slice().reverse();
   const shownResults = showAllResults
     ? recent.slice(0, RESULTS_MAX)

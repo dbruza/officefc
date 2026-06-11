@@ -79,8 +79,13 @@ export function computeSeasonAwards(matches: LeagueMatch[]): SeasonAward[] {
     return entry;
   };
 
-  let giant: { playerId: string; opponentId: string; delta: number; gap: number; matchId: string } | null =
-    null;
+  let giant: {
+    playerId: string;
+    opponentId: string;
+    delta: number;
+    gap: number;
+    matchId: string;
+  } | null = null;
   for (const match of played) {
     const a = side(match.aId);
     const b = side(match.bId);
@@ -129,9 +134,7 @@ export function computeSeasonAwards(matches: LeagueMatch[]): SeasonAward[] {
 
   const boot = top((entry) => entry.gf);
   const eligible = rows.filter(([, entry]) => entry.games >= GLOVE_MIN_GAMES);
-  const glove = (eligible.length ? eligible : rows)
-    .slice()
-    .sort((x, y) => x[1].ga - y[1].ga)[0];
+  const glove = (eligible.length ? eligible : rows).slice().sort((x, y) => x[1].ga - y[1].ga)[0];
   const improved = top((entry) => entry.eloGain);
   const streaker = top((entry) => entry.longestWin);
   const drawer = top((entry) => entry.draws);

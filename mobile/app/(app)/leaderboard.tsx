@@ -13,6 +13,7 @@ import { AppTabBar, Card, Icon, PlayerRow, ScreenHeader, Txt } from "@/component
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
+  getSeasonResults,
   getSeasons,
   getStandings,
   type LeaguePlayer,
@@ -28,19 +29,21 @@ export default function Leaderboard() {
   const [seasonId, setSeasonId] = useState("");
   const [standings, setStandings] = useState<Standing[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
+  const [championId, setChampionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [queryText, setQueryText] = useState("");
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      Promise.all([getSeasons(), getLeaguePlayers()])
-        .then(async ([seasonRows, roster]) => {
+      Promise.all([getSeasons(), getLeaguePlayers(), getSeasonResults()])
+        .then(async ([seasonRows, roster, results]) => {
           const selectedId =
             seasonId || seasonRows.find((season) => season.active)?.id || seasonRows[0]?.id || "";
           setSeasons(seasonRows);
           setSeasonId(selectedId);
           setPlayers(new Map(roster.map((player) => [player.id, player])));
+          setChampionId(results[0]?.championId ?? null);
           setStandings(selectedId ? await getStandings(selectedId) : []);
         })
         .finally(() => setLoading(false));
@@ -135,6 +138,7 @@ export default function Leaderboard() {
                     : { w: standing.w, d: standing.d, l: standing.l }
                 }
                 you={standing.uid === user?.uid}
+                champion={standing.uid === championId}
                 onPress={() => router.push(`/(app)/player/${standing.uid}`)}
               />
             );

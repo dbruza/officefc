@@ -19,18 +19,20 @@ import {
 } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
-  getActiveSeason,
   getEloHistory,
   getHeadToHeadsForPlayer,
   getLeaguePlayers,
   getPlayerMatches,
   getPlayerStats,
+  getSeasonResults,
+  getSeasons,
   getStandings,
   type HeadToHead,
   type LeagueMatch,
   type LeaguePlayer,
   type PlayerStats,
   type Season,
+  type SeasonResult,
   type Standing,
 } from "@/lib/league";
 import { computeAchievements } from "@/lib/awards";
@@ -43,6 +45,8 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   const [player, setPlayer] = useState<LeaguePlayer | null>(null);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [season, setSeason] = useState<Season | null>(null);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonResults, setSeasonResults] = useState<SeasonResult[]>([]);
   const [standing, setStanding] = useState<Standing | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [matches, setMatches] = useState<LeagueMatch[]>([]);
@@ -55,17 +59,21 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
     setLoading(true);
     setError(null);
     try {
-      const [activeSeason, roster, allTime, pairs, playedMatches] = await Promise.all([
-        getActiveSeason(),
+      const [seasonRows, roster, allTime, pairs, playedMatches, results] = await Promise.all([
+        getSeasons(),
         getLeaguePlayers(),
         getPlayerStats(uid),
         getHeadToHeadsForPlayer(uid),
         getPlayerMatches(uid),
+        getSeasonResults(),
       ]);
+      const activeSeason = seasonRows.find((item) => item.active) ?? null;
       const [table, eloPoints] = activeSeason
         ? await Promise.all([getStandings(activeSeason.id), getEloHistory(activeSeason.id, uid)])
         : [[], []];
       setSeason(activeSeason);
+      setSeasons(seasonRows);
+      setSeasonResults(results);
       setPlayer(roster.find((item) => item.id === uid) ?? null);
       setPlayers(new Map(roster.map((item) => [item.id, item])));
       setStats(allTime);
@@ -93,6 +101,9 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
 
   const isYou = uid === user?.uid;
   const form = standing?.form ?? [];
+  const isReigningChampion = seasonResults.length > 0 && uid === seasonResults[0].championId;
+  const seasonsById = new Map(seasons.map((item) => [item.id, item]));
+  const titles = seasonResults.filter((result) => result.championId === uid);
   const achievements = computeAchievements(uid, stats, matches);
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
   const h2hRows = headToHeads
@@ -129,7 +140,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
         {!loading && player ? (
           <>
             <View style={styles.hero}>
-              <Avatar player={player} size={66} ring jersey />
+              <Avatar player={player} size={66} ring jersey champion={isReigningChampion} />
               <View style={{ flex: 1 }}>
                 <Txt variant="head" size={10.5} color={colors.textDim} style={styles.kicker}>
                   CURRENT ELO
@@ -227,6 +238,47 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                 )}
               </Card>
             </View>
+
+            {titles.length > 0 ? (
+              <View style={{ marginTop: spacing.x2 }}>
+                <SectionLabel
+                  action={
+                    <Txt variant="monoBold" size={11.5} color={colors.textDim}>
+                      {titles.length} {titles.length === 1 ? "title" : "titles"}
+                    </Txt>
+                  }
+                >
+                  Silverware
+                </SectionLabel>
+                <View style={{ gap: spacing.sm }}>
+                  {titles.map((title) => {
+                    const titleSeason = seasonsById.get(title.seasonId);
+                    return (
+                      <View key={title.seasonId} style={styles.titleRow}>
+                        <View style={styles.trophyTile}>
+                          <Icon name="trophy" size={18} color={colors.gold} />
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Txt variant="bodyMedium" size={13.5} numberOfLines={1}>
+                            {titleSeason?.name ?? "Season"} Champion
+                          </Txt>
+                          <Txt variant="mono" size={10.5} color={colors.textDim}>
+                            {titleSeason ? `${titleSeason.year} · ` : ""}League title
+                          </Txt>
+                        </View>
+                        {isReigningChampion && title.seasonId === seasonResults[0]?.seasonId ? (
+                          <View style={styles.reigning}>
+                            <Txt variant="monoBold" size={8} color={colors.gold}>
+                              REIGNING
+                            </Txt>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
 
             <View style={{ marginTop: spacing.x2 }}>
               <SectionLabel
@@ -395,5 +447,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: withAlpha(colors.loss, 0.35),
     backgroundColor: withAlpha(colors.loss, 0.08),
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  trophyTile: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: withAlpha(colors.gold, 0.35),
+    backgroundColor: withAlpha(colors.gold, 0.1),
+  },
+  reigning: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.gold, 0.35),
+    backgroundColor: withAlpha(colors.gold, 0.08),
   },
 });

@@ -17,6 +17,8 @@ export interface PlayerRowProps {
   form?: MatchResult[];
   you?: boolean;
   compact?: boolean;
+  /** Reigning-champion treatment on the avatar (gold ring + trophy badge). */
+  champion?: boolean;
   onPress?: () => void;
 }
 
@@ -29,6 +31,7 @@ export function PlayerRow({
   form,
   you,
   compact,
+  champion,
   onPress,
 }: PlayerRowProps) {
   return (
@@ -44,7 +47,7 @@ export function PlayerRow({
       ]}
     >
       {rank ? <RankBadge rank={rank} /> : null}
-      <Avatar player={player} size={38} jersey />
+      <Avatar player={player} size={38} jersey champion={champion} />
       <View style={styles.mid}>
         <View style={styles.nameRow}>
           <Txt variant="bodyMedium" size={14.5} numberOfLines={1} style={{ flexShrink: 1 }}>

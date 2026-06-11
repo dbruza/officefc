@@ -3,8 +3,9 @@ import { useId } from "react";
 import { View, StyleSheet } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Txt } from "./Txt";
+import { Icon } from "./Icon";
 import { colors } from "@/theme";
-import { shade } from "@/lib/color";
+import { shade, withAlpha } from "@/lib/color";
 import { initialsOf, type Player } from "@/types";
 
 export interface AvatarProps {
@@ -12,9 +13,17 @@ export interface AvatarProps {
   size?: number;
   ring?: boolean;
   jersey?: boolean;
+  /** Reigning-champion treatment: gold ring + trophy badge. */
+  champion?: boolean;
 }
 
-export function Avatar({ player, size = 40, ring = false, jersey = false }: AvatarProps) {
+export function Avatar({
+  player,
+  size = 40,
+  ring = false,
+  jersey = false,
+  champion = false,
+}: AvatarProps) {
   const uniqueId = useId().replace(/:/g, "");
   if (!player) return null;
   const fs = Math.round(size * 0.38);
@@ -33,9 +42,9 @@ export function Avatar({ player, size = 40, ring = false, jersey = false }: Avat
             justifyContent: "center",
             overflow: "hidden",
           },
-          ring && {
+          (ring || champion) && {
             borderWidth: 2,
-            borderColor: player.color,
+            borderColor: champion ? colors.gold : player.color,
           },
         ]}
       >
@@ -60,6 +69,11 @@ export function Avatar({ player, size = 40, ring = false, jersey = false }: Avat
           </Txt>
         </View>
       )}
+      {champion && (
+        <View style={styles.trophy}>
+          <Icon name="trophy" size={9.5} color={colors.gold} stroke={2.5} />
+        </View>
+      )}
     </View>
   );
 }
@@ -76,6 +90,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
     borderWidth: 1,
     borderColor: colors.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  trophy: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.gold, 0.45),
     alignItems: "center",
     justifyContent: "center",
   },

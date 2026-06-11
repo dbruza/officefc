@@ -478,6 +478,19 @@ export async function getSeasonResult(seasonId: string): Promise<SeasonResult | 
   };
 }
 
+/** All finalized season results, most recently finalized first. */
+export async function getSeasonResults(): Promise<SeasonResult[]> {
+  const snap = await getDocs(collection(db, "seasonResults"));
+  return snap.docs
+    .map((resultDoc) => ({
+      seasonId: resultDoc.id,
+      championId: String(resultDoc.get("championId")),
+      runnerUpId: String(resultDoc.get("runnerUpId")),
+      finalizedAt: asNullableDate(resultDoc.get("finalizedAt")),
+    }))
+    .sort((a, b) => (b.finalizedAt?.getTime() ?? 0) - (a.finalizedAt?.getTime() ?? 0));
+}
+
 export async function getSeasonPotm(seasonId: string): Promise<PotmResult[]> {
   const snap = await getDocs(collection(db, "seasonResults", seasonId, "potm"));
   return snap.docs

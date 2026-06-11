@@ -16,6 +16,8 @@ export const colors = {
   accent: "#00ff87",
   /** Foreground used on top of the accent fill (near-black). */
   onAccent: "#06080c",
+  /** Champion gold (trophy / #1 medal). */
+  gold: "#ffd24a",
 
   win: "#22e06a",
   draw: "#9aa6b4",
