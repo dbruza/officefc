@@ -72,8 +72,12 @@ export default function LogMatch() {
   );
   const myElo = ratingByUid.get(user?.uid ?? "") ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
-  const myDelta = opponent ? previewElo(myElo, opponentElo, myGoals, opponentGoals) : 0;
-  const opponentDelta = opponent ? previewElo(opponentElo, myElo, opponentGoals, myGoals) : 0;
+  const myDelta = opponent
+    ? previewElo(myElo, opponentElo, myGoals, opponentGoals, myTeam?.overall, opponentTeam?.overall)
+    : 0;
+  const opponentDelta = opponent
+    ? previewElo(opponentElo, myElo, opponentGoals, myGoals, opponentTeam?.overall, myTeam?.overall)
+    : 0;
   const canContinue =
     (step === 0 && !!opponent) ||
     (step === 1 && !!myTeam && !!opponentTeam) ||

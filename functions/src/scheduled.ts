@@ -6,7 +6,7 @@ import { calculateSeason } from "./elo";
 import { sendPush } from "./notify";
 import { isStaleUnsubmittedDraft } from "./extract/draftLifecycle";
 import type { DraftState } from "./extract/draftSecurity";
-import { dateMillis, seasonMatchInputFromDoc } from "./utils";
+import { dateMillis, seasonMatchInputsWithTeams } from "./utils";
 
 const db = getFirestore();
 const storage = getStorage();
@@ -44,7 +44,7 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
     db.collection(`seasons/${seasonId}/snapshots`).get(),
   ]);
 
-  const matches = matchSnaps.docs.map(seasonMatchInputFromDoc);
+  const matches = await seasonMatchInputsWithTeams(matchSnaps.docs, db);
 
   const result = calculateSeason(
     matches,

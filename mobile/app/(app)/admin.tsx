@@ -19,6 +19,7 @@ import {
   finalizeSeason,
   manageTeam,
   seedTeams,
+  rebuildLeagueReadModels,
   resolveMatch,
   listSeasons,
   getTeams,
@@ -276,6 +277,7 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameName, setRenameName] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const [search, setSearch] = useState("");
 
   const visibleTeams = teams.filter((team) => {
@@ -306,6 +308,30 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
           showAlert("Error", errorMessage(error));
         } finally {
           setSyncing(false);
+        }
+      },
+    });
+  }
+
+  function confirmRecalc() {
+    confirmAction({
+      title: "Recalculate ELO",
+      message:
+        "Replay every confirmed match across all seasons under the current ELO model, including team-strength handicaps. Standings and rating history will be rewritten. Sync the catalogue first so team ratings are current.",
+      confirmLabel: "Recalculate",
+      onConfirm: async () => {
+        setRecalculating(true);
+        try {
+          const result = await rebuildLeagueReadModels();
+          showAlert(
+            "ELO recalculated",
+            `${result.matchCount} matches across ${result.seasonCount} season(s) replayed.`,
+          );
+          onReload();
+        } catch (error: unknown) {
+          showAlert("Error", errorMessage(error));
+        } finally {
+          setRecalculating(false);
         }
       },
     });
@@ -400,6 +426,17 @@ function TeamsSection({ teams, onReload }: { teams: Team[]; onReload: () => void
         style={{ marginBottom: spacing.lg }}
       >
         {syncing ? "Updating…" : "Update FIFA catalogue"}
+      </Button>
+
+      <Button
+        size="md"
+        variant="dark"
+        icon="bolt"
+        onPress={confirmRecalc}
+        disabled={recalculating}
+        style={{ marginBottom: spacing.lg }}
+      >
+        {recalculating ? "Recalculating…" : "Recalculate ELO"}
       </Button>
 
       <TextInput

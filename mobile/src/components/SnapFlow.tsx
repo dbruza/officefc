@@ -124,8 +124,12 @@ export function SnapFlow({
   const ratingByUid = useMemo(() => new Map(standings.map((s) => [s.uid, s.elo])), [standings]);
   const myElo = ratingByUid.get(uid) ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
-  const myDelta = opponent ? previewElo(myElo, opponentElo, myGoals, opponentGoals) : 0;
-  const opponentDelta = opponent ? previewElo(opponentElo, myElo, opponentGoals, myGoals) : 0;
+  const myDelta = opponent
+    ? previewElo(myElo, opponentElo, myGoals, opponentGoals, myTeam?.overall, opponentTeam?.overall)
+    : 0;
+  const opponentDelta = opponent
+    ? previewElo(opponentElo, myElo, opponentGoals, myGoals, opponentTeam?.overall, myTeam?.overall)
+    : 0;
 
   const usesExtraction = extraction?.suggestion != null && extraction.ok;
 

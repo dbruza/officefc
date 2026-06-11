@@ -1,5 +1,7 @@
 export const BASE_ELO = 1500;
 export const ELO_K = 32;
+/** Elo points each FIFA team-overall point is worth when handicapping the expected score. */
+export const TEAM_ELO_PER_OVERALL = 12;
 
 export type MatchResult = "W" | "D" | "L";
 
@@ -14,6 +16,8 @@ export interface SeasonMatchInput {
   bShotsOnTarget?: number | null;
   aPossession?: number | null;
   bPossession?: number | null;
+  aTeamOverall?: number | null;
+  bTeamOverall?: number | null;
 }
 
 export interface CalculatedMatch extends SeasonMatchInput {
@@ -87,6 +91,22 @@ export function expectedScore(a: number, b: number): number {
   return 1 / (1 + Math.pow(10, (b - a) / 400));
 }
 
+/**
+ * Ratings used for the expected-score calculation, handicapped by team strength: each side's
+ * player Elo is shifted by TEAM_ELO_PER_OVERALL per team-overall point. When either team's
+ * overall is missing, no handicap applies and the raw player ratings are returned. The handicap
+ * never accumulates into a player's stored rating — it only tilts how much a result is worth.
+ */
+export function effectiveRatings(
+  aElo: number,
+  bElo: number,
+  aOverall: number | null | undefined,
+  bOverall: number | null | undefined,
+): [number, number] {
+  if (aOverall == null || bOverall == null) return [aElo, bElo];
+  return [aElo + TEAM_ELO_PER_OVERALL * aOverall, bElo + TEAM_ELO_PER_OVERALL * bOverall];
+}
+
 function resultFor(goalsFor: number, goalsAgainst: number): MatchResult {
   return goalsFor > goalsAgainst ? "W" : goalsFor < goalsAgainst ? "L" : "D";
 }
@@ -126,8 +146,14 @@ export function calculateSeason(
     const aEloBefore = ratings.get(match.aId) ?? BASE_ELO;
     const bEloBefore = ratings.get(match.bId) ?? BASE_ELO;
     const perfA = performanceScore(match);
-    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEloBefore, bEloBefore)));
-    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bEloBefore, aEloBefore)));
+    const [aEff, bEff] = effectiveRatings(
+      aEloBefore,
+      bEloBefore,
+      match.aTeamOverall,
+      match.bTeamOverall,
+    );
+    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEff, bEff)));
+    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bEff, aEff)));
     const aEloAfter = aEloBefore + aDelta;
     const bEloAfter = bEloBefore + bDelta;
 
@@ -219,8 +245,9 @@ export function computePOTM(
     const aBefore = ratings.get(match.aId) ?? BASE_ELO;
     const bBefore = ratings.get(match.bId) ?? BASE_ELO;
     const perfA = performanceScore(match);
-    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aBefore, bBefore)));
-    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bBefore, aBefore)));
+    const [aEff, bEff] = effectiveRatings(aBefore, bBefore, match.aTeamOverall, match.bTeamOverall);
+    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEff, bEff)));
+    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bEff, aEff)));
     const aAfter = aBefore + aDelta;
     const bAfter = bBefore + bDelta;
     ratings.set(match.aId, aAfter);

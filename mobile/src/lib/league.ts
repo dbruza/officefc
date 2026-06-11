@@ -596,19 +596,29 @@ export async function rebuildLeagueReadModels(): Promise<{
 // Mirrors functions/src/elo.ts — the server is the source of truth for ratings.
 const ELO_K = 32;
 const ELO_SCALE = 400;
+const TEAM_ELO_PER_OVERALL = 12;
 
 /**
  * Approximate the ELO delta for a result, for live UI preview only. This uses a plain
  * win/draw/loss score; the committed rating comes from the server's stats-aware
  * performanceScore (goals + shots-on-target + possession), so the preview can differ slightly.
+ * Team overalls handicap the expectation exactly like the server: only when both are known.
  */
 export function previewElo(
   myElo: number,
   opponentElo: number,
   myGoals: number,
   opponentGoals: number,
+  myTeamOverall?: number | null,
+  opponentTeamOverall?: number | null,
 ) {
-  const expected = 1 / (1 + Math.pow(10, (opponentElo - myElo) / ELO_SCALE));
+  let myEff = myElo;
+  let opponentEff = opponentElo;
+  if (myTeamOverall != null && opponentTeamOverall != null) {
+    myEff += TEAM_ELO_PER_OVERALL * myTeamOverall;
+    opponentEff += TEAM_ELO_PER_OVERALL * opponentTeamOverall;
+  }
+  const expected = 1 / (1 + Math.pow(10, (opponentEff - myEff) / ELO_SCALE));
   const score = myGoals > opponentGoals ? 1 : myGoals < opponentGoals ? 0 : 0.5;
   return Math.round(ELO_K * (score - expected));
 }

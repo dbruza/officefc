@@ -3,7 +3,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "./config";
 import { calculateSeason } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
-import { dateMillis, seasonMatchInputFromDoc } from "./utils";
+import { dateMillis, seasonMatchInputsWithTeams } from "./utils";
 
 /**
  * Rebuild a season's ELO, standings, and eloHistory from its confirmed matches.
@@ -26,7 +26,7 @@ export async function recalcSeasonElo(seasonId: string): Promise<void> {
   ]);
   if (!season.exists) throw new HttpsError("not-found", "Season not found.");
 
-  const matches = matchSnaps.docs.map(seasonMatchInputFromDoc);
+  const matches = await seasonMatchInputsWithTeams(matchSnaps.docs, db);
   const result = calculateSeason(
     matches,
     members.docs.map((snap) => snap.id),

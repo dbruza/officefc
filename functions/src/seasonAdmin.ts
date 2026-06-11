@@ -4,7 +4,7 @@ import { LEAGUE_ID } from "./config";
 import { computePOTM, type Standing } from "./elo";
 import { requireAuth, assertAdmin } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
-import { dateMillis, generateUniqueJoinCode, seasonMatchInputFromDoc } from "./utils";
+import { dateMillis, generateUniqueJoinCode, seasonMatchInputsWithTeams } from "./utils";
 import { sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
 
@@ -40,7 +40,7 @@ export const finalizeSeason = onCall({ cors: true }, async (req) => {
   if (confirmed.empty)
     throw new HttpsError("failed-precondition", "No confirmed matches in this season.");
 
-  const matchInputs = confirmed.docs.map(seasonMatchInputFromDoc);
+  const matchInputs = await seasonMatchInputsWithTeams(confirmed.docs, db);
 
   const standingsSnap = await db.collection(`seasons/${seasonId}/standings`).get();
   const finalStandings: Standing[] = standingsSnap.docs
