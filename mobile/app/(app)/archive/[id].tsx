@@ -1,46 +1,62 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { type Href, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Avatar, Card, Icon, PlayerRow, ScreenHeader, Txt } from "@/components";
+import {
+  AwardCard,
+  Card,
+  PlayerRow,
+  Podium,
+  ScreenHeader,
+  SectionLabel,
+  Txt,
+  type PodiumEntry,
+} from "@/components";
 import {
   getLeaguePlayers,
   getSeason,
-  getSeasonResult,
+  getSeasonMatches,
   getStandings,
+  type LeagueMatch,
   type LeaguePlayer,
   type Season,
-  type SeasonResult,
   type Standing,
 } from "@/lib/league";
+import { computeSeasonAwards } from "@/lib/awards";
 import { useAuth } from "@/lib/auth";
-import { colors, radius, spacing } from "@/theme";
-import { mix, withAlpha } from "@/lib/color";
+import { colors, spacing } from "@/theme";
 
 export default function ArchiveRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuth();
   const [season, setSeason] = useState<Season | null>(null);
-  const [result, setResult] = useState<SeasonResult | null>(null);
   const [standings, setStandings] = useState<Standing[]>([]);
+  const [matches, setMatches] = useState<LeagueMatch[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      Promise.all([getSeason(id), getSeasonResult(id), getStandings(id), getLeaguePlayers()])
-        .then(([seasonRow, resultRow, table, roster]) => {
+      Promise.all([getSeason(id), getStandings(id), getSeasonMatches(id), getLeaguePlayers()])
+        .then(([seasonRow, table, seasonMatches, roster]) => {
           setSeason(seasonRow);
-          setResult(resultRow);
           setStandings(table);
+          setMatches(seasonMatches);
           setPlayers(new Map(roster.map((player) => [player.id, player])));
         })
         .finally(() => setLoading(false));
     }, [id]),
   );
 
-  const champion = result ? players.get(result.championId) : null;
+  const podium: PodiumEntry[] = standings.slice(0, 3).flatMap((standing) => {
+    const player = players.get(standing.uid);
+    return player ? [{ player, elo: standing.elo }] : [];
+  });
+  const awards = computeSeasonAwards(matches);
+  const openPlayer = (playerId: string) => router.push(`/(app)/player/${playerId}` as Href);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScreenHeader
@@ -49,21 +65,23 @@ export default function ArchiveRoute() {
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {champion ? (
-          <View style={styles.champion}>
-            <Icon name="crown" size={20} color="#ffd24a" />
-            <Avatar player={champion} size={40} jersey />
-            <View style={{ flex: 1 }}>
-              <Txt variant="head" size={9.5} color="#ffd24a" style={styles.kicker}>
-                CHAMPION
-              </Txt>
-              <Txt variant="head" size={17}>
-                {champion.name}
-              </Txt>
+        {podium.length === 3 ? (
+          <Card padded={false} style={styles.podiumCard}>
+            <Podium entries={podium} onPick={openPlayer} />
+          </Card>
+        ) : null}
+
+        {awards.length ? (
+          <View style={{ marginBottom: spacing.lg }}>
+            <SectionLabel>Season awards</SectionLabel>
+            <View style={{ gap: spacing.sm }}>
+              {awards.map((award) => (
+                <AwardCard key={award.key} award={award} winner={players.get(award.playerId)} />
+              ))}
             </View>
-            <Icon name="trophy" size={29} color="#ffd24a" />
           </View>
         ) : null}
+
         <View style={styles.tableHead}>
           <Txt variant="head" size={9.5} color={colors.textDim}>
             FINAL TABLE
@@ -101,18 +119,12 @@ export default function ArchiveRoute() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.x3 },
-  champion: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.lg,
+  podiumCard: {
+    paddingTop: spacing.lg,
+    paddingHorizontal: 14,
+    overflow: "hidden",
     marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: withAlpha("#ffd24a", 0.25),
-    borderRadius: radius.lg,
-    backgroundColor: mix(colors.surface, "#ffd24a", 7),
   },
-  kicker: { letterSpacing: 1.2 },
   tableHead: {
     flexDirection: "row",
     justifyContent: "space-between",

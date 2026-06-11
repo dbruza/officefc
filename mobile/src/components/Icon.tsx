@@ -3,7 +3,7 @@
  * to react-native-svg. Stroke-based, inherits `color`.
  */
 import type { JSX } from "react";
-import Svg, { Path, Circle, Rect, G } from "react-native-svg";
+import Svg, { Path, Circle, Polyline, Rect, G } from "react-native-svg";
 import { colors } from "@/theme";
 
 export type IconName =
@@ -22,13 +22,22 @@ export type IconName =
   | "trophy"
   | "crown"
   | "medal"
+  | "swords"
   | "ball"
   | "jersey"
   | "check"
   | "photo"
   | "edit"
   | "bolt"
-  | "info";
+  | "info"
+  | "boot"
+  | "glove"
+  | "trend"
+  | "target"
+  | "shield"
+  | "crosshair"
+  | "award"
+  | "handshake";
 
 export interface IconProps {
   name: IconName;
@@ -79,7 +88,7 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
     ),
     flame: (
       <Path
-        d="M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3 3 6a5 5 0 0 1-10 0c0-4 5-6 5-13Z"
+        d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
         {...common}
       />
     ),
@@ -99,6 +108,14 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
         <Path d="M9 9 7 3h10l-2 6" {...common} />
       </G>
     ),
+    swords: (
+      <G {...common}>
+        <Polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" {...common} />
+        <Path d="M13 19l6-6M16 16l4 4M19 21l2-2" {...common} />
+        <Polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" {...common} />
+        <Path d="M5 14l4 4M7 17l-3 3M3 19l2 2" {...common} />
+      </G>
+    ),
     ball: (
       <G {...common}>
         <Circle cx="12" cy="12" r="9" {...common} />
@@ -115,11 +132,69 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
       </G>
     ),
     edit: <Path d="M4 20h4L18 10l-4-4L4 16v4ZM13 7l4 4" {...common} />,
-    bolt: <Path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" {...common} />,
+    bolt: (
+      <Path
+        d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+        {...common}
+      />
+    ),
     info: (
       <G {...common}>
         <Circle cx="12" cy="12" r="9" {...common} />
         <Path d="M12 11v5M12 8h.01" {...common} />
+      </G>
+    ),
+    boot: (
+      <Path
+        d="M6 4v7l-1.6 1.3A2.2 2.2 0 0 0 5.8 16.5H18a3.2 3.2 0 0 0 .4-6.4L11 8.6V4H6ZM4 19h16"
+        {...common}
+      />
+    ),
+    glove: (
+      <Path
+        d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
+        {...common}
+      />
+    ),
+    trend: <Path d="M3 17l6-6 4 4 8-8M15 7h6v6" {...common} />,
+    target: (
+      <G {...common}>
+        <Circle cx="12" cy="12" r="10" {...common} />
+        <Circle cx="12" cy="12" r="6" {...common} />
+        <Circle cx="12" cy="12" r="2" {...common} />
+      </G>
+    ),
+    shield: (
+      <Path
+        d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+        {...common}
+      />
+    ),
+    crosshair: (
+      <G {...common}>
+        <Circle cx="12" cy="12" r="10" {...common} />
+        <Path d="M22 12h-4M6 12H2M12 6V2M12 22v-4" {...common} />
+      </G>
+    ),
+    award: (
+      <G {...common}>
+        <Path
+          d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"
+          {...common}
+        />
+        <Circle cx="12" cy="8" r="6" {...common} />
+      </G>
+    ),
+    handshake: (
+      <G {...common}>
+        <Path d="m11 17 2 2a1 1 0 1 0 3-3" {...common} />
+        <Path
+          d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"
+          {...common}
+        />
+        <Path d="m21 3 1 11h-2" {...common} />
+        <Path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" {...common} />
+        <Path d="M3 4h8" {...common} />
       </G>
     ),
   };

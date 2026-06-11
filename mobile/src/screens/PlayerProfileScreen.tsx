@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "reac
 import { type Href, useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  AchievementBadge,
   AppTabBar,
   Avatar,
   Button,
@@ -22,14 +23,17 @@ import {
   getEloHistory,
   getHeadToHeadsForPlayer,
   getLeaguePlayers,
+  getPlayerMatches,
   getPlayerStats,
   getStandings,
   type HeadToHead,
+  type LeagueMatch,
   type LeaguePlayer,
   type PlayerStats,
   type Season,
   type Standing,
 } from "@/lib/league";
+import { computeAchievements } from "@/lib/awards";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 
@@ -41,6 +45,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   const [season, setSeason] = useState<Season | null>(null);
   const [standing, setStanding] = useState<Standing | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [matches, setMatches] = useState<LeagueMatch[]>([]);
   const [history, setHistory] = useState<ChartPoint[]>([]);
   const [headToHeads, setHeadToHeads] = useState<HeadToHead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,11 +55,12 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
     setLoading(true);
     setError(null);
     try {
-      const [activeSeason, roster, allTime, pairs] = await Promise.all([
+      const [activeSeason, roster, allTime, pairs, playedMatches] = await Promise.all([
         getActiveSeason(),
         getLeaguePlayers(),
         getPlayerStats(uid),
         getHeadToHeadsForPlayer(uid),
+        getPlayerMatches(uid),
       ]);
       const [table, eloPoints] = activeSeason
         ? await Promise.all([getStandings(activeSeason.id), getEloHistory(activeSeason.id, uid)])
@@ -63,6 +69,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
       setPlayer(roster.find((item) => item.id === uid) ?? null);
       setPlayers(new Map(roster.map((item) => [item.id, item])));
       setStats(allTime);
+      setMatches(playedMatches);
       setHeadToHeads(pairs);
       setStanding(table.find((item) => item.uid === uid) ?? null);
       setHistory(
@@ -86,6 +93,8 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
 
   const isYou = uid === user?.uid;
   const form = standing?.form ?? [];
+  const achievements = computeAchievements(uid, stats, matches);
+  const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
   const h2hRows = headToHeads
     .map((pair) => {
       const asA = pair.aId === uid;
@@ -220,6 +229,25 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
             </View>
 
             <View style={{ marginTop: spacing.x2 }}>
+              <SectionLabel
+                action={
+                  <Txt variant="monoBold" size={11.5} color={colors.textDim}>
+                    {unlockedCount}/{achievements.length} unlocked
+                  </Txt>
+                }
+              >
+                Achievements
+              </SectionLabel>
+              <View style={styles.achievementGrid}>
+                {achievements.map((achievement) => (
+                  <View key={achievement.key} style={styles.achievementCell}>
+                    <AchievementBadge achievement={achievement} />
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={{ marginTop: spacing.x2 }}>
               <SectionLabel>Head-to-head record</SectionLabel>
               <View style={{ gap: spacing.sm }}>
                 {h2hRows.map((row) => {
@@ -342,6 +370,12 @@ const styles = StyleSheet.create({
   statCell: { width: "48.7%" },
   splitCards: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   splitCard: { flex: 1, minHeight: 102 },
+  achievementGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  achievementCell: { width: "48.7%" },
   h2hRow: {
     minHeight: 62,
     flexDirection: "row",

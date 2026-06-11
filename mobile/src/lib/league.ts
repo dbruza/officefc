@@ -441,6 +441,32 @@ export async function getMatch(matchId: string): Promise<LeagueMatch | null> {
   return snap.exists() ? mapMatch(snap.id, snap.data()) : null;
 }
 
+/** Confirmed matches of a season, oldest first. Equality-only filters (no composite index). */
+export async function getSeasonMatches(seasonId: string): Promise<LeagueMatch[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, "matches"),
+      where("seasonId", "==", seasonId),
+      where("status", "==", "confirmed"),
+    ),
+  );
+  return snap.docs
+    .map((matchDoc) => mapMatch(matchDoc.id, matchDoc.data()))
+    .sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
+}
+
+/** A player's confirmed matches across all seasons, oldest first. */
+export async function getPlayerMatches(uid: string): Promise<LeagueMatch[]> {
+  const matchesCol = collection(db, "matches");
+  const [aSnap, bSnap] = await Promise.all([
+    getDocs(query(matchesCol, where("aId", "==", uid), where("status", "==", "confirmed"))),
+    getDocs(query(matchesCol, where("bId", "==", uid), where("status", "==", "confirmed"))),
+  ]);
+  return [...aSnap.docs, ...bSnap.docs]
+    .map((matchDoc) => mapMatch(matchDoc.id, matchDoc.data()))
+    .sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
+}
+
 export async function getSeasonResult(seasonId: string): Promise<SeasonResult | null> {
   const snap = await getDoc(doc(db, "seasonResults", seasonId));
   if (!snap.exists()) return null;

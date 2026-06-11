@@ -2,34 +2,58 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppTabBar, Avatar, Card, Icon, ScreenHeader, SectionLabel, Txt } from "@/components";
+import {
+  AppTabBar,
+  Avatar,
+  AwardCard,
+  Card,
+  Icon,
+  Podium,
+  ScreenHeader,
+  SeasonMatchRow,
+  SectionLabel,
+  Txt,
+  type IconName,
+  type PodiumEntry,
+} from "@/components";
 import {
   getLeaguePlayers,
+  getSeasonMatches,
   getSeasonPotm,
   getSeasonResult,
   getSeasons,
   getStandings,
+  type LeagueMatch,
   type LeaguePlayer,
   type PotmResult,
   type Season,
   type SeasonResult,
   type Standing,
 } from "@/lib/league";
+import { AWARD_META, computeSeasonAwards, type SeasonAward } from "@/lib/awards";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
+import { firstName } from "@/lib/format";
 
 interface PastSeason {
   season: Season;
   result: SeasonResult | null;
   potm: PotmResult[];
+  thirdId: string | null;
+  awards: SeasonAward[];
 }
+
+const RESULTS_PREVIEW = 5;
+const RESULTS_MAX = 12;
 
 export default function SeasonsRoute() {
   const router = useRouter();
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [leader, setLeader] = useState<Standing | null>(null);
+  const [standings, setStandings] = useState<Standing[]>([]);
+  const [matches, setMatches] = useState<LeagueMatch[]>([]);
   const [past, setPast] = useState<PastSeason[]>([]);
+  const [showAllResults, setShowAllResults] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -39,19 +63,31 @@ export default function SeasonsRoute() {
         .then(async ([seasonRows, roster]) => {
           const active = seasonRows.find((season) => season.active) ?? null;
           const old = seasonRows.filter((season) => !season.active);
-          const [table, archives] = await Promise.all([
+          const [table, liveMatches, archives] = await Promise.all([
             active ? getStandings(active.id) : Promise.resolve([]),
+            active ? getSeasonMatches(active.id) : Promise.resolve([]),
             Promise.all(
-              old.map(async (season) => ({
-                season,
-                result: await getSeasonResult(season.id),
-                potm: await getSeasonPotm(season.id),
-              })),
+              old.map(async (season) => {
+                const [result, potm, frozen, seasonMatches] = await Promise.all([
+                  getSeasonResult(season.id),
+                  getSeasonPotm(season.id),
+                  getStandings(season.id),
+                  getSeasonMatches(season.id),
+                ]);
+                return {
+                  season,
+                  result,
+                  potm,
+                  thirdId: frozen[2]?.uid ?? null,
+                  awards: computeSeasonAwards(seasonMatches),
+                };
+              }),
             ),
           ]);
           setSeasons(seasonRows);
           setPlayers(new Map(roster.map((player) => [player.id, player])));
-          setLeader(table[0] ?? null);
+          setStandings(table);
+          setMatches(liveMatches);
           setPast(archives);
         })
         .finally(() => setLoading(false));
@@ -67,7 +103,24 @@ export default function SeasonsRoute() {
     : 1;
   const elapsedDays = active ? Math.max(0, (Date.now() - active.start.getTime()) / 86_400_000) : 0;
   const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
+  const leader = standings[0] ?? null;
   const leadingPlayer = leader ? players.get(leader.uid) : null;
+
+  const podium: PodiumEntry[] = standings
+    .slice(0, 3)
+    .flatMap((standing) => {
+      const player = players.get(standing.uid);
+      return player ? [{ player, elo: standing.elo }] : [];
+    });
+  const recent = matches.slice().reverse();
+  const shownResults = showAllResults
+    ? recent.slice(0, RESULTS_MAX)
+    : recent.slice(0, RESULTS_PREVIEW);
+  const awards = computeSeasonAwards(matches);
+
+  const openPlayer = (playerId: string) => router.push(`/(app)/player/${playerId}` as Href);
+  const openMatch = (matchId: string) =>
+    router.push({ pathname: "/(app)/match/[id]", params: { id: matchId } } as Href);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -123,9 +176,86 @@ export default function SeasonsRoute() {
           </Card>
         ) : null}
 
-        <SectionLabel>Past seasons</SectionLabel>
+        {podium.length === 3 ? (
+          <>
+            <SectionLabel>If the season ended today</SectionLabel>
+            <Card padded={false} style={styles.podiumCard}>
+              <Podium entries={podium} onPick={openPlayer} />
+            </Card>
+          </>
+        ) : null}
+
+        {recent.length ? (
+          <View style={{ marginTop: spacing.x2 }}>
+            <SectionLabel
+              action={
+                <Txt variant="monoBold" size={11} color={colors.textDim}>
+                  {recent.length} played
+                </Txt>
+              }
+            >
+              Recent results
+            </SectionLabel>
+            <View style={{ gap: 7 }}>
+              {shownResults.map((match) => {
+                const playerA = players.get(match.aId);
+                const playerB = players.get(match.bId);
+                if (!playerA || !playerB) return null;
+                return (
+                  <SeasonMatchRow
+                    key={match.id}
+                    match={match}
+                    playerA={playerA}
+                    playerB={playerB}
+                    onPress={() => openMatch(match.id)}
+                  />
+                );
+              })}
+              {recent.length > RESULTS_PREVIEW ? (
+                <Pressable
+                  onPress={() => setShowAllResults((value) => !value)}
+                  style={styles.showMore}
+                >
+                  <Txt variant="head" size={11} color={colors.accent}>
+                    {showAllResults
+                      ? "SHOW FEWER"
+                      : `SHOW MORE (${Math.min(RESULTS_MAX, recent.length) - RESULTS_PREVIEW} MORE)`}
+                  </Txt>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        {awards.length && active ? (
+          <View style={{ marginTop: spacing.x2 }}>
+            <SectionLabel
+              action={
+                <Txt variant="head" size={10.5} color={colors.textFaint} style={styles.kicker}>
+                  LIVE · {active.name.toUpperCase()}
+                </Txt>
+              }
+            >
+              Season awards
+            </SectionLabel>
+            <View style={{ gap: spacing.sm }}>
+              {awards.map((award) => (
+                <AwardCard
+                  key={award.key}
+                  award={award}
+                  winner={players.get(award.playerId)}
+                  onPress={(item) => (item.matchId ? openMatch(item.matchId) : undefined)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        <View style={{ marginTop: spacing.x2 }}>
+          <SectionLabel>Past seasons</SectionLabel>
+        </View>
         <View style={{ gap: spacing.md }}>
-          {past.map(({ season, result, potm }) => (
+          {past.map(({ season, result, potm, thirdId, awards: seasonAwards }) => (
             <Pressable
               key={season.id}
               onPress={() =>
@@ -149,24 +279,53 @@ export default function SeasonsRoute() {
               </View>
               {result ? (
                 <View style={styles.podiumRow}>
-                  <Podium
+                  <PodiumChip
                     label="Champion"
                     player={players.get(result.championId)}
                     icon="trophy"
                     color="#ffd24a"
                   />
-                  <Podium
+                  <PodiumChip
                     label="Runner-up"
                     player={players.get(result.runnerUpId)}
                     icon="medal"
                     color="#cdd6e0"
                   />
+                  {thirdId ? (
+                    <PodiumChip
+                      label="Third"
+                      player={players.get(thirdId)}
+                      icon="medal"
+                      color="#e0935b"
+                    />
+                  ) : null}
                 </View>
               ) : (
                 <Txt size={12} color={colors.textDim}>
                   Final result pending.
                 </Txt>
               )}
+              {seasonAwards.length ? (
+                <View style={styles.awardPills}>
+                  {seasonAwards.slice(0, 3).map((award) => {
+                    const meta = AWARD_META[award.key];
+                    const winner = players.get(award.playerId);
+                    return winner ? (
+                      <View key={award.key} style={styles.awardPill}>
+                        <Icon name={meta.icon} size={13} color={meta.accent} />
+                        <Txt variant="bodyMedium" size={11}>
+                          {firstName(winner.name)}
+                        </Txt>
+                      </View>
+                    ) : null;
+                  })}
+                  {seasonAwards.length > 3 ? (
+                    <Txt size={11} color={colors.textFaint}>
+                      +{seasonAwards.length - 3} more
+                    </Txt>
+                  ) : null}
+                </View>
+              ) : null}
               {potm.length ? (
                 <View style={styles.potmRow}>
                   <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
@@ -205,7 +364,7 @@ export default function SeasonsRoute() {
   );
 }
 
-function Podium({
+function PodiumChip({
   label,
   player,
   icon,
@@ -213,13 +372,13 @@ function Podium({
 }: {
   label: string;
   player: LeaguePlayer | undefined;
-  icon: "trophy" | "medal";
+  icon: IconName;
   color: string;
 }) {
   if (!player) return null;
   return (
-    <View style={styles.podium}>
-      <Avatar player={player} size={32} />
+    <View style={styles.podiumChip}>
+      <Avatar player={player} size={30} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           <Icon name={icon} size={12} color={color} />
@@ -228,7 +387,7 @@ function Podium({
           </Txt>
         </View>
         <Txt variant="bodyMedium" size={12.5} numberOfLines={1}>
-          {player.name}
+          {firstName(player.name)}
         </Txt>
       </View>
     </View>
@@ -269,6 +428,17 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.line,
   },
+  podiumCard: {
+    paddingTop: spacing.lg,
+    paddingHorizontal: 14,
+    overflow: "hidden",
+  },
+  showMore: {
+    alignSelf: "center",
+    marginTop: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
   pastCard: {
     padding: spacing.lg,
     borderWidth: 1,
@@ -283,7 +453,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   podiumRow: { flexDirection: "row", gap: spacing.sm },
-  podium: {
+  podiumChip: {
     flex: 1,
     minWidth: 0,
     flexDirection: "row",
@@ -293,6 +463,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: radius.md,
+    backgroundColor: colors.surface2,
+  },
+  awardPills: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 7,
+    marginTop: spacing.md,
+  },
+  awardPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 4,
+    paddingLeft: 6,
+    paddingRight: 9,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.pill,
     backgroundColor: colors.surface2,
   },
   potmRow: {
