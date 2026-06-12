@@ -10,7 +10,8 @@ import type { MatchResult, Player } from "@/types";
 
 export interface PlayerRowProps {
   player: Player;
-  elo: number;
+  /** Omitted for unranked players — renders an em dash. */
+  elo?: number;
   rank?: number;
   move?: number;
   record?: { w: number; d: number; l: number };
@@ -79,8 +80,13 @@ export function PlayerRow({
         ) : null}
       </View>
       <View style={styles.right}>
-        <Txt variant="monoBold" size={18} style={{ letterSpacing: -0.4 }}>
-          {elo}
+        <Txt
+          variant="monoBold"
+          size={18}
+          color={elo === undefined ? colors.textFaint : colors.text}
+          style={{ letterSpacing: -0.4 }}
+        >
+          {elo ?? "—"}
         </Txt>
         {move !== undefined ? <Movement move={move} /> : null}
       </View>

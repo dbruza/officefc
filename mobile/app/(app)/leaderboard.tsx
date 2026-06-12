@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { AppTabBar, Card, Icon, PlayerRow, ScreenHeader, Txt } from "@/components";
+import { AppTabBar, Card, Icon, PlayerRow, ScreenHeader, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
@@ -68,11 +68,22 @@ export default function Leaderboard() {
       : standings;
   }, [players, queryText, standings]);
 
+  // Members without a confirmed match yet — shown below the table on the live season only;
+  // past seasons stay a historical record of who actually played.
+  const unranked = useMemo(() => {
+    if (!selectedSeason?.active) return [];
+    const q = queryText.trim().toLowerCase();
+    const ranked = new Set(standings.map((standing) => standing.uid));
+    return [...players.values()].filter(
+      (player) => !ranked.has(player.id) && (!q || player.name.toLowerCase().includes(q)),
+    );
+  }, [players, queryText, selectedSeason, standings]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScreenHeader
         title="Leaderboard"
-        subtitle={`${visible.length} contenders${selectedSeason ? ` · ${selectedSeason.year}` : ""}`}
+        subtitle={`${visible.length + unranked.length} contender${visible.length + unranked.length === 1 ? "" : "s"}${selectedSeason ? ` · ${selectedSeason.year}` : ""}`}
         back={false}
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -109,7 +120,7 @@ export default function Leaderboard() {
           />
         </View>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {!loading && visible.length === 0 ? (
+        {!loading && visible.length === 0 && unranked.length === 0 ? (
           <Card style={{ alignItems: "center", paddingVertical: spacing.x3 }}>
             <Icon name="board" size={28} color={colors.textDim} />
             <Txt variant="head" size={17} style={{ marginTop: spacing.md }}>
@@ -144,6 +155,31 @@ export default function Leaderboard() {
             );
           })}
         </View>
+        {unranked.length > 0 ? (
+          <View style={{ marginTop: spacing.lg }}>
+            <SectionLabel
+              action={
+                <Txt variant="monoBold" size={11.5} color={colors.textDim}>
+                  No matches yet
+                </Txt>
+              }
+            >
+              Unranked
+            </SectionLabel>
+            <View style={{ gap: spacing.sm }}>
+              {unranked.map((player) => (
+                <PlayerRow
+                  key={player.id}
+                  player={player}
+                  compact
+                  you={player.id === user?.uid}
+                  champion={player.id === championId}
+                  onPress={() => router.push(`/(app)/player/${player.id}`)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
       <AppTabBar active="leaderboard" />
     </SafeAreaView>
