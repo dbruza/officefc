@@ -12,6 +12,7 @@ import {
   Icon,
   LineChart,
   ScreenHeader,
+  SeasonMatchRow,
   SectionLabel,
   StatCard,
   Txt,
@@ -38,6 +39,8 @@ import {
 import { computeAchievements } from "@/lib/awards";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
+
+const RECENT_PREVIEW = 6;
 
 export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?: boolean }) {
   const router = useRouter();
@@ -106,6 +109,8 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   const titles = seasonResults.filter((result) => result.championId === uid);
   const achievements = computeAchievements(uid, stats, matches);
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
+  const recentMatches = matches.slice().reverse();
+  const previewMatches = recentMatches.slice(0, RECENT_PREVIEW);
   const h2hRows = headToHeads
     .map((pair) => {
       const asA = pair.aId === uid;
@@ -237,6 +242,56 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                   </Txt>
                 )}
               </Card>
+            </View>
+
+            <View style={{ marginTop: spacing.x2 }}>
+              <SectionLabel
+                action={
+                  matches.length > RECENT_PREVIEW ? (
+                    <Pressable
+                      onPress={() =>
+                        router.push({ pathname: "/(app)/games", params: { uid } } as Href)
+                      }
+                    >
+                      <Txt variant="head" size={11} color={colors.accent}>
+                        SEE ALL
+                      </Txt>
+                    </Pressable>
+                  ) : matches.length ? (
+                    <Txt variant="monoBold" size={11} color={colors.textDim}>
+                      {matches.length} played
+                    </Txt>
+                  ) : undefined
+                }
+              >
+                Recent games
+              </SectionLabel>
+              <View style={{ gap: 7 }}>
+                {previewMatches.map((match) => {
+                  const playerA = players.get(match.aId);
+                  const playerB = players.get(match.bId);
+                  if (!playerA || !playerB) return null;
+                  return (
+                    <SeasonMatchRow
+                      key={match.id}
+                      match={match}
+                      playerA={playerA}
+                      playerB={playerB}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(app)/match/[id]",
+                          params: { id: match.id },
+                        } as Href)
+                      }
+                    />
+                  );
+                })}
+                {matches.length === 0 ? (
+                  <Card style={{ alignItems: "center" }}>
+                    <Txt color={colors.textDim}>No confirmed games yet.</Txt>
+                  </Card>
+                ) : null}
+              </View>
             </View>
 
             {titles.length > 0 ? (
