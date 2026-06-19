@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { timed } from "../logger";
 import { asDate, nullableNumber } from "./firestoreMap";
 import type { EloHistoryPoint, PlayerStats, Standing } from "./types";
 import type { MatchResult } from "@/types";
@@ -20,8 +21,10 @@ function mapStanding(uid: string, data: Record<string, unknown>): Standing {
 }
 
 export async function getStandings(seasonId: string): Promise<Standing[]> {
-  const snap = await getDocs(collection(db, "seasons", seasonId, "standings"));
-  return snap.docs.map((doc) => mapStanding(doc.id, doc.data())).sort((a, b) => a.rank - b.rank);
+  return timed("getStandings", async () => {
+    const snap = await getDocs(collection(db, "seasons", seasonId, "standings"));
+    return snap.docs.map((doc) => mapStanding(doc.id, doc.data())).sort((a, b) => a.rank - b.rank);
+  });
 }
 
 export async function getEloHistory(seasonId: string, uid: string): Promise<EloHistoryPoint[]> {
@@ -37,8 +40,10 @@ export async function getEloHistory(seasonId: string, uid: string): Promise<EloH
 }
 
 export async function getPlayerStats(uid: string): Promise<PlayerStats | null> {
-  const snap = await getDoc(doc(db, "playerStats", uid));
-  return snap.exists() ? (snap.data() as PlayerStats) : null;
+  return timed("getPlayerStats", async () => {
+    const snap = await getDoc(doc(db, "playerStats", uid));
+    return snap.exists() ? (snap.data() as PlayerStats) : null;
+  });
 }
 
 // Mirrors functions/src/elo.ts — the server is the source of truth for ratings.

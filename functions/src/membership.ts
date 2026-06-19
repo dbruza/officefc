@@ -1,4 +1,5 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "./logging";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
 import { requireAuth, assertAdmin } from "./auth";
@@ -55,7 +56,7 @@ async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number
  * - Allowlisted admin → seed league + admin membership, no code needed.
  * - Otherwise → validate the season join code (multi-use, permanent membership).
  */
-export const redeemInvite = onCall({ cors: true }, async (req) => {
+export const redeemInvite = loggedOnCall("redeemInvite", { cors: true }, async (req) => {
   const { uid, email } = requireAuth(req);
   const db = getFirestore();
   const memberRef = db.doc(`leagues/${LEAGUE_ID}/members/${uid}`);
@@ -104,7 +105,7 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
 });
 
 /** Admin-only idempotent seed for local/dev environments and fresh deployments. */
-export const ensureLeagueSetup = onCall({ cors: true }, async (req) => {
+export const ensureLeagueSetup = loggedOnCall("ensureLeagueSetup", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
   const { seasonId, teamCount } = await ensureLeagueData();

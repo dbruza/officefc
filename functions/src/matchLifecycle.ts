@@ -1,4 +1,5 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "./logging";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
@@ -8,7 +9,7 @@ import { sendPush } from "./notify";
 import { responderRejection } from "./matchRules";
 
 /** Only the named opponent can confirm a pending match. */
-export const confirmMatch = onCall({ cors: true }, async (req) => {
+export const confirmMatch = loggedOnCall("confirmMatch", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertMember(uid);
   const matchId = String(req.data?.matchId ?? "").trim();
@@ -52,7 +53,7 @@ export const confirmMatch = onCall({ cors: true }, async (req) => {
 });
 
 /** The named opponent may dispute a pending match; disputed matches never affect ELO. */
-export const disputeMatch = onCall({ cors: true }, async (req) => {
+export const disputeMatch = loggedOnCall("disputeMatch", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertMember(uid);
   const matchId = String(req.data?.matchId ?? "").trim();
@@ -105,7 +106,7 @@ export const notifyMatchSubmitted = onDocumentCreated("matches/{matchId}", async
 });
 
 /** Delete a match photo from storage and clear the reference. Owner only. */
-export const deleteMatchPhoto = onCall({ cors: true }, async (req) => {
+export const deleteMatchPhoto = loggedOnCall("deleteMatchPhoto", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   const matchId = String(req.data?.matchId ?? "").trim();
   if (!matchId) throw new HttpsError("invalid-argument", "matchId is required.");

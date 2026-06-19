@@ -1,3 +1,4 @@
+import * as logger from "firebase-functions/logger";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
@@ -124,7 +125,7 @@ export const sendReminders = onSchedule("0 */6 * * *", async () => {
     });
     sent++;
   }
-  console.log(`Reminders sent: ${sent}`);
+  logger.info("reminders_sent", { sent });
 });
 
 /**
@@ -186,5 +187,5 @@ export const cleanupAbandonedDrafts = onSchedule("0 3 * * *", async () => {
     });
     deleted++;
   }
-  console.log(`Stale AI drafts deleted: ${deleted}`);
+  logger.info("stale_drafts_deleted", { deleted });
 });

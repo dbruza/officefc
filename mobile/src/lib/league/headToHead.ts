@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { timed } from "../logger";
 import { asNullableDate } from "./firestoreMap";
 import type { HeadToHead } from "./types";
 
@@ -37,8 +38,10 @@ export async function getHeadToHead(aId: string, bId: string): Promise<HeadToHea
 }
 
 export async function getHeadToHeadsForPlayer(uid: string): Promise<HeadToHead[]> {
-  const snap = await getDocs(collection(db, "h2h"));
-  return snap.docs
-    .filter((h2hDoc) => h2hDoc.get("aId") === uid || h2hDoc.get("bId") === uid)
-    .map((h2hDoc) => mapHeadToHead(h2hDoc.id, h2hDoc.data()));
+  return timed("getHeadToHeadsForPlayer", async () => {
+    const snap = await getDocs(collection(db, "h2h"));
+    return snap.docs
+      .filter((h2hDoc) => h2hDoc.get("aId") === uid || h2hDoc.get("bId") === uid)
+      .map((h2hDoc) => mapHeadToHead(h2hDoc.id, h2hDoc.data()));
+  });
 }

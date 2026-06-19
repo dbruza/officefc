@@ -1,4 +1,5 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "../logging";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
@@ -89,7 +90,8 @@ function isImageType(contentType: string | undefined): boolean {
   return !!contentType && ALLOWED_TYPES.includes(contentType);
 }
 
-export const extractMatchStats = onCall(
+export const extractMatchStats = loggedOnCall(
+  "extractMatchStats",
   { cors: true, secrets: [ANTHROPIC_API_KEY] },
   async (req) => {
     const { uid } = requireAuth(req);

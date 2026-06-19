@@ -1,3 +1,4 @@
+import * as logger from "firebase-functions/logger";
 import { getFirestore } from "firebase-admin/firestore";
 
 const EXPO_PUSH_ENDPOINT = "https://exp.host/--/api/v2/push/send";
@@ -44,7 +45,9 @@ export async function deliverPushMessages(
     });
     return true;
   } catch (error) {
-    console.warn("Expo push delivery failed", error);
+    logger.warn("expo_push_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }

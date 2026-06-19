@@ -83,3 +83,32 @@ npm run test:rules
 
 These tests cover league membership boundaries, trusted match fields, onboarding reads,
 team validation, and private match-photo access.
+
+## Logging & Observability
+
+Logs land in **Google Cloud Logging** (Logs Explorer for the deployed project; the Emulator
+UI shows the same entries locally).
+
+- **Cloud Functions:** every callable is wrapped by `loggedOnCall` (`functions/src/logging.ts`),
+  which emits one structured `callable_done` event per invocation with `jsonPayload.fn`,
+  `outcome` (`ok` / `rejected`), and `durationMs`. Expected `HttpsError` rejections
+  (`invalid-argument`, `not-found`, `permission-denied`, …) log at `warning`; unexpected
+  throws log at `error` with the original stack. Filter by `jsonPayload.fn` to trace one
+  callable's latency and failures.
+- **Client:** the app logs through `mobile/src/lib/logger`. Everything prints to the local
+  console; `warn`/`error` (including `slow_read` warnings from the instrumented league reads
+  and the `auth_bootstrap_ready` timing) are also forwarded to the authenticated `ingestLog`
+  callable, which re-emits them with `jsonPayload.source="client"`. Filter Logs Explorer on
+  `jsonPayload.source="client"` to see device-reported issues, keyed by the authenticated
+  `uid`.
+- **Enabling client forwarding:** set `EXPO_PUBLIC_REMOTE_LOGGING=1` in `mobile/.env`. It
+  defaults to `0`. Deploy the backend (so `ingestLog` exists) **before** enabling it.
+  `ingestLog` is authenticated-only and rate-limited; pre-sign-in client errors stay local
+  until the user signs in.
+- **Tuning:** the slow-read threshold and batch/flush sizes live in
+  `mobile/src/lib/logger`; the server-side caps (batch size, byte limits, per-uid rate limit)
+  live in `functions/src/clientLogs`.
+
+Future hardening — reliable fatal-crash capture (a native crash reporter) and App Check for
+the sink — is documented in
+`docs/superpowers/specs/2026-06-15-firebase-logging-observability-design.md`.

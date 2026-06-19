@@ -1,4 +1,5 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "../logging";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import {
@@ -18,7 +19,7 @@ async function deleteIfPresent(storagePath: string): Promise<void> {
   if (exists) await file.delete();
 }
 
-export const abandonMatchDraft = onCall({ cors: true }, async (req) => {
+export const abandonMatchDraft = loggedOnCall("abandonMatchDraft", { cors: true }, async (req) => {
   if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = req.auth.uid;
   const draftId = String(req.data?.draftId ?? "").trim();

@@ -1,4 +1,5 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "./logging";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { computePOTM, type Standing } from "./elo";
 import { requireAuth, assertAdmin, assertMember } from "./auth";
@@ -15,7 +16,7 @@ import { rebuildTeamCatalogueSnapshot } from "./teams";
 
 const db = getFirestore();
 
-export const finalizeSeason = onCall({ cors: true }, async (req) => {
+export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -82,7 +83,7 @@ export const finalizeSeason = onCall({ cors: true }, async (req) => {
   return { ok: true, championId, runnerUpId, potmCount: potmResults.length };
 });
 
-export const createSeason = onCall({ cors: true }, async (req) => {
+export const createSeason = loggedOnCall("createSeason", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -114,7 +115,7 @@ export const createSeason = onCall({ cors: true }, async (req) => {
   return { ok: true, seasonId, joinCode };
 });
 
-export const activateSeason = onCall({ cors: true }, async (req) => {
+export const activateSeason = loggedOnCall("activateSeason", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -141,7 +142,7 @@ export const activateSeason = onCall({ cors: true }, async (req) => {
   return { ok: true, seasonId };
 });
 
-export const manageTeam = onCall({ cors: true }, async (req) => {
+export const manageTeam = loggedOnCall("manageTeam", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -219,7 +220,7 @@ export const manageTeam = onCall({ cors: true }, async (req) => {
   throw new HttpsError("invalid-argument", `Unknown action: ${action}`);
 });
 
-export const resolveMatch = onCall({ cors: true }, async (req) => {
+export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
 
@@ -335,7 +336,7 @@ export const resolveMatch = onCall({ cors: true }, async (req) => {
   return { ok: true, matchId };
 });
 
-export const listSeasons = onCall({ cors: true }, async (req) => {
+export const listSeasons = loggedOnCall("listSeasons", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertMember(uid);
   const snap = await db.collection("seasons").orderBy("start", "desc").get();

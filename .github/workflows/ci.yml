@@ -74,6 +74,9 @@ jobs:
       - name: Test Cloud Functions
         run: npm run test:functions
 
+      - name: Test mobile app
+        run: npm --prefix mobile test
+
       - name: Test extraction and ELO
         run: npm test
 

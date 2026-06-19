@@ -1,24 +1,27 @@
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
+import { timed } from "../logger";
 import { asDate, asNullableDate } from "./firestoreMap";
 import type { PotmResult, Season, SeasonResult } from "./types";
 
 export async function getActiveSeason(): Promise<Season | null> {
-  const snap = await getDocs(
-    query(collection(db, "seasons"), where("active", "==", true), limit(1)),
-  );
-  const doc = snap.docs[0];
-  if (!doc) return null;
-  const data = doc.data();
-  return {
-    id: doc.id,
-    name: String(data.name),
-    year: Number(data.year),
-    start: asDate(data.start),
-    end: asDate(data.end),
-    active: true,
-  };
+  return timed("getActiveSeason", async () => {
+    const snap = await getDocs(
+      query(collection(db, "seasons"), where("active", "==", true), limit(1)),
+    );
+    const doc = snap.docs[0];
+    if (!doc) return null;
+    const data = doc.data();
+    return {
+      id: doc.id,
+      name: String(data.name),
+      year: Number(data.year),
+      start: asDate(data.start),
+      end: asDate(data.end),
+      active: true,
+    };
+  });
 }
 
 export async function getSeasons(): Promise<Season[]> {

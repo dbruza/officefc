@@ -12,6 +12,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAppFonts, colors } from "@/theme";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { resolveNotificationRoute } from "@/lib/notifications";
+import { setLogRoute } from "@/lib/logger";
+import { installGlobalErrorLogging } from "@/lib/logger/globalHandler";
+import { LogErrorBoundary } from "@/components/LogErrorBoundary";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -21,6 +24,10 @@ function RootNavigator() {
   const segments = useSegments();
   const router = useRouter();
   const ready = !initializing && !loadingProfile;
+
+  useEffect(() => {
+    setLogRoute(segments.join("/") || "/");
+  }, [segments]);
 
   useEffect(() => {
     if (!ready) return;
@@ -61,12 +68,20 @@ function RootNavigator() {
       </View>
     );
   }
-  return <Slot />;
+  return (
+    <LogErrorBoundary>
+      <Slot />
+    </LogErrorBoundary>
+  );
 }
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useAppFonts();
   const router = useRouter();
+
+  useEffect(() => {
+    installGlobalErrorLogging();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === "web") return;

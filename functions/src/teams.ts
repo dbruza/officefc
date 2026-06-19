@@ -1,4 +1,4 @@
-import { onCall } from "firebase-functions/v2/https";
+import { loggedOnCall } from "./logging";
 import { getFirestore, FieldValue, type Firestore } from "firebase-admin/firestore";
 import { requireAuth, assertAdmin } from "./auth";
 import { TEAM_CATALOGUE, TEAM_CATALOGUE_VERSION, type CatalogueTeam } from "./data/teamCatalogue";
@@ -213,7 +213,7 @@ export async function seedTeamCatalogue(
 }
 
 /** Admin-only: update Firestore to the bundled catalogue version. */
-export const seedTeams = onCall({ cors: true }, async (req) => {
+export const seedTeams = loggedOnCall("seedTeams", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
   const result = await seedTeamCatalogue({ force: true });

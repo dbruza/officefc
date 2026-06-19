@@ -46,3 +46,6 @@ export {
 
 // Scheduled jobs
 export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./scheduled";
+
+// Client log sink
+export { ingestLog } from "./clientLogs";

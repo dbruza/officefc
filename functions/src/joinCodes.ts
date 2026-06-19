@@ -1,10 +1,11 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "./logging";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireAuth, assertAdmin } from "./auth";
 import { generateUniqueJoinCode, readSeasonJoinCode, writeSeasonJoinCode } from "./utils";
 
 /** Admin-only: get (or generate) the join code for a season. */
-export const getSeasonJoinCode = onCall({ cors: true }, async (req) => {
+export const getSeasonJoinCode = loggedOnCall("getSeasonJoinCode", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertAdmin(uid);
   const db = getFirestore();
@@ -28,18 +29,22 @@ export const getSeasonJoinCode = onCall({ cors: true }, async (req) => {
 });
 
 /** Admin-only: rotate the join code for a season (old code stops working immediately). */
-export const rotateSeasonJoinCode = onCall({ cors: true }, async (req) => {
-  const { uid } = requireAuth(req);
-  await assertAdmin(uid);
-  const db = getFirestore();
+export const rotateSeasonJoinCode = loggedOnCall(
+  "rotateSeasonJoinCode",
+  { cors: true },
+  async (req) => {
+    const { uid } = requireAuth(req);
+    await assertAdmin(uid);
+    const db = getFirestore();
 
-  const seasonId = String(req.data?.seasonId ?? "").trim();
-  if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
+    const seasonId = String(req.data?.seasonId ?? "").trim();
+    if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
 
-  const snap = await db.doc(`seasons/${seasonId}`).get();
-  if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
+    const snap = await db.doc(`seasons/${seasonId}`).get();
+    if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
 
-  const code = await generateUniqueJoinCode();
-  await writeSeasonJoinCode(seasonId, code);
-  return { seasonId, code };
-});
+    const code = await generateUniqueJoinCode();
+    await writeSeasonJoinCode(seasonId, code);
+    return { seasonId, code };
+  },
+);

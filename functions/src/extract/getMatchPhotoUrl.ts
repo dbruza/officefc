@@ -1,4 +1,5 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
+import { loggedOnCall } from "../logging";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "../auth";
@@ -11,7 +12,7 @@ const SIGNED_URL_TTL_MS = 10 * 60 * 1000; // 10 minutes
  * Return a short-lived signed read URL for a match's private photo.
  * The client must be a league member; the photo path must be stored on the match doc.
  */
-export const getMatchPhotoUrl = onCall({ cors: true }, async (req) => {
+export const getMatchPhotoUrl = loggedOnCall("getMatchPhotoUrl", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   await assertMember(uid);
 

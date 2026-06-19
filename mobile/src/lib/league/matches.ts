@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
+import { timed } from "../logger";
 import { asNullableDate, nullableNumber } from "./firestoreMap";
 import type {
   AdminPendingMatch,
@@ -89,14 +90,16 @@ export async function getSeasonMatches(seasonId: string): Promise<LeagueMatch[]>
 
 /** A player's confirmed matches across all seasons, oldest first. */
 export async function getPlayerMatches(uid: string): Promise<LeagueMatch[]> {
-  const matchesCol = collection(db, "matches");
-  const [aSnap, bSnap] = await Promise.all([
-    getDocs(query(matchesCol, where("aId", "==", uid), where("status", "==", "confirmed"))),
-    getDocs(query(matchesCol, where("bId", "==", uid), where("status", "==", "confirmed"))),
-  ]);
-  return [...aSnap.docs, ...bSnap.docs]
-    .map((matchDoc) => mapMatch(matchDoc.id, matchDoc.data()))
-    .sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
+  return timed("getPlayerMatches", async () => {
+    const matchesCol = collection(db, "matches");
+    const [aSnap, bSnap] = await Promise.all([
+      getDocs(query(matchesCol, where("aId", "==", uid), where("status", "==", "confirmed"))),
+      getDocs(query(matchesCol, where("bId", "==", uid), where("status", "==", "confirmed"))),
+    ]);
+    return [...aSnap.docs, ...bSnap.docs]
+      .map((matchDoc) => mapMatch(matchDoc.id, matchDoc.data()))
+      .sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
+  });
 }
 
 function mapPendingMatch(id: string, data: Record<string, unknown>): PendingMatch {

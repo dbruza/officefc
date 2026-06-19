@@ -19,6 +19,7 @@ import {
 import { auth } from "./firebase";
 import { getProfile, type Profile } from "./profiles";
 import { getMembership, type Membership } from "./membership";
+import { logger, setLogUid, STARTUP_SLOW_MS } from "./logger";
 
 interface AuthState {
   /** First auth check still pending. */
@@ -73,11 +74,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const bootStart = Date.now();
+    let reported = false;
     return onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setEmailVerified(!!u?.emailVerified);
+      setLogUid(u?.uid ?? null);
       await loadProfileAndMembership(u);
       setInitializing(false);
+      if (!reported) {
+        reported = true;
+        const durationMs = Date.now() - bootStart;
+        // profile + membership ready — NOT first-screen data, hence the name. Escalate to
+        // warn past the startup threshold so slow boots forward to Cloud Logging.
+        const fields = { durationMs, signedIn: !!u };
+        if (durationMs >= STARTUP_SLOW_MS) logger.warn("auth_bootstrap_ready", fields);
+        else logger.info("auth_bootstrap_ready", fields);
+      }
     });
   }, [loadProfileAndMembership]);
 
@@ -92,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOutUser = useCallback(async () => {
     await signOut(auth);
+    setLogUid(null);
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
