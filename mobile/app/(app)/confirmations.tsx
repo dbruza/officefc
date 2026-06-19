@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Avatar, Button, Card, Icon, Txt } from "@/components";
@@ -8,33 +8,30 @@ import {
   confirmMatch,
   disputeMatch,
   getLeaguePlayers,
-  getPendingConfirmations,
-  subscribePendingConfirmations,
   type LeaguePlayer,
   type PendingMatch,
 } from "@/lib/league";
+import { usePendingConfirmations } from "@/lib/usePendingConfirmations";
 import { colors, spacing } from "@/theme";
 import type { Player } from "@/types";
 
 export default function Confirmations() {
   const router = useRouter();
   const { user } = useAuth();
-  const [matches, setMatches] = useState<PendingMatch[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { matches, loaded: pendingLoaded } = usePendingConfirmations(user?.uid, {
+    onError: () => setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
+  });
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError(null);
     try {
-      const [pending, roster] = await Promise.all([
-        getPendingConfirmations(user.uid),
-        getLeaguePlayers(),
-      ]);
-      setMatches(pending);
+      const roster = await getLeaguePlayers();
       setPlayers(new Map(roster.map((player) => [player.id, player])));
     } catch {
       setError("Couldn't load confirmations. Check the emulators and try again.");
@@ -49,29 +46,14 @@ export default function Confirmations() {
     }, [load]),
   );
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribePendingConfirmations(user.uid, setMatches, () =>
-      setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
-    );
-    const appState = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        void getPendingConfirmations(user.uid).then(setMatches);
-      }
-    });
-    return () => {
-      unsubscribe();
-      appState.remove();
-    };
-  }, [user]);
-
   async function resolve(match: PendingMatch, action: "confirm" | "dispute") {
     setBusyId(match.id);
     setError(null);
     try {
       if (action === "confirm") await confirmMatch(match.id);
       else await disputeMatch(match.id, "Opponent disputed the submitted result.");
-      setMatches((current) => current.filter((item) => item.id !== match.id));
+      // The live listener drops the row once the backend moves the match out of
+      // pending_confirmation; no optimistic local mutation (which would race the listener).
     } catch {
       setError("That result couldn't be updated. It may already have been resolved.");
     } finally {
@@ -96,8 +78,8 @@ export default function Confirmations() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {!loading && matches.length === 0 ? (
+        {loading || !pendingLoaded ? <ActivityIndicator color={colors.accent} /> : null}
+        {!loading && pendingLoaded && matches.length === 0 ? (
           <Card style={styles.empty}>
             <Icon name="check" size={28} color={colors.accent} />
             <Txt variant="head" size={18} style={{ marginTop: spacing.md }}>

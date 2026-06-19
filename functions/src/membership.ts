@@ -8,6 +8,7 @@ import {
   readSeasonJoinCode,
   writeSeasonJoinCode,
 } from "./utils";
+import { seasonJoinRejection } from "./membershipRules";
 import { seedTeamCatalogue } from "./teams";
 
 type Role = "admin" | "member";
@@ -83,9 +84,13 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
   if (!seasonId) throw new HttpsError("not-found", "Join code not found.");
   const seasonDoc = await db.doc(`seasons/${seasonId}`).get();
   if (!seasonDoc.exists) throw new HttpsError("not-found", "Join code not found.");
-  if (!seasonDoc.get("active"))
+  const rejection = seasonJoinRejection({
+    active: seasonDoc.get("active"),
+    finalized: seasonDoc.get("finalized"),
+  });
+  if (rejection === "inactive")
     throw new HttpsError("failed-precondition", "That season is no longer active.");
-  if (seasonDoc.get("finalized"))
+  if (rejection === "finalized")
     throw new HttpsError("failed-precondition", "That season has been finalized.");
 
   await memberRef.set({

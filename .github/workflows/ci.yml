@@ -65,6 +65,9 @@ jobs:
       - name: Type-check mobile app
         run: npm run typecheck:mobile
 
+      - name: Type-check Cloud Functions
+        run: npm --prefix functions run typecheck
+
       - name: Export production web app
         run: npm run build:web
 

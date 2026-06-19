@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { AppTabBar, Avatar, Button, Card, Icon, PlayerRow, SectionLabel, Txt } from "@/components";
@@ -9,16 +9,15 @@ import {
   ensureLeagueSetup,
   getActiveSeason,
   getLeaguePlayers,
-  getPendingConfirmations,
   getPlayerStats,
   getStandings,
   rebuildLeagueReadModels,
-  subscribePendingConfirmations,
   type LeaguePlayer,
   type PlayerStats,
   type Season,
   type Standing,
 } from "@/lib/league";
+import { usePendingConfirmations } from "@/lib/usePendingConfirmations";
 import { initialsOf, type Player } from "@/types";
 import { colors, spacing, radius } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
@@ -31,9 +30,12 @@ export default function Home() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
-  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { matches: pendingMatches } = usePendingConfirmations(user?.uid, {
+    onError: () => setError("Couldn't update the confirmation inbox in real time."),
+  });
+  const pendingCount = pendingMatches.length;
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -70,24 +72,6 @@ export default function Home() {
       void load();
     }, [load]),
   );
-
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = subscribePendingConfirmations(
-      user.uid,
-      (matches) => setPendingCount(matches.length),
-      () => setError("Couldn't update the confirmation inbox in real time."),
-    );
-    const appState = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        void getPendingConfirmations(user.uid).then((matches) => setPendingCount(matches.length));
-      }
-    });
-    return () => {
-      unsubscribe();
-      appState.remove();
-    };
-  }, [user]);
 
   const me: Player | null = profile
     ? {
