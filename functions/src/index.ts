@@ -49,3 +49,6 @@ export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./schedul
 
 // Client log sink
 export { ingestLog } from "./clientLogs";
+
+// TEMPORARY one-off migration — remove after the join-code backfill has run (see #22).
+export { backfillSeasonCodes } from "./migrations/backfillSeasonCodes";
