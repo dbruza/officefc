@@ -372,11 +372,24 @@ export async function getLeaguePlayers(): Promise<LeaguePlayer[]> {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function mapStanding(uid: string, data: Record<string, unknown>): Standing {
+  return {
+    uid,
+    rank: nullableNumber(data.rank) ?? 0,
+    elo: nullableNumber(data.elo) ?? 0,
+    w: nullableNumber(data.w) ?? 0,
+    d: nullableNumber(data.d) ?? 0,
+    l: nullableNumber(data.l) ?? 0,
+    gf: nullableNumber(data.gf) ?? 0,
+    ga: nullableNumber(data.ga) ?? 0,
+    form: Array.isArray(data.form) ? (data.form as MatchResult[]) : [],
+    move: nullableNumber(data.move) ?? 0,
+  };
+}
+
 export async function getStandings(seasonId: string): Promise<Standing[]> {
   const snap = await getDocs(collection(db, "seasons", seasonId, "standings"));
-  return snap.docs
-    .map((doc) => ({ uid: doc.id, ...doc.data() }) as Standing)
-    .sort((a, b) => a.rank - b.rank);
+  return snap.docs.map((doc) => mapStanding(doc.id, doc.data())).sort((a, b) => a.rank - b.rank);
 }
 
 export async function getEloHistory(seasonId: string, uid: string): Promise<EloHistoryPoint[]> {

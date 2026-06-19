@@ -56,6 +56,7 @@ beforeEach(async () => {
       status: "confirmed",
     });
     await setDoc(doc(db, "seasons/s1"), { name: "Summer Showdown", active: true });
+    await setDoc(doc(db, "seasonCodes/s1"), { code: "OFC-ABCDE" });
     await setDoc(doc(db, "playerStats/alice"), { uid: "alice", games: 1, w: 1, d: 0, l: 0 });
     await setDoc(doc(db, "h2h/alice__dave"), {
       pairKey: "alice__dave",
@@ -86,6 +87,7 @@ beforeEach(async () => {
 });
 
 const member = () => testEnv.authenticatedContext("alice").firestore();
+const admin = () => testEnv.authenticatedContext("dave").firestore(); // seeded as role: admin
 const outsider = () => testEnv.authenticatedContext("nora").firestore(); // signed in, NOT a member
 const anon = () => testEnv.unauthenticatedContext().firestore();
 
@@ -100,6 +102,14 @@ test("member can read league matches", async () => {
 test("members can read M3 aggregate documents", async () => {
   await assertSucceeds(getDoc(doc(member(), "playerStats/alice")));
   await assertSucceeds(getDoc(doc(member(), "h2h/alice__dave")));
+});
+
+test("season join codes are function-only — no client can read them", async () => {
+  // The season doc itself stays member-readable; the code must not, or members would harvest it.
+  await assertSucceeds(getDoc(doc(member(), "seasons/s1")));
+  await assertFails(getDoc(doc(member(), "seasonCodes/s1")));
+  await assertFails(getDoc(doc(admin(), "seasonCodes/s1")));
+  await assertFails(getDoc(doc(outsider(), "seasonCodes/s1")));
 });
 
 test("members can read the compact team catalogue snapshot", async () => {

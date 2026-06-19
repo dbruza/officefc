@@ -2,13 +2,15 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { requireAuth } from "./auth";
+import { requireAuth, assertMember } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
 import { sendPush } from "./notify";
+import { responderRejection } from "./matchRules";
 
 /** Only the named opponent can confirm a pending match. */
 export const confirmMatch = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
+  await assertMember(uid);
   const matchId = String(req.data?.matchId ?? "").trim();
   if (!matchId) throw new HttpsError("invalid-argument", "A match id is required.");
 
@@ -18,11 +20,11 @@ export const confirmMatch = onCall({ cors: true }, async (req) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
     const data = snap.data()!;
-    const participant = uid === data.aId || uid === data.bId;
-    if (!participant || uid === data.submittedBy) {
+    const rejection = responderRejection(data, uid);
+    if (rejection === "not_opponent") {
       throw new HttpsError("permission-denied", "Only the named opponent can confirm.");
     }
-    if (data.status !== "pending_confirmation") {
+    if (rejection === "not_pending") {
       throw new HttpsError("failed-precondition", "This match is no longer pending.");
     }
     tx.update(ref, {
@@ -52,6 +54,7 @@ export const confirmMatch = onCall({ cors: true }, async (req) => {
 /** The named opponent may dispute a pending match; disputed matches never affect ELO. */
 export const disputeMatch = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
+  await assertMember(uid);
   const matchId = String(req.data?.matchId ?? "").trim();
   const reason = String(req.data?.reason ?? "")
     .trim()
@@ -64,11 +67,11 @@ export const disputeMatch = onCall({ cors: true }, async (req) => {
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
     const data = snap.data()!;
-    const participant = uid === data.aId || uid === data.bId;
-    if (!participant || uid === data.submittedBy) {
+    const rejection = responderRejection(data, uid);
+    if (rejection === "not_opponent") {
       throw new HttpsError("permission-denied", "Only the named opponent can dispute.");
     }
-    if (data.status !== "pending_confirmation") {
+    if (rejection === "not_pending") {
       throw new HttpsError("failed-precondition", "This match is no longer pending.");
     }
     tx.update(ref, {

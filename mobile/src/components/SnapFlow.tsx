@@ -935,6 +935,14 @@ function ScoreBox({
   );
 }
 
+/** Parse a numeric stat field: empty → null, otherwise the number (keeping a real 0); NaN → null. */
+function parseStatInput(text: string): number | null {
+  const trimmed = text.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
+}
+
 function StatEditRow({
   label,
   myValue,
@@ -956,7 +964,7 @@ function StatEditRow({
       <View style={styles.statEditFields}>
         <TextInput
           value={myValue != null ? String(myValue) : ""}
-          onChangeText={(t) => onChangeMy(t ? Number(t) || null : null)}
+          onChangeText={(t) => onChangeMy(parseStatInput(t))}
           placeholder="—"
           placeholderTextColor={colors.textFaint}
           keyboardType="numeric"
@@ -967,7 +975,7 @@ function StatEditRow({
         </Txt>
         <TextInput
           value={oppValue != null ? String(oppValue) : ""}
-          onChangeText={(t) => onChangeOpp(t ? Number(t) || null : null)}
+          onChangeText={(t) => onChangeOpp(parseStatInput(t))}
           placeholder="—"
           placeholderTextColor={colors.textFaint}
           keyboardType="numeric"

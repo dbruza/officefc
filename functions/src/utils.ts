@@ -1,11 +1,19 @@
 import {
   getFirestore,
+  FieldValue,
   Timestamp,
   type Firestore,
   type QueryDocumentSnapshot,
 } from "firebase-admin/firestore";
 import { randomCode } from "./config";
 import type { SeasonMatchInput } from "./elo";
+
+/**
+ * Join codes live in this function-only collection — never on the member-readable season
+ * document — so league members can't harvest a season's invite code by reading its season doc.
+ * Keyed by season id; the `code` field is what `redeemInvite` matches on.
+ */
+const SEASON_CODES_COLLECTION = "seasonCodes";
 
 /** Coerce a Firestore Timestamp or ISO date string to epoch millis; unknown shapes → 0. */
 export function dateMillis(value: unknown): number {
@@ -84,8 +92,41 @@ export async function generateUniqueJoinCode(): Promise<string> {
   const db = getFirestore();
   for (let i = 0; i < 10; i++) {
     const code = randomCode();
-    const existing = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
-    if (existing.empty) return code;
+    if ((await findSeasonIdByJoinCode(code, db)) === null) return code;
   }
   throw new Error("Failed to generate a unique join code after 10 attempts.");
+}
+
+/** Persist a season's join code in the function-only `seasonCodes` collection. */
+export async function writeSeasonJoinCode(
+  seasonId: string,
+  code: string,
+  db: Firestore = getFirestore(),
+): Promise<void> {
+  await db
+    .doc(`${SEASON_CODES_COLLECTION}/${seasonId}`)
+    .set({ code, updatedAt: FieldValue.serverTimestamp() });
+}
+
+/** The join code for a season, or undefined if none has been generated yet. */
+export async function readSeasonJoinCode(
+  seasonId: string,
+  db: Firestore = getFirestore(),
+): Promise<string | undefined> {
+  const snap = await db.doc(`${SEASON_CODES_COLLECTION}/${seasonId}`).get();
+  const code = snap.get("code");
+  return typeof code === "string" ? code : undefined;
+}
+
+/** The season id that owns a join code, or null if no season uses it. */
+export async function findSeasonIdByJoinCode(
+  code: string,
+  db: Firestore = getFirestore(),
+): Promise<string | null> {
+  const snap = await db
+    .collection(SEASON_CODES_COLLECTION)
+    .where("code", "==", code)
+    .limit(1)
+    .get();
+  return snap.empty ? null : snap.docs[0].id;
 }

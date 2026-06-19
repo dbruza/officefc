@@ -1,10 +1,15 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { LEAGUE_ID } from "./config";
 import { computePOTM, type Standing } from "./elo";
-import { requireAuth, assertAdmin } from "./auth";
+import { requireAuth, assertAdmin, assertMember } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
-import { dateMillis, generateUniqueJoinCode, seasonMatchInputsWithTeams } from "./utils";
+import {
+  dateMillis,
+  generateUniqueJoinCode,
+  readSeasonJoinCode,
+  seasonMatchInputsWithTeams,
+  writeSeasonJoinCode,
+} from "./utils";
 import { sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
 
@@ -103,9 +108,9 @@ export const createSeason = onCall({ cors: true }, async (req) => {
     end: Timestamp.fromMillis(endMs),
     active: false,
     finalized: false,
-    joinCode,
     createdAt: FieldValue.serverTimestamp(),
   });
+  await writeSeasonJoinCode(seasonId, joinCode);
   return { ok: true, seasonId, joinCode };
 });
 
@@ -122,18 +127,17 @@ export const activateSeason = onCall({ cors: true }, async (req) => {
     throw new HttpsError("failed-precondition", "Cannot activate a finalized season.");
   if (snap.get("active")) return { ok: true, seasonId };
 
-  let joinCode = snap.get("joinCode") as string | undefined;
-  if (!joinCode) {
-    joinCode = await generateUniqueJoinCode();
-  }
+  let joinCode = await readSeasonJoinCode(seasonId);
+  if (!joinCode) joinCode = await generateUniqueJoinCode();
 
   const active = await db.collection("seasons").where("active", "==", true).get();
   const batch = db.batch();
   for (const doc of active.docs) {
     batch.update(doc.ref, { active: false });
   }
-  batch.update(ref, { active: true, joinCode, activatedAt: FieldValue.serverTimestamp() });
+  batch.update(ref, { active: true, activatedAt: FieldValue.serverTimestamp() });
   await batch.commit();
+  await writeSeasonJoinCode(seasonId, joinCode);
   return { ok: true, seasonId };
 });
 
@@ -333,12 +337,14 @@ export const resolveMatch = onCall({ cors: true }, async (req) => {
 
 export const listSeasons = onCall({ cors: true }, async (req) => {
   const { uid } = requireAuth(req);
-  const memberSnap = await db.doc(`leagues/${LEAGUE_ID}/members/${uid}`).get();
-  const isAdmin = memberSnap.exists && memberSnap.get("role") === "admin";
+  await assertMember(uid);
   const snap = await db.collection("seasons").orderBy("start", "desc").get();
   return snap.docs.map((doc) => {
     const data = doc.data();
-    if (!isAdmin) delete data.joinCode;
+    // Join codes are function-only (see seasonCodes); never surface them, including any legacy
+    // joinCode field still sitting on pre-migration season docs. Admins fetch codes via
+    // getSeasonJoinCode.
+    delete data.joinCode;
     return { id: doc.id, ...data };
   });
 });

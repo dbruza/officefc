@@ -76,6 +76,13 @@ service cloud.firestore {
         allow write: if false;       // function-only
       }
     }
+
+    // Season join codes: function-only, never exposed to clients. The season doc above is
+    // member-readable, so codes must NOT live on it (members would harvest them). Admins read
+    // codes through the getSeasonJoinCode callable; redemption is validated server-side.
+    match /seasonCodes/{seasonId} {
+      allow read, write: if false;
+    }
     match /teams/{teamId} {
       allow read: if isMember();
       allow write: if false;

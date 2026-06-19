@@ -2,7 +2,12 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
 import { requireAuth, assertAdmin } from "./auth";
-import { generateUniqueJoinCode } from "./utils";
+import {
+  findSeasonIdByJoinCode,
+  generateUniqueJoinCode,
+  readSeasonJoinCode,
+  writeSeasonJoinCode,
+} from "./utils";
 import { seedTeamCatalogue } from "./teams";
 
 type Role = "admin" | "member";
@@ -26,22 +31,17 @@ async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number
   let activeSeasonId = active.docs[0]?.id;
   if (!activeSeasonId) {
     activeSeasonId = DEFAULT_SEASON.id;
-    const joinCode = await generateUniqueJoinCode();
     await db.doc(`seasons/${activeSeasonId}`).set({
       name: DEFAULT_SEASON.name,
       year: DEFAULT_SEASON.year,
       start: DEFAULT_SEASON.start,
       end: DEFAULT_SEASON.end,
       active: true,
-      joinCode,
       createdAt: FieldValue.serverTimestamp(),
     });
-  } else {
-    const seasonSnap = await db.doc(`seasons/${activeSeasonId}`).get();
-    if (!seasonSnap.get("joinCode")) {
-      const joinCode = await generateUniqueJoinCode();
-      await db.doc(`seasons/${activeSeasonId}`).update({ joinCode });
-    }
+    await writeSeasonJoinCode(activeSeasonId, await generateUniqueJoinCode());
+  } else if (!(await readSeasonJoinCode(activeSeasonId))) {
+    await writeSeasonJoinCode(activeSeasonId, await generateUniqueJoinCode());
   }
 
   const { active: activeTeamCount } = await seedTeamCatalogue();
@@ -79,9 +79,10 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
     .toUpperCase();
   if (!code) throw new HttpsError("failed-precondition", "A season join code is required.");
 
-  const seasonSnaps = await db.collection("seasons").where("joinCode", "==", code).limit(1).get();
-  if (seasonSnaps.empty) throw new HttpsError("not-found", "Join code not found.");
-  const seasonDoc = seasonSnaps.docs[0];
+  const seasonId = await findSeasonIdByJoinCode(code);
+  if (!seasonId) throw new HttpsError("not-found", "Join code not found.");
+  const seasonDoc = await db.doc(`seasons/${seasonId}`).get();
+  if (!seasonDoc.exists) throw new HttpsError("not-found", "Join code not found.");
   if (!seasonDoc.get("active"))
     throw new HttpsError("failed-precondition", "That season is no longer active.");
   if (seasonDoc.get("finalized"))
@@ -90,7 +91,7 @@ export const redeemInvite = onCall({ cors: true }, async (req) => {
   await memberRef.set({
     role: "member" as Role,
     joinedAt: FieldValue.serverTimestamp(),
-    viaSeason: seasonDoc.id,
+    viaSeason: seasonId,
     viaCode: code,
   });
 

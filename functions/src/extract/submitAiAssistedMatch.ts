@@ -10,6 +10,7 @@ import {
   type DraftState,
   type MatchState,
 } from "./draftSecurity";
+import { fieldsEdited } from "./extractionAudit";
 
 const db = getFirestore();
 
@@ -17,29 +18,6 @@ function nullableNum(v: unknown): number | null {
   if (v === null || v === undefined) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
-}
-
-function fieldsEdited(
-  raw: Record<string, unknown> | null | undefined,
-  submitted: Record<string, unknown>,
-): string[] {
-  const edited: string[] = [];
-  if (!raw) return edited;
-  function check(field: string, rawHome: unknown, rawAway: unknown): void {
-    const subHome = submitted[`my${field}`];
-    const subAway = submitted[`opponent${field}`];
-    if (rawHome !== null && rawHome !== undefined && rawHome !== subHome)
-      edited.push(`home_${field.toLowerCase()}`);
-    if (rawAway !== null && rawAway !== undefined && rawAway !== subAway)
-      edited.push(`away_${field.toLowerCase()}`);
-  }
-  const home = (raw.home ?? {}) as Record<string, unknown>;
-  const away = (raw.away ?? {}) as Record<string, unknown>;
-  check("Goals", home.goals, away.goals);
-  check("Possession", home.possession, away.possession);
-  check("Shots", home.shots, away.shots);
-  check("ShotsOnTarget", home.shots_on_target, away.shots_on_target);
-  return edited;
 }
 
 export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
@@ -130,8 +108,8 @@ export const submitAiAssistedMatch = onCall({ cors: true }, async (req) => {
 
     const extraction = draft?.raw as Record<string, unknown> | undefined;
     const suggestion = (extraction?.suggestion ?? {}) as Record<string, unknown>;
-    const editedFields = fieldsEdited(suggestion, submittedGoalsAndStats);
     const isHomeSide = mySide === "home";
+    const editedFields = fieldsEdited(suggestion, submittedGoalsAndStats, mySide);
     const matchData = {
       seasonId,
       submittedBy: uid,

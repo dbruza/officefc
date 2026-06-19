@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireAuth, assertAdmin } from "./auth";
-import { generateUniqueJoinCode } from "./utils";
+import { generateUniqueJoinCode, readSeasonJoinCode, writeSeasonJoinCode } from "./utils";
 
 /** Admin-only: get (or generate) the join code for a season. */
 export const getSeasonJoinCode = onCall({ cors: true }, async (req) => {
@@ -16,14 +16,13 @@ export const getSeasonJoinCode = onCall({ cors: true }, async (req) => {
     seasonId = active.docs[0].id;
   }
 
-  const ref = db.doc(`seasons/${seasonId}`);
-  const snap = await ref.get();
+  const snap = await db.doc(`seasons/${seasonId}`).get();
   if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
 
-  let code = snap.get("joinCode") as string | undefined;
+  let code = await readSeasonJoinCode(seasonId);
   if (!code) {
     code = await generateUniqueJoinCode();
-    await ref.update({ joinCode: code });
+    await writeSeasonJoinCode(seasonId, code);
   }
   return { seasonId, code };
 });
@@ -37,11 +36,10 @@ export const rotateSeasonJoinCode = onCall({ cors: true }, async (req) => {
   const seasonId = String(req.data?.seasonId ?? "").trim();
   if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
 
-  const ref = db.doc(`seasons/${seasonId}`);
-  const snap = await ref.get();
+  const snap = await db.doc(`seasons/${seasonId}`).get();
   if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
 
   const code = await generateUniqueJoinCode();
-  await ref.update({ joinCode: code });
+  await writeSeasonJoinCode(seasonId, code);
   return { seasonId, code };
 });

@@ -157,6 +157,11 @@ export const extractMatchStats = onCall(
     }
 
     try {
+      // Consume a rate-limit slot up front, before any storage read or model call. The cached
+      // reuse path returned above, so this only ever charges a fresh extraction; running it inside
+      // the try means a rejection still leaves the draft in a clean "failed" state.
+      await checkRateLimit(uid);
+
       const bucket = storage.bucket();
       const file = bucket.file(storagePath);
       const [metadataResult] = await file.getMetadata();
@@ -172,8 +177,6 @@ export const extractMatchStats = onCall(
           `File too large (${(fileSize / 1024 / 1024).toFixed(1)} MB).`,
         );
       }
-
-      await checkRateLimit(uid);
 
       const [rawBuffer] = await file.download();
       const { buffer, contentType: processedType } = await downscaleImage(rawBuffer, contentType);
