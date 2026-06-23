@@ -52,6 +52,7 @@ export async function recalcSeasonElo(seasonId: string): Promise<void> {
         bEloBefore: match.bEloBefore,
         bEloAfter: match.bEloAfter,
         bDelta: match.bDelta,
+        ...(match.eloExplain ? { eloExplain: match.eloExplain } : {}),
         recalculatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },

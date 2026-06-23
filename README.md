@@ -53,6 +53,23 @@ Clients can propose matches, but trusted outcomes are computed on the backend. A
 affects ELO only after opponent confirmation or an audited admin resolution. AI extraction
 only pre-fills the form; a player reviews the values before submission.
 
+## Rating system
+
+Ratings are a seasonal ELO (everyone starts at 1500 each season) computed deterministically
+from confirmed matches in `functions/src/elo.ts`:
+
+- **Stats-aware result.** A match result is a performance blend, not just the scoreline:
+  goal margin (60%), shots on target (25%), and possession (15%). A side can win on the
+  scoreboard yet earn little or lose rating if it was dominated on the underlying stats. Each
+  match stores an `eloExplain` breakdown, surfaced in the app's "Why the rating moved" panel.
+- **Team handicap.** When both teams' overalls are known, each FIFA overall point shifts the
+  expected score by 12 ELO, so beating a stronger team is worth more.
+- **Placement.** A player holds a ranked place only after `MIN_RANKED_GAMES` (3) games; before
+  that they are provisional (no rank, can't take the title) and use a higher K-factor (40 vs
+  32) for their first 10 games so new ratings settle faster.
+- **Tie-breaks.** Equal ELO is broken by goal difference, then wins, then fewer games played,
+  then a stable id.
+
 ## Current Status
 
 The product implementation through season administration and notifications is complete.

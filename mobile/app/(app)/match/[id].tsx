@@ -167,6 +167,10 @@ export default function MatchDetailRoute() {
               </View>
             </View>
 
+            {match.status === "confirmed" && match.eloExplain ? (
+              <EloExplainPanel match={match} />
+            ) : null}
+
             {photoUrl ? (
               <View style={{ marginTop: spacing.x2 }}>
                 <SectionLabel
@@ -297,6 +301,49 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
         <StatsRow label="Goals" a={match.aGoals} b={match.bGoals} />
       </View>
     </Card>
+  );
+}
+
+function signed(n: number): string {
+  return n > 0 ? `+${n}` : String(n);
+}
+
+function kCell(k: number): string {
+  return k > 32 ? `${k} ·P` : String(k);
+}
+
+function explainCopy(match: LeagueMatch): string {
+  const aSurprise = match.aGoals > match.bGoals && (match.aDelta ?? 0) <= 0;
+  const bSurprise = match.bGoals > match.aGoals && (match.bDelta ?? 0) <= 0;
+  if (aSurprise || bSurprise) {
+    return "Ratings blend the scoreline with shots on target and possession. Here the result went one way but the underlying stats favoured the other player, so the rating moved against the scoreboard.";
+  }
+  return "Your rating change is the gap between how you performed — goals blended with shots on target and possession — and how likely you were to win. Beating expectations earns more. New players use a higher K-factor (·P) while their rating settles.";
+}
+
+function EloExplainPanel({ match }: { match: LeagueMatch }) {
+  const ex = match.eloExplain;
+  if (!ex || match.aDelta === null || match.bDelta === null) return null;
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  const provisional = ex.aK > 32 || ex.bK > 32;
+  return (
+    <View style={{ marginTop: spacing.x2 }}>
+      <SectionLabel>Why the rating moved</SectionLabel>
+      <Card style={styles.statsPanel}>
+        <View style={{ gap: spacing.sm }}>
+          <StatsRow label="Win chance" a={pct(ex.aExpected)} b={pct(ex.bExpected)} />
+          <StatsRow label="Match quality" a={pct(ex.perfA)} b={pct(ex.perfB)} />
+          {ex.aTeamAdj !== 0 ? (
+            <StatsRow label="Team handicap" a={signed(ex.aTeamAdj)} b={signed(ex.bTeamAdj)} />
+          ) : null}
+          {provisional ? <StatsRow label="K-factor" a={kCell(ex.aK)} b={kCell(ex.bK)} /> : null}
+          <StatsRow label="ELO change" a={signed(match.aDelta)} b={signed(match.bDelta)} />
+        </View>
+        <Txt size={11} color={colors.textDim} style={{ marginTop: spacing.md, lineHeight: 16 }}>
+          {explainCopy(match)}
+        </Txt>
+      </Card>
+    </View>
   );
 }
 

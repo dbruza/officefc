@@ -17,6 +17,7 @@ import { asNullableDate, nullableNumber } from "./firestoreMap";
 import type {
   AdminPendingMatch,
   AiAssistedSubmitInput,
+  EloExplain,
   LeagueMatch,
   MatchSideStats,
   PendingMatch,
@@ -39,6 +40,23 @@ function sideStats(data: Record<string, unknown>, side: "a" | "b"): MatchSideSta
   return possession !== null || shots !== null || shotsOnTarget !== null
     ? { possession, shots, shotsOnTarget }
     : undefined;
+}
+
+function mapEloExplain(data: Record<string, unknown>): EloExplain | undefined {
+  const nested = data.eloExplain;
+  if (!nested || typeof nested !== "object") return undefined;
+  const e = nested as Record<string, unknown>;
+  const num = (v: unknown): number => (typeof v === "number" ? v : 0);
+  return {
+    aExpected: num(e.aExpected),
+    bExpected: num(e.bExpected),
+    perfA: num(e.perfA),
+    perfB: num(e.perfB),
+    aTeamAdj: num(e.aTeamAdj),
+    bTeamAdj: num(e.bTeamAdj),
+    aK: num(e.aK),
+    bK: num(e.bK),
+  };
 }
 
 function mapMatch(id: string, data: Record<string, unknown>): LeagueMatch {
@@ -66,6 +84,7 @@ function mapMatch(id: string, data: Record<string, unknown>): LeagueMatch {
     bDelta: nullableNumber(data.bDelta),
     aStats: sideStats(data, "a"),
     bStats: sideStats(data, "b"),
+    eloExplain: mapEloExplain(data),
   };
 }
 

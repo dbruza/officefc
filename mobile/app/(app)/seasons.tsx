@@ -103,10 +103,12 @@ export default function SeasonsRoute() {
     : 1;
   const elapsedDays = active ? Math.max(0, (Date.now() - active.start.getTime()) / 86_400_000) : 0;
   const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
-  const leader = standings[0] ?? null;
+  // Only ranked players can lead or take a podium spot (provisional players hold rank 0).
+  const rankedStandings = standings.filter((standing) => standing.ranked);
+  const leader = rankedStandings[0] ?? null;
   const leadingPlayer = leader ? players.get(leader.uid) : null;
 
-  const podium: PodiumEntry[] = standings.slice(0, 3).flatMap((standing) => {
+  const podium: PodiumEntry[] = rankedStandings.slice(0, 3).flatMap((standing) => {
     const player = players.get(standing.uid);
     return player ? [{ player, elo: standing.elo }] : [];
   });

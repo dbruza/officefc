@@ -70,19 +70,20 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
     }
   }
 
+  // Only ranked players appear in the snapshot and get a move indicator; provisional players
+  // (rank 0) are skipped so crossing into the ranked table doesn't read as a huge jump.
   const rows: Record<string, { rank: number; elo: number }> = {};
-  let rank = 1;
   for (const standing of result.standings) {
-    rows[standing.uid] = { rank, elo: standing.elo };
-    const prevRank = prevRanks.get(standing.uid) ?? rank;
-    const move = prevRank - rank;
-    standing.move = move;
-    rank++;
+    if (!standing.ranked) continue;
+    rows[standing.uid] = { rank: standing.rank, elo: standing.elo };
+    const prevRank = prevRanks.get(standing.uid) ?? standing.rank;
+    standing.move = prevRank - standing.rank;
   }
 
   const writer = db.bulkWriter();
   writer.set(ref, { weekKey, seasonId, rows, capturedAt: FieldValue.serverTimestamp() });
   for (const standing of result.standings) {
+    if (!standing.ranked) continue;
     writer.set(
       db.doc(`seasons/${seasonId}/standings/${standing.uid}`),
       { move: standing.move },

@@ -154,8 +154,12 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                   {standing?.elo ?? 1500}
                 </Txt>
                 <Txt variant="mono" size={12} color={colors.textDim}>
-                  {standing ? `Rank #${standing.rank}` : "Unranked"} ·{" "}
-                  {season?.name ?? "No active season"}
+                  {standing?.ranked
+                    ? `Rank #${standing.rank}`
+                    : standing
+                      ? "Placement"
+                      : "Unranked"}{" "}
+                  · {season?.name ?? "No active season"}
                 </Txt>
               </View>
             </View>

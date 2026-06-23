@@ -50,7 +50,9 @@ export default function ArchiveRoute() {
     }, [id]),
   );
 
-  const podium: PodiumEntry[] = standings.slice(0, 3).flatMap((standing) => {
+  // Only ranked players hold a place in a finalized season's table and podium.
+  const rankedStandings = standings.filter((standing) => standing.ranked);
+  const podium: PodiumEntry[] = rankedStandings.slice(0, 3).flatMap((standing) => {
     const player = players.get(standing.uid);
     return player ? [{ player, elo: standing.elo }] : [];
   });
@@ -91,7 +93,7 @@ export default function ArchiveRoute() {
           </Txt>
         </View>
         <View style={{ gap: spacing.sm }}>
-          {standings.map((standing) => {
+          {rankedStandings.map((standing) => {
             const player = players.get(standing.uid);
             if (!player) return null;
             return (
@@ -105,7 +107,7 @@ export default function ArchiveRoute() {
               />
             );
           })}
-          {!loading && standings.length === 0 ? (
+          {!loading && rankedStandings.length === 0 ? (
             <Card style={{ alignItems: "center", paddingVertical: spacing.x2 }}>
               <Txt color={colors.textDim}>No frozen standings are available for this season.</Txt>
             </Card>

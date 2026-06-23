@@ -70,13 +70,36 @@ export default function LogMatch() {
     () => new Map(standings.map((standing) => [standing.uid, standing.elo])),
     [standings],
   );
+  const gamesByUid = useMemo(
+    () =>
+      new Map(standings.map((standing) => [standing.uid, standing.w + standing.d + standing.l])),
+    [standings],
+  );
   const myElo = ratingByUid.get(user?.uid ?? "") ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
+  const myGames = gamesByUid.get(user?.uid ?? "") ?? 0;
+  const opponentGames = gamesByUid.get(opponent?.id ?? "") ?? 0;
   const myDelta = opponent
-    ? previewElo(myElo, opponentElo, myGoals, opponentGoals, myTeam?.overall, opponentTeam?.overall)
+    ? previewElo(
+        myElo,
+        opponentElo,
+        myGoals,
+        opponentGoals,
+        myTeam?.overall,
+        opponentTeam?.overall,
+        myGames,
+      )
     : 0;
   const opponentDelta = opponent
-    ? previewElo(opponentElo, myElo, opponentGoals, myGoals, opponentTeam?.overall, myTeam?.overall)
+    ? previewElo(
+        opponentElo,
+        myElo,
+        opponentGoals,
+        myGoals,
+        opponentTeam?.overall,
+        myTeam?.overall,
+        opponentGames,
+      )
     : 0;
   const canContinue =
     (step === 0 && !!opponent) ||

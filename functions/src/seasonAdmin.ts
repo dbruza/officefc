@@ -51,6 +51,8 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
   const standingsSnap = await db.collection(`seasons/${seasonId}/standings`).get();
   const finalStandings: Standing[] = standingsSnap.docs
     .map((doc) => ({ uid: doc.id, ...doc.data() }) as Standing)
+    // Only ranked players hold a place; provisional players (rank 0) can't take the title.
+    .filter((standing) => standing.rank >= 1)
     .sort((a, b) => a.rank - b.rank);
 
   const championId = finalStandings[0]?.uid ?? null;

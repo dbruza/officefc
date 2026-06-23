@@ -3,6 +3,22 @@ export const ELO_K = 32;
 /** Elo points each FIFA team-overall point is worth when handicapping the expected score. */
 export const TEAM_ELO_PER_OVERALL = 12;
 
+/** Games a player must complete before they hold a ranked place in the standings. */
+export const MIN_RANKED_GAMES = 3;
+/** Higher K applied while a player's seasonal rating is still finding its level. */
+export const PROVISIONAL_K = 40;
+/** Number of a player's first games each season that use the provisional K. */
+export const PROVISIONAL_GAMES = 10;
+
+/**
+ * K-factor for a delta, given how many games the player had already completed this season
+ * before this match. New players use a higher K so their rating finds its level faster, then
+ * settle to the standard K once they have played PROVISIONAL_GAMES.
+ */
+export function getK(gamesPlayedBefore: number): number {
+  return gamesPlayedBefore < PROVISIONAL_GAMES ? PROVISIONAL_K : ELO_K;
+}
+
 export type MatchResult = "W" | "D" | "L";
 
 export interface SeasonMatchInput {
@@ -20,6 +36,20 @@ export interface SeasonMatchInput {
   bTeamOverall?: number | null;
 }
 
+/** Per-match breakdown of how each side's Elo delta was produced, for the "why did my
+ *  rating change?" UI. `teamAdj` is the net team-strength handicap (in Elo points) applied
+ *  to that side's effective rating: positive means the stronger team, negative the weaker. */
+export interface EloExplain {
+  aExpected: number;
+  bExpected: number;
+  perfA: number;
+  perfB: number;
+  aTeamAdj: number;
+  bTeamAdj: number;
+  aK: number;
+  bK: number;
+}
+
 export interface CalculatedMatch extends SeasonMatchInput {
   aEloBefore: number;
   aEloAfter: number;
@@ -27,6 +57,7 @@ export interface CalculatedMatch extends SeasonMatchInput {
   bEloBefore: number;
   bEloAfter: number;
   bDelta: number;
+  eloExplain?: EloExplain;
 }
 
 export interface Standing {
@@ -40,6 +71,21 @@ export interface Standing {
   ga: number;
   form: MatchResult[];
   move: number;
+  ranked: boolean;
+}
+
+/**
+ * Standings order for players who have qualified: Elo, then goal difference, then wins, then
+ * fewer games played (rewards a tighter record), then uid as a stable final tie-break.
+ */
+export function compareStandings(a: Standing, b: Standing): number {
+  return (
+    b.elo - a.elo ||
+    b.gf - b.ga - (a.gf - a.ga) ||
+    b.w - a.w ||
+    a.w + a.d + a.l - (b.w + b.d + b.l) ||
+    a.uid.localeCompare(b.uid)
+  );
 }
 
 export interface HistoryPoint {
@@ -145,6 +191,11 @@ export function calculateSeason(
   const calculated = matches.map((match): CalculatedMatch => {
     const aEloBefore = ratings.get(match.aId) ?? BASE_ELO;
     const bEloBefore = ratings.get(match.bId) ?? BASE_ELO;
+    const aStats = stats.get(match.aId)!;
+    const bStats = stats.get(match.bId)!;
+    // Games each player had completed this season before this match drives the K-factor.
+    const aK = getK(aStats.w + aStats.d + aStats.l);
+    const bK = getK(bStats.w + bStats.d + bStats.l);
     const perfA = performanceScore(match);
     const [aEff, bEff] = effectiveRatings(
       aEloBefore,
@@ -152,10 +203,17 @@ export function calculateSeason(
       match.aTeamOverall,
       match.bTeamOverall,
     );
-    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEff, bEff)));
-    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bEff, aEff)));
+    const aExpected = expectedScore(aEff, bEff);
+    const bExpected = expectedScore(bEff, aEff);
+    const aDelta = Math.round(aK * (perfA - aExpected));
+    const bDelta = Math.round(bK * (1 - perfA - bExpected));
     const aEloAfter = aEloBefore + aDelta;
     const bEloAfter = bEloBefore + bDelta;
+    // Net team-strength handicap on each side (Elo points), positive for the stronger team.
+    const aHandicap = aEff - aEloBefore;
+    const bHandicap = bEff - bEloBefore;
+    const aTeamAdj = aHandicap - bHandicap;
+    const bTeamAdj = bHandicap - aHandicap;
 
     ratings.set(match.aId, aEloAfter);
     ratings.set(match.bId, bEloAfter);
@@ -170,8 +228,6 @@ export function calculateSeason(
       rating: bEloAfter,
     });
 
-    const aStats = stats.get(match.aId)!;
-    const bStats = stats.get(match.bId)!;
     const aResult = resultFor(match.aGoals, match.bGoals);
     const bResult = resultFor(match.bGoals, match.aGoals);
     aStats.gf += match.aGoals;
@@ -191,11 +247,21 @@ export function calculateSeason(
       bEloBefore,
       bEloAfter,
       bDelta,
+      eloExplain: {
+        aExpected,
+        bExpected,
+        perfA,
+        perfB: 1 - perfA,
+        aTeamAdj,
+        bTeamAdj,
+        aK,
+        bK,
+      },
     };
   });
 
   const standings = [...players]
-    .map((uid) => {
+    .map((uid): Standing => {
       const row = stats.get(uid)!;
       return {
         uid,
@@ -208,14 +274,18 @@ export function calculateSeason(
         ga: row.ga,
         form: row.form.slice(-5),
         move: 0,
+        ranked: row.w + row.d + row.l >= MIN_RANKED_GAMES,
       };
     })
     .filter((row) => row.w + row.d + row.l > 0)
-    .sort((a, b) => b.elo - a.elo || b.w - a.w || a.uid.localeCompare(b.uid));
+    // Ranked players first, then provisional; each group ordered by the tie-break chain.
+    .sort((a, b) => Number(b.ranked) - Number(a.ranked) || compareStandings(a, b));
 
-  standings.forEach((row, index) => {
-    row.rank = index + 1;
-  });
+  // Only ranked players occupy a numbered place; provisional players keep rank 0.
+  let rankCounter = 0;
+  for (const row of standings) {
+    if (row.ranked) row.rank = ++rankCounter;
+  }
 
   return { matches: calculated, standings, history };
 }
@@ -238,20 +308,25 @@ export function computePOTM(
     (a, b) => a.dateMillis - b.dateMillis || a.id.localeCompare(b.id),
   );
   const ratings = new Map<string, number>();
+  const gamesPlayed = new Map<string, number>();
   const months = new Map<string, MonthlyGains>();
   const result: Array<{ month: string; playerId: string; gain: number; games: number }> = [];
 
   for (const match of sorted) {
     const aBefore = ratings.get(match.aId) ?? BASE_ELO;
     const bBefore = ratings.get(match.bId) ?? BASE_ELO;
+    const aGamesBefore = gamesPlayed.get(match.aId) ?? 0;
+    const bGamesBefore = gamesPlayed.get(match.bId) ?? 0;
     const perfA = performanceScore(match);
     const [aEff, bEff] = effectiveRatings(aBefore, bBefore, match.aTeamOverall, match.bTeamOverall);
-    const aDelta = Math.round(ELO_K * (perfA - expectedScore(aEff, bEff)));
-    const bDelta = Math.round(ELO_K * (1 - perfA - expectedScore(bEff, aEff)));
+    const aDelta = Math.round(getK(aGamesBefore) * (perfA - expectedScore(aEff, bEff)));
+    const bDelta = Math.round(getK(bGamesBefore) * (1 - perfA - expectedScore(bEff, aEff)));
     const aAfter = aBefore + aDelta;
     const bAfter = bBefore + bDelta;
     ratings.set(match.aId, aAfter);
     ratings.set(match.bId, bAfter);
+    gamesPlayed.set(match.aId, aGamesBefore + 1);
+    gamesPlayed.set(match.bId, bGamesBefore + 1);
 
     const month = getMonthKey(match.dateMillis);
     if (!months.has(month)) months.set(month, new Map());

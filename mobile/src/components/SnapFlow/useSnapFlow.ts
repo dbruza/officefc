@@ -51,13 +51,35 @@ export function useSnapFlow(props: SnapFlowProps) {
   const cancelRequested = useRef(false);
 
   const ratingByUid = useMemo(() => new Map(standings.map((s) => [s.uid, s.elo])), [standings]);
+  const gamesByUid = useMemo(
+    () => new Map(standings.map((s) => [s.uid, s.w + s.d + s.l])),
+    [standings],
+  );
   const myElo = ratingByUid.get(uid) ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
+  const myGames = gamesByUid.get(uid) ?? 0;
+  const opponentGames = gamesByUid.get(opponent?.id ?? "") ?? 0;
   const myDelta = opponent
-    ? previewElo(myElo, opponentElo, myGoals, opponentGoals, myTeam?.overall, opponentTeam?.overall)
+    ? previewElo(
+        myElo,
+        opponentElo,
+        myGoals,
+        opponentGoals,
+        myTeam?.overall,
+        opponentTeam?.overall,
+        myGames,
+      )
     : 0;
   const opponentDelta = opponent
-    ? previewElo(opponentElo, myElo, opponentGoals, myGoals, opponentTeam?.overall, myTeam?.overall)
+    ? previewElo(
+        opponentElo,
+        myElo,
+        opponentGoals,
+        myGoals,
+        opponentTeam?.overall,
+        myTeam?.overall,
+        opponentGames,
+      )
     : 0;
 
   const usesExtraction = extraction?.suggestion != null && extraction.ok;

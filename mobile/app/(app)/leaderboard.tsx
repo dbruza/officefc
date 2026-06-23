@@ -79,6 +79,11 @@ export default function Leaderboard() {
     );
   }, [players, queryText, selectedSeason, standings]);
 
+  // Ranked players hold the table; provisional players (1–2 games) sit in a placement section.
+  // Placement is a live-season concept — finalized seasons show only the ranked table.
+  const rankedStandings = visible.filter((standing) => standing.ranked);
+  const placement = selectedSeason?.active ? visible.filter((standing) => !standing.ranked) : [];
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScreenHeader
@@ -120,7 +125,10 @@ export default function Leaderboard() {
           />
         </View>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {!loading && visible.length === 0 && unranked.length === 0 ? (
+        {!loading &&
+        rankedStandings.length === 0 &&
+        placement.length === 0 &&
+        unranked.length === 0 ? (
           <Card style={{ alignItems: "center", paddingVertical: spacing.x3 }}>
             <Icon name="board" size={28} color={colors.textDim} />
             <Txt variant="head" size={17} style={{ marginTop: spacing.md }}>
@@ -132,7 +140,7 @@ export default function Leaderboard() {
           </Card>
         ) : null}
         <View style={{ gap: spacing.sm }}>
-          {visible.map((standing) => {
+          {rankedStandings.map((standing) => {
             const player = players.get(standing.uid);
             if (!player) return null;
             return (
@@ -155,6 +163,36 @@ export default function Leaderboard() {
             );
           })}
         </View>
+        {placement.length > 0 ? (
+          <View style={{ marginTop: spacing.lg }}>
+            <SectionLabel
+              action={
+                <Txt variant="monoBold" size={11.5} color={colors.textDim}>
+                  3 games to qualify
+                </Txt>
+              }
+            >
+              Placement
+            </SectionLabel>
+            <View style={{ gap: spacing.sm }}>
+              {placement.map((standing) => {
+                const player = players.get(standing.uid);
+                if (!player) return null;
+                return (
+                  <PlayerRow
+                    key={standing.uid}
+                    player={player}
+                    elo={standing.elo}
+                    record={{ w: standing.w, d: standing.d, l: standing.l }}
+                    you={standing.uid === user?.uid}
+                    champion={standing.uid === championId}
+                    onPress={() => router.push(`/(app)/player/${standing.uid}`)}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
         {unranked.length > 0 ? (
           <View style={{ marginTop: spacing.lg }}>
             <SectionLabel

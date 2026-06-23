@@ -6,9 +6,10 @@ import type { EloHistoryPoint, PlayerStats, Standing } from "./types";
 import type { MatchResult } from "@/types";
 
 function mapStanding(uid: string, data: Record<string, unknown>): Standing {
+  const rank = nullableNumber(data.rank) ?? 0;
   return {
     uid,
-    rank: nullableNumber(data.rank) ?? 0,
+    rank,
     elo: nullableNumber(data.elo) ?? 0,
     w: nullableNumber(data.w) ?? 0,
     d: nullableNumber(data.d) ?? 0,
@@ -17,13 +18,20 @@ function mapStanding(uid: string, data: Record<string, unknown>): Standing {
     ga: nullableNumber(data.ga) ?? 0,
     form: Array.isArray(data.form) ? (data.form as MatchResult[]) : [],
     move: nullableNumber(data.move) ?? 0,
+    // Pre-migration docs have no `ranked` field but always carried a rank >= 1.
+    ranked: typeof data.ranked === "boolean" ? data.ranked : rank >= 1,
   };
 }
 
 export async function getStandings(seasonId: string): Promise<Standing[]> {
   return timed("getStandings", async () => {
     const snap = await getDocs(collection(db, "seasons", seasonId, "standings"));
-    return snap.docs.map((doc) => mapStanding(doc.id, doc.data())).sort((a, b) => a.rank - b.rank);
+    return (
+      snap.docs
+        .map((doc) => mapStanding(doc.id, doc.data()))
+        // Ranked players first (by rank), then provisional players (by ELO).
+        .sort((a, b) => Number(b.ranked) - Number(a.ranked) || a.rank - b.rank || b.elo - a.elo)
+    );
   });
 }
 
@@ -50,12 +58,21 @@ export async function getPlayerStats(uid: string): Promise<PlayerStats | null> {
 const ELO_K = 32;
 const ELO_SCALE = 400;
 const TEAM_ELO_PER_OVERALL = 12;
+const PROVISIONAL_K = 40;
+const PROVISIONAL_GAMES = 10;
+
+/** Mirror of the server's getK: new players use a higher K for their first games this season. */
+function previewK(gamesPlayed: number): number {
+  return gamesPlayed < PROVISIONAL_GAMES ? PROVISIONAL_K : ELO_K;
+}
 
 /**
  * Approximate the ELO delta for a result, for live UI preview only. This uses a plain
  * win/draw/loss score; the committed rating comes from the server's stats-aware
  * performanceScore (goals + shots-on-target + possession), so the preview can differ slightly.
  * Team overalls handicap the expectation exactly like the server: only when both are known.
+ * Pass the scoring player's games-played this season so new players see the provisional K;
+ * when omitted it falls back to the settled K.
  */
 export function previewElo(
   myElo: number,
@@ -64,6 +81,7 @@ export function previewElo(
   opponentGoals: number,
   myTeamOverall?: number | null,
   opponentTeamOverall?: number | null,
+  myGamesPlayed: number = PROVISIONAL_GAMES,
 ) {
   let myEff = myElo;
   let opponentEff = opponentElo;
@@ -73,5 +91,5 @@ export function previewElo(
   }
   const expected = 1 / (1 + Math.pow(10, (opponentEff - myEff) / ELO_SCALE));
   const score = myGoals > opponentGoals ? 1 : myGoals < opponentGoals ? 0 : 0.5;
-  return Math.round(ELO_K * (score - expected));
+  return Math.round(previewK(myGamesPlayed) * (score - expected));
 }

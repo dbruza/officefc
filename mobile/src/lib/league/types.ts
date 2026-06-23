@@ -52,6 +52,8 @@ export interface Standing {
   ga: number;
   form: MatchResult[];
   move: number;
+  /** True once the player has played enough games to hold a ranked place; provisional otherwise. */
+  ranked: boolean;
 }
 
 export interface PendingMatch {
@@ -94,12 +96,25 @@ export interface LeagueMatch {
   bDelta: number | null;
   aStats?: MatchSideStats;
   bStats?: MatchSideStats;
+  eloExplain?: EloExplain;
 }
 
 export interface MatchSideStats {
   possession?: number | null;
   shots?: number | null;
   shotsOnTarget?: number | null;
+}
+
+/** How each side's ELO delta was produced — mirrors functions/src/elo.ts EloExplain. */
+export interface EloExplain {
+  aExpected: number;
+  bExpected: number;
+  perfA: number;
+  perfB: number;
+  aTeamAdj: number;
+  bTeamAdj: number;
+  aK: number;
+  bK: number;
 }
 
 export interface EloHistoryPoint {

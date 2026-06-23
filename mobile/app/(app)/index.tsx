@@ -126,7 +126,12 @@ export default function Home() {
                   {myStanding?.elo ?? 1500}
                 </Txt>
                 <Txt variant="mono" size={11.5} color={colors.textDim}>
-                  ELO · {myStanding ? `RANK #${myStanding.rank}` : "UNRANKED"}
+                  ELO ·{" "}
+                  {myStanding?.ranked
+                    ? `RANK #${myStanding.rank}`
+                    : myStanding
+                      ? "PLACEMENT"
+                      : "UNRANKED"}
                 </Txt>
               </View>
               <View style={styles.seasonMeta}>
@@ -245,24 +250,27 @@ export default function Home() {
         >
           Top of the table
         </SectionLabel>
-        {standings.length ? (
+        {standings.some((s) => s.ranked) ? (
           <View style={{ gap: spacing.sm }}>
-            {standings.slice(0, 3).map((standing) => {
-              const player = players.get(standing.uid);
-              if (!player) return null;
-              return (
-                <PlayerRow
-                  key={standing.uid}
-                  player={player}
-                  rank={standing.rank}
-                  elo={standing.elo}
-                  form={standing.form}
-                  move={standing.move}
-                  you={standing.uid === user?.uid}
-                  onPress={() => router.push(`/(app)/player/${standing.uid}`)}
-                />
-              );
-            })}
+            {standings
+              .filter((s) => s.ranked)
+              .slice(0, 3)
+              .map((standing) => {
+                const player = players.get(standing.uid);
+                if (!player) return null;
+                return (
+                  <PlayerRow
+                    key={standing.uid}
+                    player={player}
+                    rank={standing.rank}
+                    elo={standing.elo}
+                    form={standing.form}
+                    move={standing.move}
+                    you={standing.uid === user?.uid}
+                    onPress={() => router.push(`/(app)/player/${standing.uid}`)}
+                  />
+                );
+              })}
           </View>
         ) : (
           <Card style={styles.emptyTable}>
