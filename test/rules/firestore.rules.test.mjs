@@ -83,6 +83,13 @@ beforeEach(async () => {
       ],
     });
     await setDoc(doc(db, "invites/OFC-ABCDE"), { role: "member", usedBy: null });
+    await setDoc(doc(db, "activity/result_m1"), {
+      type: "match_result",
+      leagueId: "office",
+      seasonId: "s1",
+      actorIds: ["alice", "dave"],
+      payload: { matchId: "m1", aId: "alice", bId: "dave", aGoals: 2, bGoals: 1 },
+    });
   });
 });
 
@@ -120,6 +127,13 @@ test("members can read the compact team catalogue snapshot", async () => {
 test("non-members cannot read M3 aggregate documents", async () => {
   await assertFails(getDoc(doc(outsider(), "playerStats/alice")));
   await assertFails(getDoc(doc(outsider(), "h2h/alice__dave")));
+});
+
+test("activity feed: members read, others cannot, and clients never write", async () => {
+  await assertSucceeds(getDoc(doc(member(), "activity/result_m1")));
+  await assertFails(getDoc(doc(outsider(), "activity/result_m1")));
+  await assertFails(setDoc(doc(member(), "activity/forged"), { type: "champion" }));
+  await assertFails(setDoc(doc(admin(), "activity/forged"), { type: "champion" }));
 });
 
 test("a signed-in non-member can read their OWN profile (onboarding)", async () => {

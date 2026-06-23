@@ -5,6 +5,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
+import { emitMatchActivity, topRankedLeaderId } from "./activityFeed";
 import { sendPush } from "./notify";
 import { responderRejection } from "./matchRules";
 
@@ -41,8 +42,11 @@ export const confirmMatch = loggedOnCall("confirmMatch", { cors: true }, async (
     };
   });
 
+  // Capture the season leader BEFORE recalc so a lead change can be detected after.
+  const previousLeaderId = await topRankedLeaderId(db, result.seasonId);
   await recalcSeasonElo(result.seasonId);
   await recalcLeagueStats();
+  await emitMatchActivity({ db, matchId, seasonId: result.seasonId, previousLeaderId });
   await sendPush(
     result.submittedBy,
     "Match confirmed",

@@ -139,6 +139,12 @@ service cloud.firestore {
       allow read: if isMember();
       allow write: if false;
     }
+
+    // League activity feed: members read; events are written only by Cloud Functions.
+    match /activity/{eventId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
     match /seasonResults/{seasonId} {
       allow read: if isMember();
       allow write: if false;

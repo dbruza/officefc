@@ -2,7 +2,17 @@ import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
-import { AppTabBar, Avatar, Button, Card, Icon, PlayerRow, SectionLabel, Txt } from "@/components";
+import {
+  ActivityFeed,
+  AppTabBar,
+  Avatar,
+  Button,
+  Card,
+  Icon,
+  PlayerRow,
+  SectionLabel,
+  Txt,
+} from "@/components";
 import { AdminInvite } from "@/components/AdminInvite";
 import { useAuth } from "@/lib/auth";
 import {
@@ -10,8 +20,10 @@ import {
   getActiveSeason,
   getLeaguePlayers,
   getPlayerStats,
+  getRecentActivity,
   getStandings,
   rebuildLeagueReadModels,
+  type ActivityEvent,
   type LeaguePlayer,
   type PlayerStats,
   type Season,
@@ -30,6 +42,7 @@ export default function Home() {
   const [standings, setStandings] = useState<Standing[]>([]);
   const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { matches: pendingMatches } = usePendingConfirmations(user?.uid, {
@@ -46,10 +59,11 @@ export default function Home() {
         await ensureLeagueSetup();
       }
       const activeSeason = await getActiveSeason();
-      const [roster, table, allTime] = await Promise.all([
+      const [roster, table, allTime, feed] = await Promise.all([
         getLeaguePlayers(),
         activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
         getPlayerStats(user.uid),
+        getRecentActivity(20),
       ]);
       let resolvedStats = allTime;
       if (!resolvedStats && isAdmin && table.length) {
@@ -60,6 +74,7 @@ export default function Home() {
       setPlayers(new Map(roster.map((player) => [player.id, player])));
       setStandings(table);
       setPlayerStats(resolvedStats);
+      setActivity(feed);
     } catch {
       setError("Couldn't load the live league data. Check the emulators and retry.");
     } finally {
@@ -285,6 +300,18 @@ export default function Home() {
             </View>
           </Card>
         )}
+
+        {!loading ? (
+          <View style={{ marginTop: spacing.x2 }}>
+            <SectionLabel>League activity</SectionLabel>
+            <ActivityFeed
+              events={activity}
+              players={players}
+              onOpenMatch={(matchId) => router.push(`/(app)/match/${matchId}`)}
+              onOpenPlayer={(uid) => router.push(`/(app)/player/${uid}`)}
+            />
+          </View>
+        ) : null}
 
         {isAdmin ? <AdminInvite /> : null}
 

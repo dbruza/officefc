@@ -4,6 +4,7 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { computePOTM, type Standing } from "./elo";
 import { requireAuth, assertAdmin, assertMember } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
+import { emitMatchActivity, emitSeasonActivity, topRankedLeaderId } from "./activityFeed";
 import {
   dateMillis,
   generateUniqueJoinCode,
@@ -81,6 +82,18 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     });
   }
   await writer.close();
+
+  await emitSeasonActivity({
+    seasonId,
+    seasonName: String(data.name ?? seasonId),
+    championId,
+    runnerUpId,
+    potm: potmResults.map((potm) => ({
+      month: potm.month,
+      playerId: potm.playerId,
+      gain: potm.gain,
+    })),
+  });
 
   return { ok: true, championId, runnerUpId, potmCount: potmResults.length };
 });
@@ -320,8 +333,10 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
   });
 
   if (action !== "void") {
+    const previousLeaderId = await topRankedLeaderId(db, previous.seasonId);
     await recalcSeasonElo(previous.seasonId);
     await recalcLeagueStats();
+    await emitMatchActivity({ db, matchId, seasonId: previous.seasonId, previousLeaderId });
   }
 
   const opponentId = previous.submittedBy;

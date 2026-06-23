@@ -52,3 +52,6 @@ export { ingestLog } from "./clientLogs";
 
 // TEMPORARY one-off migration — remove after the join-code backfill has run (see #22).
 export { backfillSeasonCodes } from "./migrations/backfillSeasonCodes";
+
+// TEMPORARY one-off migration — remove after the activity-feed seed has run (see A1).
+export { backfillActivityFeed } from "./migrations/backfillActivityFeed";

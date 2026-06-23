@@ -19,6 +19,7 @@ export type { ChartPoint } from "./LineChart";
 export { Podium, MEDAL } from "./Podium";
 export type { PodiumEntry } from "./Podium";
 export { AwardCard } from "./AwardCard";
+export { ActivityFeed } from "./ActivityFeed";
 export { AchievementBadge } from "./AchievementBadge";
 export { SeasonMatchRow } from "./SeasonMatchRow";
 export { Card } from "./Card";

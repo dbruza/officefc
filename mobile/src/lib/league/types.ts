@@ -176,6 +176,24 @@ export interface HeadToHead {
   meetings: H2HMeeting[];
 }
 
+export type ActivityType =
+  | "match_result"
+  | "upset"
+  | "streak"
+  | "new_number_one"
+  | "potm"
+  | "champion";
+
+/** One entry in the league activity feed. Payload holds uids + facts; names resolve client-side. */
+export interface ActivityEvent {
+  id: string;
+  type: ActivityType;
+  seasonId: string | null;
+  actorIds: string[];
+  createdAt: Date | null;
+  payload: Record<string, unknown>;
+}
+
 export interface SubmitMatchInput {
   seasonId: string;
   submittedBy: string;
