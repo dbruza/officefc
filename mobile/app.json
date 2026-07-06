@@ -12,6 +12,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.officefc.app",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "OfficeFC uses the camera to capture end-of-match stats screens for AI-assisted match logging.",
         "NSPhotoLibraryUsageDescription": "OfficeFC accesses your photo library so you can upload stats screens you've already taken."
       }

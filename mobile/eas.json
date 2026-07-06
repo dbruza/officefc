@@ -21,6 +21,7 @@
     "production": {
       "distribution": "store",
       "environment": "production",
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0"
       }
@@ -28,6 +29,10 @@
   },
   "submit": {
     "production": {
+      "ios": {
+        "ascAppId": "REPLACE_WITH_ASC_APP_ID",
+        "appleTeamId": "2BRP35R76D"
+      },
       "android": {
         "track": "internal",
         "releaseStatus": "draft"
