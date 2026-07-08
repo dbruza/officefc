@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { type Href, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card, Icon, ScreenHeader, SeasonMatchRow, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
@@ -10,30 +10,34 @@ import {
   type LeagueMatch,
   type LeaguePlayer,
 } from "@/lib/league";
+import { useFocusData } from "@/lib/useFocusData";
 import { firstName } from "@/lib/format";
 import { colors, spacing } from "@/theme";
+
+interface GamesData {
+  players: Map<string, LeaguePlayer>;
+  matches: LeagueMatch[];
+}
 
 export default function GamesRoute() {
   const router = useRouter();
   const { user } = useAuth();
   const params = useLocalSearchParams<{ uid?: string }>();
   const uid = params.uid ?? user?.uid ?? "";
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [matches, setMatches] = useState<LeagueMatch[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!uid) return;
-      setLoading(true);
-      Promise.all([getLeaguePlayers(), getPlayerMatches(uid)])
-        .then(([roster, played]) => {
-          setPlayers(new Map(roster.map((player) => [player.id, player])));
-          setMatches(played.slice().reverse());
-        })
-        .finally(() => setLoading(false));
+  const { data, loading } = useFocusData<GamesData>(
+    `games:${uid}`,
+    useCallback(async () => {
+      if (!uid) return { players: new Map<string, LeaguePlayer>(), matches: [] };
+      const [roster, played] = await Promise.all([getLeaguePlayers(), getPlayerMatches(uid)]);
+      return {
+        players: new Map(roster.map((player) => [player.id, player])),
+        matches: played.slice().reverse(),
+      };
     }, [uid]),
   );
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const matches = data?.matches ?? [];
 
   const isYou = uid === user?.uid;
   const player = players.get(uid);

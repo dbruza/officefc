@@ -1,10 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { type Href, useFocusEffect, useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AchievementBadge,
-  AppTabBar,
   Avatar,
   Button,
   Card,
@@ -37,31 +36,37 @@ import {
   type Standing,
 } from "@/lib/league";
 import { computeAchievements } from "@/lib/awards";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 
 const RECENT_PREVIEW = 6;
 
+interface ProfileData {
+  player: LeaguePlayer | null;
+  players: Map<string, LeaguePlayer>;
+  season: Season | null;
+  seasons: Season[];
+  seasonResults: SeasonResult[];
+  standing: Standing | null;
+  stats: PlayerStats | null;
+  matches: LeagueMatch[];
+  history: ChartPoint[];
+  headToHeads: HeadToHead[];
+}
+
 export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?: boolean }) {
   const router = useRouter();
   const { user, signOutUser } = useAuth();
-  const [player, setPlayer] = useState<LeaguePlayer | null>(null);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [season, setSeason] = useState<Season | null>(null);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [seasonResults, setSeasonResults] = useState<SeasonResult[]>([]);
-  const [standing, setStanding] = useState<Standing | null>(null);
-  const [stats, setStats] = useState<PlayerStats | null>(null);
-  const [matches, setMatches] = useState<LeagueMatch[]>([]);
-  const [history, setHistory] = useState<ChartPoint[]>([]);
-  const [headToHeads, setHeadToHeads] = useState<HeadToHead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const {
+    data,
+    loading,
+    error: loadFailed,
+    reload,
+  } = useFocusData<ProfileData>(
+    `player:${uid}`,
+    useCallback(async () => {
       const [seasonRows, roster, allTime, pairs, playedMatches, results] = await Promise.all([
         getSeasons(),
         getLeaguePlayers(),
@@ -74,33 +79,34 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
       const [table, eloPoints] = activeSeason
         ? await Promise.all([getStandings(activeSeason.id), getEloHistory(activeSeason.id, uid)])
         : [[], []];
-      setSeason(activeSeason);
-      setSeasons(seasonRows);
-      setSeasonResults(results);
-      setPlayer(roster.find((item) => item.id === uid) ?? null);
-      setPlayers(new Map(roster.map((item) => [item.id, item])));
-      setStats(allTime);
-      setMatches(playedMatches);
-      setHeadToHeads(pairs);
-      setStanding(table.find((item) => item.uid === uid) ?? null);
-      setHistory(
-        eloPoints.map((point) => ({
+      return {
+        player: roster.find((item) => item.id === uid) ?? null,
+        players: new Map(roster.map((item) => [item.id, item])),
+        season: activeSeason,
+        seasons: seasonRows,
+        seasonResults: results,
+        standing: table.find((item) => item.uid === uid) ?? null,
+        stats: allTime,
+        matches: playedMatches,
+        history: eloPoints.map((point) => ({
           date: point.date.toISOString().slice(0, 10),
           rating: point.rating,
         })),
-      );
-    } catch {
-      setError("Couldn't load this profile. Check the connection and retry.");
-    } finally {
-      setLoading(false);
-    }
-  }, [uid]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
+        headToHeads: pairs,
+      };
+    }, [uid]),
   );
+  const player = data?.player ?? null;
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const season = data?.season ?? null;
+  const seasons = data?.seasons ?? [];
+  const seasonResults = data?.seasonResults ?? [];
+  const standing = data?.standing ?? null;
+  const stats = data?.stats ?? null;
+  const matches = data?.matches ?? [];
+  const history = data?.history ?? [];
+  const headToHeads = data?.headToHeads ?? [];
+  const error = loadFailed ? "Couldn't load this profile. Check the connection and retry." : null;
 
   const isYou = uid === user?.uid;
   const form = standing?.form ?? [];
@@ -125,7 +131,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
     .sort((a, b) => b.wins + b.losses + b.draws - (a.wins + a.losses + a.draws));
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={root ? ["top"] : ["top", "bottom"]}>
       <ScreenHeader
         title={isYou ? "Your profile" : (player?.name ?? "Player profile")}
         subtitle={player ? `@${player.handle} · #${player.jersey}` : undefined}
@@ -136,7 +142,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
         {error ? (
           <Card>
             <Txt color={colors.loss}>{error}</Txt>
-            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={load}>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
               Retry
             </Button>
           </Card>
@@ -431,7 +437,6 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
           </>
         ) : null}
       </ScrollView>
-      {root ? <AppTabBar active="profile" /> : null}
     </SafeAreaView>
   );
 }

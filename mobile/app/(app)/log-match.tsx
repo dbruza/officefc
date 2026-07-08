@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  InteractionManager,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Avatar, Button, Card, EloDelta, Icon, SnapFlow, TeamPicker, Txt } from "@/components";
@@ -42,17 +49,22 @@ export default function LogMatch() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getActiveSeason(), getLeaguePlayers(), getTeams()])
-      .then(async ([activeSeason, roster, teamList]) => {
-        setSeason(activeSeason);
-        setPlayers(roster.filter((player) => player.id !== user?.uid));
-        setTeams(teamList);
-        if (activeSeason) setStandings(await getStandings(activeSeason.id));
-        if (!activeSeason) setError("No active season yet. Ask an admin to initialize the league.");
-        else if (teamList.length === 0) setError("No active teams are available yet.");
-      })
-      .catch(() => setError("Couldn't load the league. Check the emulators and try again."))
-      .finally(() => setLoading(false));
+    // Defer the fetch until the push animation settles so the transition stays smooth.
+    const task = InteractionManager.runAfterInteractions(() => {
+      Promise.all([getActiveSeason(), getLeaguePlayers(), getTeams()])
+        .then(async ([activeSeason, roster, teamList]) => {
+          setSeason(activeSeason);
+          setPlayers(roster.filter((player) => player.id !== user?.uid));
+          setTeams(teamList);
+          if (activeSeason) setStandings(await getStandings(activeSeason.id));
+          if (!activeSeason)
+            setError("No active season yet. Ask an admin to initialize the league.");
+          else if (teamList.length === 0) setError("No active teams are available yet.");
+        })
+        .catch(() => setError("Couldn't load the league. Check the connection and try again."))
+        .finally(() => setLoading(false));
+    });
+    return () => task.cancel();
   }, [user?.uid]);
 
   const me: Player | null = profile

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +19,7 @@ import {
   type H2HMeeting,
   type LeaguePlayer,
 } from "@/lib/league";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 import { firstName } from "@/lib/format";
@@ -27,35 +28,32 @@ import type { MatchResult } from "@/types";
 export default function HeadToHeadRoute() {
   const router = useRouter();
   const params = useLocalSearchParams<{ a?: string; b?: string }>();
-  const [players, setPlayers] = useState<LeaguePlayer[]>([]);
   const [aId, setAId] = useState(params.a ?? "");
   const [bId, setBId] = useState(params.b ?? "");
-  const [headToHead, setHeadToHead] = useState<HeadToHead | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const { data: roster, loading } = useFocusData(
+    "h2h-roster",
+    useCallback(() => getLeaguePlayers(), []),
+  );
+  const players = useMemo(() => roster ?? [], [roster]);
 
   useEffect(() => {
-    getLeaguePlayers()
-      .then((roster) => {
-        setPlayers(roster);
-        setAId((current) => current || roster[0]?.id || "");
-        setBId(
-          (current) =>
-            current || roster.find((player) => player.id !== (params.a ?? roster[0]?.id))?.id || "",
-        );
-      })
-      .finally(() => setLoading(false));
-  }, [params.a]);
+    if (!players.length) return;
+    setAId((current) => current || players[0]?.id || "");
+    setBId(
+      (current) =>
+        current || players.find((player) => player.id !== (params.a ?? players[0]?.id))?.id || "",
+    );
+  }, [players, params.a]);
 
-  useEffect(() => {
-    if (!aId || !bId || aId === bId) {
-      setHeadToHead(null);
-      return;
-    }
-    setLoading(true);
-    getHeadToHead(aId, bId)
-      .then(setHeadToHead)
-      .finally(() => setLoading(false));
-  }, [aId, bId]);
+  const { data: headToHeadData } = useFocusData<HeadToHead | null>(
+    `h2h:${aId}:${bId}`,
+    useCallback(
+      async () => (aId && bId && aId !== bId ? getHeadToHead(aId, bId) : null),
+      [aId, bId],
+    ),
+  );
+  const headToHead = headToHeadData ?? null;
 
   const a = players.find((player) => player.id === aId);
   const b = players.find((player) => player.id === bId);
@@ -66,7 +64,7 @@ export default function HeadToHeadRoute() {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScreenHeader title="Head-to-head" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loading && players.length === 0 ? <ActivityIndicator color={colors.accent} /> : null}
+        {loading ? <ActivityIndicator color={colors.accent} /> : null}
         {a && b ? (
           <>
             <View style={styles.banner}>

@@ -20,6 +20,7 @@ import { auth } from "./firebase";
 import { getProfile, type Profile } from "./profiles";
 import { getMembership, type Membership } from "./membership";
 import { logger, setLogUid, STARTUP_SLOW_MS } from "./logger";
+import { clearFocusDataCache } from "./useFocusData";
 
 interface AuthState {
   /** First auth check still pending. */
@@ -106,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOutUser = useCallback(async () => {
     await signOut(auth);
     setLogUid(null);
+    clearFocusDataCache();
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {

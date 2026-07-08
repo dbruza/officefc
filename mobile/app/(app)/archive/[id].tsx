@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { type Href, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   AwardCard,
@@ -24,31 +24,42 @@ import {
 } from "@/lib/league";
 import { computeSeasonAwards } from "@/lib/awards";
 import { useAuth } from "@/lib/auth";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, spacing } from "@/theme";
+
+interface ArchiveData {
+  season: Season | null;
+  standings: Standing[];
+  matches: LeagueMatch[];
+  players: Map<string, LeaguePlayer>;
+}
 
 export default function ArchiveRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const [season, setSeason] = useState<Season | null>(null);
-  const [standings, setStandings] = useState<Standing[]>([]);
-  const [matches, setMatches] = useState<LeagueMatch[]>([]);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      Promise.all([getSeason(id), getStandings(id), getSeasonMatches(id), getLeaguePlayers()])
-        .then(([seasonRow, table, seasonMatches, roster]) => {
-          setSeason(seasonRow);
-          setStandings(table);
-          setMatches(seasonMatches);
-          setPlayers(new Map(roster.map((player) => [player.id, player])));
-        })
-        .finally(() => setLoading(false));
+  const { data, loading } = useFocusData<ArchiveData>(
+    `archive:${id}`,
+    useCallback(async () => {
+      const [seasonRow, table, seasonMatches, roster] = await Promise.all([
+        getSeason(id),
+        getStandings(id),
+        getSeasonMatches(id),
+        getLeaguePlayers(),
+      ]);
+      return {
+        season: seasonRow,
+        standings: table,
+        matches: seasonMatches,
+        players: new Map(roster.map((player) => [player.id, player])),
+      };
     }, [id]),
   );
+  const season = data?.season ?? null;
+  const standings = data?.standings ?? [];
+  const matches = data?.matches ?? [];
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
 
   // Only ranked players hold a place in a finalized season's table and podium.
   const rankedStandings = standings.filter((standing) => standing.ranked);

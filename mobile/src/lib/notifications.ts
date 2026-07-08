@@ -71,12 +71,12 @@ export function resolveNotificationRoute(data: Record<string, string>): Href | n
   if (!type) return null;
   switch (type) {
     case "match_pending":
-      return matchId ? `/(app)/match/${matchId}` : "/(app)";
+      return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
     case "match_confirmed":
-      return matchId ? `/(app)/match/${matchId}` : "/(app)";
+      return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
     case "match_disputed":
-      return matchId ? `/(app)/match/${matchId}` : "/(app)";
+      return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
     default:
-      return "/(app)";
+      return "/(app)/(tabs)";
   }
 }

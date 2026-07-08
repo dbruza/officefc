@@ -8,8 +8,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
-import { AppTabBar, Card, Icon, PlayerRow, ScreenHeader, SectionLabel, Txt } from "@/components";
+import { useRouter } from "expo-router";
+import { Card, Icon, PlayerRow, ScreenHeader, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
@@ -20,47 +20,52 @@ import {
   type Season,
   type Standing,
 } from "@/lib/league";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, spacing } from "@/theme";
+
+interface LeaderboardData {
+  seasons: Season[];
+  selectedId: string;
+  standings: Standing[];
+  players: Map<string, LeaguePlayer>;
+  championId: string | null;
+}
 
 export default function Leaderboard() {
   const router = useRouter();
   const { user } = useAuth();
-  const [seasons, setSeasons] = useState<Season[]>([]);
+  // "" means "whatever season is active" until the user explicitly picks one.
   const [seasonId, setSeasonId] = useState("");
-  const [standings, setStandings] = useState<Standing[]>([]);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [championId, setChampionId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [queryText, setQueryText] = useState("");
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      Promise.all([getSeasons(), getLeaguePlayers(), getSeasonResults()])
-        .then(async ([seasonRows, roster, results]) => {
-          const selectedId =
-            seasonId || seasonRows.find((season) => season.active)?.id || seasonRows[0]?.id || "";
-          setSeasons(seasonRows);
-          setSeasonId(selectedId);
-          setPlayers(new Map(roster.map((player) => [player.id, player])));
-          setChampionId(results[0]?.championId ?? null);
-          setStandings(selectedId ? await getStandings(selectedId) : []);
-        })
-        .finally(() => setLoading(false));
+  const { data, loading } = useFocusData<LeaderboardData>(
+    `leaderboard:${seasonId || "active"}`,
+    useCallback(async () => {
+      const [seasonRows, roster, results] = await Promise.all([
+        getSeasons(),
+        getLeaguePlayers(),
+        getSeasonResults(),
+      ]);
+      const selectedId =
+        seasonId || seasonRows.find((season) => season.active)?.id || seasonRows[0]?.id || "";
+      return {
+        seasons: seasonRows,
+        selectedId,
+        standings: selectedId ? await getStandings(selectedId) : [],
+        players: new Map(roster.map((player) => [player.id, player])),
+        championId: results[0]?.championId ?? null,
+      };
     }, [seasonId]),
   );
+  const seasons = data?.seasons ?? [];
+  const standings = data?.standings ?? [];
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const championId = data?.championId ?? null;
+  const activeSeasonId = data?.selectedId ?? "";
 
-  async function chooseSeason(id: string) {
-    setSeasonId(id);
-    setLoading(true);
-    try {
-      setStandings(await getStandings(id));
-    } finally {
-      setLoading(false);
-    }
-  }
+  const chooseSeason = (id: string) => setSeasonId(id);
 
-  const selectedSeason = seasons.find((season) => season.id === seasonId) ?? null;
+  const selectedSeason = seasons.find((season) => season.id === activeSeasonId) ?? null;
   const visible = useMemo(() => {
     const q = queryText.trim().toLowerCase();
     return q
@@ -85,7 +90,7 @@ export default function Leaderboard() {
   const placement = selectedSeason?.active ? visible.filter((standing) => !standing.ranked) : [];
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScreenHeader
         title="Leaderboard"
         subtitle={`${visible.length + unranked.length} contender${visible.length + unranked.length === 1 ? "" : "s"}${selectedSeason ? ` · ${selectedSeason.year}` : ""}`}
@@ -100,13 +105,13 @@ export default function Leaderboard() {
           {seasons.map((season) => (
             <Pressable
               key={season.id}
-              onPress={() => void chooseSeason(season.id)}
-              style={[styles.seasonChip, season.id === seasonId && styles.seasonChipActive]}
+              onPress={() => chooseSeason(season.id)}
+              style={[styles.seasonChip, season.id === activeSeasonId && styles.seasonChipActive]}
             >
               <Txt
                 variant="bodyMedium"
                 size={12}
-                color={season.id === seasonId ? colors.accent : colors.textDim}
+                color={season.id === activeSeasonId ? colors.accent : colors.textDim}
               >
                 {season.name}
               </Txt>
@@ -219,7 +224,6 @@ export default function Leaderboard() {
           </View>
         ) : null}
       </ScrollView>
-      <AppTabBar active="leaderboard" />
     </SafeAreaView>
   );
 }

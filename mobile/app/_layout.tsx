@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import { View, ActivityIndicator, Platform, StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAppFonts, colors } from "@/theme";
 import { AuthProvider, useAuth } from "@/lib/auth";
@@ -51,7 +52,7 @@ function RootNavigator() {
       if (screen !== "join") router.replace("/(onboarding)/join");
       return;
     }
-    if (group !== "(app)") router.replace("/(app)");
+    if (group !== "(app)") router.replace("/(app)/(tabs)");
   }, [ready, user, emailVerified, profile, membership, segments, router]);
 
   if (!ready) {
@@ -113,16 +114,18 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <View style={styles.viewport}>
-        <View style={styles.appShell}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <View style={styles.viewport}>
+          <View style={styles.appShell}>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </View>
         </View>
-      </View>
-    </SafeAreaProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

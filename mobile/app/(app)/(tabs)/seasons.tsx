@@ -1,9 +1,8 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { type Href, useFocusEffect, useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  AppTabBar,
   Avatar,
   AwardCard,
   Card,
@@ -31,6 +30,7 @@ import {
   type Standing,
 } from "@/lib/league";
 import { AWARD_META, computeSeasonAwards, type SeasonAward } from "@/lib/awards";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
 import { firstName } from "@/lib/format";
@@ -46,53 +46,59 @@ interface PastSeason {
 const RESULTS_PREVIEW = 5;
 const RESULTS_MAX = 12;
 
+interface SeasonsData {
+  seasons: Season[];
+  players: Map<string, LeaguePlayer>;
+  standings: Standing[];
+  matches: LeagueMatch[];
+  past: PastSeason[];
+}
+
 export default function SeasonsRoute() {
   const router = useRouter();
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [standings, setStandings] = useState<Standing[]>([]);
-  const [matches, setMatches] = useState<LeagueMatch[]>([]);
-  const [past, setPast] = useState<PastSeason[]>([]);
   const [showAllResults, setShowAllResults] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      Promise.all([getSeasons(), getLeaguePlayers()])
-        .then(async ([seasonRows, roster]) => {
-          const active = seasonRows.find((season) => season.active) ?? null;
-          const old = seasonRows.filter((season) => !season.active);
-          const [table, liveMatches, archives] = await Promise.all([
-            active ? getStandings(active.id) : Promise.resolve([]),
-            active ? getSeasonMatches(active.id) : Promise.resolve([]),
-            Promise.all(
-              old.map(async (season) => {
-                const [result, potm, frozen, seasonMatches] = await Promise.all([
-                  getSeasonResult(season.id),
-                  getSeasonPotm(season.id),
-                  getStandings(season.id),
-                  getSeasonMatches(season.id),
-                ]);
-                return {
-                  season,
-                  result,
-                  potm,
-                  thirdId: frozen[2]?.uid ?? null,
-                  awards: computeSeasonAwards(seasonMatches),
-                };
-              }),
-            ),
-          ]);
-          setSeasons(seasonRows);
-          setPlayers(new Map(roster.map((player) => [player.id, player])));
-          setStandings(table);
-          setMatches(liveMatches);
-          setPast(archives);
-        })
-        .finally(() => setLoading(false));
+  const { data, loading } = useFocusData<SeasonsData>(
+    "seasons",
+    useCallback(async () => {
+      const [seasonRows, roster] = await Promise.all([getSeasons(), getLeaguePlayers()]);
+      const activeSeason = seasonRows.find((season) => season.active) ?? null;
+      const old = seasonRows.filter((season) => !season.active);
+      const [table, liveMatches, archives] = await Promise.all([
+        activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
+        activeSeason ? getSeasonMatches(activeSeason.id) : Promise.resolve([]),
+        Promise.all(
+          old.map(async (season) => {
+            const [result, potm, frozen, seasonMatches] = await Promise.all([
+              getSeasonResult(season.id),
+              getSeasonPotm(season.id),
+              getStandings(season.id),
+              getSeasonMatches(season.id),
+            ]);
+            return {
+              season,
+              result,
+              potm,
+              thirdId: frozen[2]?.uid ?? null,
+              awards: computeSeasonAwards(seasonMatches),
+            };
+          }),
+        ),
+      ]);
+      return {
+        seasons: seasonRows,
+        players: new Map(roster.map((player) => [player.id, player])),
+        standings: table,
+        matches: liveMatches,
+        past: archives,
+      };
     }, []),
   );
+  const seasons = data?.seasons ?? [];
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const standings = data?.standings ?? [];
+  const matches = data?.matches ?? [];
+  const past = data?.past ?? [];
 
   const active = seasons.find((season) => season.active) ?? null;
   const daysLeft = active
@@ -123,7 +129,7 @@ export default function SeasonsRoute() {
     router.push({ pathname: "/(app)/match/[id]", params: { id: matchId } } as Href);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScreenHeader title="Seasons" subtitle="Hall of Fame & silverware" back={false} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
@@ -359,7 +365,6 @@ export default function SeasonsRoute() {
           ) : null}
         </View>
       </ScrollView>
-      <AppTabBar active="seasons" />
     </SafeAreaView>
   );
 }

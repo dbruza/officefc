@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Avatar, Button, Card, Icon, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
@@ -12,38 +12,25 @@ import {
   type PendingMatch,
 } from "@/lib/league";
 import { usePendingConfirmations } from "@/lib/usePendingConfirmations";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, spacing } from "@/theme";
 import type { Player } from "@/types";
 
 export default function Confirmations() {
   const router = useRouter();
   const { user } = useAuth();
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { matches, loaded: pendingLoaded } = usePendingConfirmations(user?.uid, {
     onError: () => setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
   });
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
+  const { data: players = new Map<string, LeaguePlayer>(), loading } = useFocusData(
+    "confirmations-roster",
+    useCallback(async () => {
       const roster = await getLeaguePlayers();
-      setPlayers(new Map(roster.map((player) => [player.id, player])));
-    } catch {
-      setError("Couldn't load confirmations. Check the emulators and try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
+      return new Map(roster.map((player) => [player.id, player]));
+    }, []),
   );
 
   async function resolve(match: PendingMatch, action: "confirm" | "dispute") {

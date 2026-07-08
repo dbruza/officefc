@@ -1,10 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   ActivityFeed,
-  AppTabBar,
   Avatar,
   Button,
   Card,
@@ -30,31 +29,47 @@ import {
   type Standing,
 } from "@/lib/league";
 import { usePendingConfirmations } from "@/lib/usePendingConfirmations";
+import { useFocusData } from "@/lib/useFocusData";
 import { initialsOf, type Player } from "@/types";
 import { colors, spacing, radius } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
+
+interface HomeData {
+  season: Season | null;
+  standings: Standing[];
+  players: Map<string, LeaguePlayer>;
+  playerStats: PlayerStats | null;
+  activity: ActivityEvent[];
+}
 
 export default function Home() {
   const router = useRouter();
   const { user, profile, membership, signOutUser } = useAuth();
   const isAdmin = membership?.role === "admin";
-  const [season, setSeason] = useState<Season | null>(null);
-  const [standings, setStandings] = useState<Standing[]>([]);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
-  const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { matches: pendingMatches } = usePendingConfirmations(user?.uid, {
-    onError: () => setError("Couldn't update the confirmation inbox in real time."),
+  const uid = user?.uid;
+  const [inboxError, setInboxError] = useState<string | null>(null);
+  const { matches: pendingMatches } = usePendingConfirmations(uid, {
+    onError: () => setInboxError("Couldn't update the confirmation inbox in real time."),
   });
   const pendingCount = pendingMatches.length;
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError(null);
-    try {
+  const {
+    data,
+    loading,
+    error: loadFailed,
+    reload,
+  } = useFocusData<HomeData>(
+    `home:${uid ?? "anon"}`,
+    useCallback(async () => {
+      if (!uid) {
+        return {
+          season: null,
+          standings: [],
+          players: new Map<string, LeaguePlayer>(),
+          playerStats: null,
+          activity: [],
+        };
+      }
       if (isAdmin) {
         await ensureLeagueSetup();
       }
@@ -62,31 +77,31 @@ export default function Home() {
       const [roster, table, allTime, feed] = await Promise.all([
         getLeaguePlayers(),
         activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
-        getPlayerStats(user.uid),
+        getPlayerStats(uid),
         getRecentActivity(20),
       ]);
       let resolvedStats = allTime;
       if (!resolvedStats && isAdmin && table.length) {
         await rebuildLeagueReadModels();
-        resolvedStats = await getPlayerStats(user.uid);
+        resolvedStats = await getPlayerStats(uid);
       }
-      setSeason(activeSeason);
-      setPlayers(new Map(roster.map((player) => [player.id, player])));
-      setStandings(table);
-      setPlayerStats(resolvedStats);
-      setActivity(feed);
-    } catch {
-      setError("Couldn't load the live league data. Check the emulators and retry.");
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin, user]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
+      return {
+        season: activeSeason,
+        standings: table,
+        players: new Map(roster.map((player) => [player.id, player])),
+        playerStats: resolvedStats,
+        activity: feed,
+      };
+    }, [isAdmin, uid]),
   );
+  const season = data?.season ?? null;
+  const standings = data?.standings ?? [];
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const playerStats = data?.playerStats ?? null;
+  const activity = data?.activity ?? [];
+  const error = loadFailed
+    ? "Couldn't load the live league data. Check the connection and retry."
+    : inboxError;
 
   const me: Player | null = profile
     ? {
@@ -107,7 +122,7 @@ export default function Home() {
   }, [season]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -126,7 +141,7 @@ export default function Home() {
         ) : null}
 
         {!loading ? (
-          <Card style={styles.hero} padded onPress={() => router.push("/(app)/profile")}>
+          <Card style={styles.hero} padded onPress={() => router.navigate("/(app)/(tabs)/profile")}>
             <View style={styles.heroTop}>
               <View>
                 <Txt
@@ -209,7 +224,7 @@ export default function Home() {
             <Txt color={colors.loss} size={13}>
               {error}
             </Txt>
-            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={load}>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
               Retry
             </Button>
           </Card>
@@ -256,7 +271,7 @@ export default function Home() {
 
         <SectionLabel
           action={
-            <Pressable onPress={() => router.push("/(app)/leaderboard")}>
+            <Pressable onPress={() => router.navigate("/(app)/(tabs)/leaderboard")}>
               <Txt variant="head" size={11} color={colors.accent}>
                 FULL TABLE
               </Txt>
@@ -320,7 +335,6 @@ export default function Home() {
           Sign out
         </Button>
       </ScrollView>
-      <AppTabBar active="home" />
     </SafeAreaView>
   );
 }

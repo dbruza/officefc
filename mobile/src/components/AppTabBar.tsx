@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { type Href, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, type IconName } from "./Icon";
 import { Txt } from "./Txt";
 import { colors, radius, spacing } from "@/theme";
@@ -8,22 +9,23 @@ import { withAlpha } from "@/lib/color";
 export type AppTab = "home" | "leaderboard" | "seasons" | "profile";
 
 const TABS: { id: AppTab; label: string; icon: IconName; href: Href }[] = [
-  { id: "home", label: "Home", icon: "home", href: "/(app)" },
-  { id: "leaderboard", label: "Table", icon: "board", href: "/(app)/leaderboard" },
-  { id: "seasons", label: "Seasons", icon: "seasons", href: "/(app)/seasons" },
-  { id: "profile", label: "You", icon: "profile", href: "/(app)/profile" },
+  { id: "home", label: "Home", icon: "home", href: "/(app)/(tabs)" },
+  { id: "leaderboard", label: "Table", icon: "board", href: "/(app)/(tabs)/leaderboard" },
+  { id: "seasons", label: "Seasons", icon: "seasons", href: "/(app)/(tabs)/seasons" },
+  { id: "profile", label: "You", icon: "profile", href: "/(app)/(tabs)/profile" },
 ];
 
 export function AppTabBar({ active }: { active: AppTab }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
       {TABS.slice(0, 2).map((tab) => (
         <TabButton
           key={tab.id}
           tab={tab}
           active={active === tab.id}
-          onPress={() => router.replace(tab.href)}
+          onPress={() => router.navigate(tab.href)}
         />
       ))}
       <View style={styles.fabSlot}>
@@ -36,7 +38,7 @@ export function AppTabBar({ active }: { active: AppTab }) {
           key={tab.id}
           tab={tab}
           active={active === tab.id}
-          onPress={() => router.replace(tab.href)}
+          onPress={() => router.navigate(tab.href)}
         />
       ))}
     </View>
@@ -69,7 +71,7 @@ function TabButton({
 
 const styles = StyleSheet.create({
   bar: {
-    height: 70,
+    minHeight: 70,
     paddingHorizontal: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.line,

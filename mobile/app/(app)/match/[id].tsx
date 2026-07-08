@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from "react-native";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Avatar,
@@ -23,64 +23,74 @@ import {
   type LeaguePlayer,
   type Season,
 } from "@/lib/league";
+import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
 import { showAlert } from "@/lib/dialogs";
 import { firstName } from "@/lib/format";
 
+interface MatchData {
+  match: LeagueMatch | null;
+  season: Season | null;
+  players: Map<string, LeaguePlayer>;
+  photoUrl: string | null;
+  photoExpires: number;
+}
+
 export default function MatchDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [match, setMatch] = useState<LeagueMatch | null>(null);
-  const [season, setSeason] = useState<Season | null>(null);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoExpires, setPhotoExpires] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [photoHidden, setPhotoHidden] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const {
+    data,
+    loading,
+    error: loadFailed,
+    reload,
+  } = useFocusData<MatchData>(
+    `match:${id}`,
+    useCallback(async () => {
       const [result, roster] = await Promise.all([getMatch(id), getLeaguePlayers()]);
-      setMatch(result);
-      setPlayers(new Map(roster.map((player) => [player.id, player])));
-      setSeason(result ? await getSeason(result.seasonId) : null);
+      const season = result ? await getSeason(result.seasonId) : null;
+      let photoUrl: string | null = null;
+      let photoExpires = 0;
       if (result?.source === "ai_assisted" && result.photoPath) {
         try {
-          const { url, expiresAt } = await getMatchPhotoUrl(id);
-          setPhotoUrl(url);
-          setPhotoExpires(expiresAt);
+          const photo = await getMatchPhotoUrl(id);
+          photoUrl = photo.url;
+          photoExpires = photo.expiresAt;
         } catch {
-          setPhotoUrl(null);
+          photoUrl = null;
         }
       }
-    } catch {
-      setError("Couldn't load this match.");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return {
+        match: result,
+        season,
+        players: new Map(roster.map((player) => [player.id, player])),
+        photoUrl,
+        photoExpires,
+      };
+    }, [id]),
+  );
+  const match = data?.match ?? null;
+  const season = data?.season ?? null;
+  const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const photoUrl = photoHidden ? null : (data?.photoUrl ?? null);
+  const photoExpires = data?.photoExpires ?? 0;
+  const error = loadFailed ? "Couldn't load this match." : null;
 
   const handleDeletePhoto = async () => {
     setDeleting(true);
     try {
       await deleteMatchPhoto(id);
-      setPhotoUrl(null);
-      setMatch((prev) => (prev ? { ...prev, photoPath: null } : null));
+      setPhotoHidden(true);
+      void reload();
     } catch {
       showAlert("Could not delete photo", "Try again or ask an admin.");
     } finally {
       setDeleting(false);
     }
   };
-
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
-  );
 
   const a = match ? players.get(match.aId) : null;
   const b = match ? players.get(match.bId) : null;
@@ -96,7 +106,7 @@ export default function MatchDetailRoute() {
         {error ? (
           <Card>
             <Txt color={colors.loss}>{error}</Txt>
-            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={load}>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
               Retry
             </Button>
           </Card>
