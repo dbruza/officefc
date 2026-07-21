@@ -83,6 +83,23 @@ beforeEach(async () => {
       ],
     });
     await setDoc(doc(db, "invites/OFC-ABCDE"), { role: "member", usedBy: null });
+    // Auto-matchup fixtures: fx1 is live, fx2 already consumed.
+    await setDoc(doc(db, "fixtures/fx1"), {
+      seasonId: "s1",
+      aId: "alice",
+      bId: "dave",
+      aTeamId: "team-a",
+      bTeamId: "team-b",
+      status: "proposed",
+    });
+    await setDoc(doc(db, "fixtures/fx2"), {
+      seasonId: "s1",
+      aId: "alice",
+      bId: "dave",
+      aTeamId: "team-a",
+      bTeamId: "team-b",
+      status: "submitted",
+    });
     await setDoc(doc(db, "activity/result_m1"), {
       type: "match_result",
       leagueId: "office",
@@ -195,6 +212,69 @@ test("same-name teams remain valid when their ids are distinct", async () => {
       source: "manual",
       date: serverTimestamp(),
       createdAt: serverTimestamp(),
+    }),
+  );
+});
+
+function fixtureMatch(overrides = {}) {
+  return {
+    seasonId: "s1",
+    submittedBy: "alice",
+    aId: "alice",
+    bId: "dave",
+    aTeamId: "team-a",
+    bTeamId: "team-b",
+    aTeam: "Crimson Albion",
+    bTeam: "Royal Vega",
+    aGoals: 2,
+    bGoals: 1,
+    status: "pending_confirmation",
+    source: "fixture",
+    fixtureId: "fx1",
+    date: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+test("a fixture submission mirroring the dealt fixture is allowed", async () => {
+  await assertSucceeds(setDoc(doc(member(), "matches/fxm1"), fixtureMatch()));
+});
+
+test("a fixture submission with swapped teams is rejected", async () => {
+  await assertFails(
+    setDoc(
+      doc(member(), "matches/fxm2"),
+      fixtureMatch({
+        aTeamId: "team-b",
+        bTeamId: "team-a",
+        aTeam: "Royal Vega",
+        bTeam: "Crimson Albion",
+      }),
+    ),
+  );
+});
+
+test("an already-played fixture cannot be recorded again", async () => {
+  await assertFails(setDoc(doc(member(), "matches/fxm3"), fixtureMatch({ fixtureId: "fx2" })));
+});
+
+test("source 'fixture' without a fixtureId is rejected", async () => {
+  const { fixtureId: _omitted, ...withoutFixtureId } = fixtureMatch();
+  await assertFails(setDoc(doc(member(), "matches/fxm4"), withoutFixtureId));
+});
+
+test("fixtures are member-readable but never client-writable", async () => {
+  await assertSucceeds(getDoc(doc(member(), "fixtures/fx1")));
+  await assertFails(getDoc(doc(outsider(), "fixtures/fx1")));
+  await assertFails(
+    setDoc(doc(member(), "fixtures/hack"), {
+      seasonId: "s1",
+      aId: "alice",
+      bId: "dave",
+      aTeamId: "team-a",
+      bTeamId: "team-b",
+      status: "proposed",
     }),
   );
 });

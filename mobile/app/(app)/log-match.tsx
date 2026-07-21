@@ -272,8 +272,8 @@ export default function LogMatch() {
             size={13}
             style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}
           >
-            Snap the result screen, let the system deal a balanced matchup, or enter
-            everything manually.
+            Snap the result screen, let the system deal a balanced matchup, or enter everything
+            manually.
           </Txt>
           <View style={{ gap: spacing.md }}>
             <Pressable onPress={() => setMode("snap")} style={styles.modeCard}>
@@ -306,8 +306,8 @@ export default function LogMatch() {
                   Auto matchup
                 </Txt>
                 <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                  Pick an opponent and the system deals both teams, balanced to your ELOs.
-                  Play the fixture, then record the score.
+                  Pick an opponent and the system deals both teams, balanced to your ELOs. Play the
+                  fixture, then record the score.
                 </Txt>
               </View>
               <Icon name="chevron" size={16} color={colors.textDim} />
@@ -503,8 +503,8 @@ export default function LogMatch() {
                 <View style={styles.eloPreview}>
                   <Icon name="bolt" size={15} color={colors.accent} />
                   <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
-                    Dealt to level this matchup at your current ELOs. Play with these exact
-                    teams — the result won't record otherwise.
+                    Dealt to level this matchup at your current ELOs. Play with these exact teams —
+                    the result won't record otherwise.
                   </Txt>
                 </View>
                 {fixture.rerollCount < 1 ? (

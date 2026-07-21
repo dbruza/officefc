@@ -59,7 +59,9 @@ test("an extreme ELO gap clamps to the widest achievable in-window gap", () => {
     bElo: 1500,
   });
   assert.ok(aTeam.overall < bTeam.overall);
-  assert.ok(bTeam.overall - aTeam.overall >= FIXTURE_QUALITY_MAX - FIXTURE_QUALITY_MIN - FIXTURE_BAND);
+  assert.ok(
+    bTeam.overall - aTeam.overall >= FIXTURE_QUALITY_MAX - FIXTURE_QUALITY_MIN - FIXTURE_BAND,
+  );
 });
 
 test("recently used teams are avoided when alternatives exist", () => {

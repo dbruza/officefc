@@ -47,7 +47,10 @@ function fixturePayload(id: string, data: Record<string, unknown>) {
 
 /** Team ids `uid` used in their most recent season matches, newest first, capped at the
  *  novelty window. Voided matches still count — the team was played either way. */
-function recentTeamIds(matchDocs: Array<{ get(field: string): unknown }>, uid: string): Set<string> {
+function recentTeamIds(
+  matchDocs: Array<{ get(field: string): unknown }>,
+  uid: string,
+): Set<string> {
   const ids = new Set<string>();
   for (const doc of matchDocs) {
     if (ids.size >= FIXTURE_NOVELTY_WINDOW) break;
