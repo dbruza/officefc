@@ -346,6 +346,13 @@ function EloExplainPanel({ match }: { match: LeagueMatch }) {
           {ex.aTeamAdj !== 0 ? (
             <StatsRow label="Team handicap" a={signed(ex.aTeamAdj)} b={signed(ex.bTeamAdj)} />
           ) : null}
+          {ex.aPremierAdj !== 0 ? (
+            <StatsRow
+              label="Premier handicap"
+              a={signed(ex.aPremierAdj)}
+              b={signed(ex.bPremierAdj)}
+            />
+          ) : null}
           {provisional ? <StatsRow label="K-factor" a={kCell(ex.aK)} b={kCell(ex.bK)} /> : null}
           <StatsRow label="ELO change" a={signed(match.aDelta)} b={signed(match.bDelta)} />
         </View>

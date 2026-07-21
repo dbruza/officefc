@@ -54,6 +54,8 @@ function mapEloExplain(data: Record<string, unknown>): EloExplain | undefined {
     perfB: num(e.perfB),
     aTeamAdj: num(e.aTeamAdj),
     bTeamAdj: num(e.bTeamAdj),
+    aPremierAdj: num(e.aPremierAdj),
+    bPremierAdj: num(e.bPremierAdj),
     aK: num(e.aK),
     bK: num(e.bK),
   };

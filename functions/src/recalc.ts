@@ -29,10 +29,12 @@ export async function recalcSeasonElo(seasonId: string): Promise<void> {
   // Finals matches decide the bracket only — they never move ELO or the table.
   const regularDocs = matchSnaps.docs.filter((doc) => doc.get("finals") !== true);
   const matches = await seasonMatchInputsWithTeams(regularDocs, db);
+  const premierId = season.get("reigningPremierId");
   const result = calculateSeason(
     matches,
     members.docs.map((snap) => snap.id),
     dateMillis(season.get("start")),
+    { premierId: typeof premierId === "string" ? premierId : null },
   );
 
   const writer = db.bulkWriter();

@@ -2,6 +2,10 @@ export const BASE_ELO = 1500;
 export const ELO_K = 32;
 /** Elo points each FIFA team-overall point is worth when handicapping the expected score. */
 export const TEAM_ELO_PER_OVERALL = 12;
+/** Elo points added to the reigning Premier's effective rating for the expected-score
+ *  calculation. Like the team handicap it never accumulates into the stored rating — it
+ *  makes wins worth less and losses cost more for the previous season's table-topper. */
+export const PREMIER_HANDICAP_ELO = 100;
 
 /** Games a player must complete before they hold a ranked place in the standings. */
 export const MIN_RANKED_GAMES = 3;
@@ -38,7 +42,9 @@ export interface SeasonMatchInput {
 
 /** Per-match breakdown of how each side's Elo delta was produced, for the "why did my
  *  rating change?" UI. `teamAdj` is the net team-strength handicap (in Elo points) applied
- *  to that side's effective rating: positive means the stronger team, negative the weaker. */
+ *  to that side's effective rating: positive means the stronger team, negative the weaker.
+ *  `premierAdj` is the net reigning-Premier handicap in the same convention: +PREMIER_HANDICAP_ELO
+ *  on the title holder's side, the mirror image on their opponent's, 0/0 when neither holds it. */
 export interface EloExplain {
   aExpected: number;
   bExpected: number;
@@ -46,6 +52,8 @@ export interface EloExplain {
   perfB: number;
   aTeamAdj: number;
   bTeamAdj: number;
+  aPremierAdj: number;
+  bPremierAdj: number;
   aK: number;
   bK: number;
 }
@@ -157,6 +165,13 @@ function resultFor(goalsFor: number, goalsAgainst: number): MatchResult {
   return goalsFor > goalsAgainst ? "W" : goalsFor < goalsAgainst ? "L" : "D";
 }
 
+export interface SeasonCalcOptions {
+  /** Reigning Premier (previous season's table-topper; falls back to its champion for
+   *  table-format seasons). Their effective rating is raised by PREMIER_HANDICAP_ELO for
+   *  the expected-score calculation in every match they play. */
+  premierId?: string | null;
+}
+
 /**
  * Rebuild a season from confirmed matches only. Sorting by timestamp then document id
  * makes repeated recalculations deterministic, including matches logged in the same millisecond.
@@ -165,6 +180,7 @@ export function calculateSeason(
   inputMatches: SeasonMatchInput[],
   memberIds: string[],
   seasonStartMillis: number,
+  options?: SeasonCalcOptions,
 ): SeasonCalculation {
   const matches = [...inputMatches].sort(
     (a, b) => a.dateMillis - b.dateMillis || a.id.localeCompare(b.id),
@@ -203,8 +219,10 @@ export function calculateSeason(
       match.aTeamOverall,
       match.bTeamOverall,
     );
-    const aExpected = expectedScore(aEff, bEff);
-    const bExpected = expectedScore(bEff, aEff);
+    const premierA = options?.premierId === match.aId ? PREMIER_HANDICAP_ELO : 0;
+    const premierB = options?.premierId === match.bId ? PREMIER_HANDICAP_ELO : 0;
+    const aExpected = expectedScore(aEff + premierA, bEff + premierB);
+    const bExpected = expectedScore(bEff + premierB, aEff + premierA);
     const aDelta = Math.round(aK * (perfA - aExpected));
     const bDelta = Math.round(bK * (1 - perfA - bExpected));
     const aEloAfter = aEloBefore + aDelta;
@@ -254,6 +272,8 @@ export function calculateSeason(
         perfB: 1 - perfA,
         aTeamAdj,
         bTeamAdj,
+        aPremierAdj: premierA - premierB,
+        bPremierAdj: premierB - premierA,
         aK,
         bK,
       },
@@ -305,8 +325,9 @@ type MonthlyGains = Map<string, { totalGain: number; games: number; endingElo: n
  *  can never drift from the rating walk that produces the actual standings. */
 export function computePOTM(
   matches: SeasonMatchInput[],
+  options?: SeasonCalcOptions,
 ): Array<{ month: string; playerId: string; gain: number; games: number }> {
-  const { matches: calculated } = calculateSeason(matches, [], 0);
+  const { matches: calculated } = calculateSeason(matches, [], 0, options);
   const months = new Map<string, MonthlyGains>();
   const result: Array<{ month: string; playerId: string; gain: number; games: number }> = [];
 

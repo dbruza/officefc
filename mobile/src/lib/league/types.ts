@@ -151,6 +151,8 @@ export interface EloExplain {
   perfB: number;
   aTeamAdj: number;
   bTeamAdj: number;
+  aPremierAdj: number;
+  bPremierAdj: number;
   aK: number;
   bK: number;
 }

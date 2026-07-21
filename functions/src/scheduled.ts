@@ -51,10 +51,12 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
     db,
   );
 
+  const premierId = active.docs[0].get("reigningPremierId");
   const result = calculateSeason(
     matches,
     members.docs.map((s) => s.id),
     dateMillis(active.docs[0].get("start")),
+    { premierId: typeof premierId === "string" ? premierId : null },
   );
 
   const weekKey = getWeekKey(Date.now());

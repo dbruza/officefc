@@ -90,7 +90,12 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     runnerUpId = finalStandings[1]?.uid ?? null;
   }
 
-  const potmResults = computePOTM(matchInputs);
+  // POTM replays the season's rating walk, so it must see the same reigning-Premier
+  // handicap that recalcSeasonElo applied to this season's matches.
+  const reigningPremierId = data.reigningPremierId;
+  const potmResults = computePOTM(matchInputs, {
+    premierId: typeof reigningPremierId === "string" ? reigningPremierId : null,
+  });
 
   const writer = db.bulkWriter();
   writer.set(
@@ -185,12 +190,32 @@ export const activateSeason = loggedOnCall("activateSeason", { cors: true }, asy
   let joinCode = await readSeasonJoinCode(seasonId);
   if (!joinCode) joinCode = await generateUniqueJoinCode();
 
+  // Stamp the reigning Premier once, at first activation: the most recently finalized
+  // season's table-topper (its champion for table-format seasons) carries the
+  // PREMIER_HANDICAP_ELO handicap for this whole season. Never re-stamped on later
+  // activations, so mid-season recalcs stay deterministic.
+  let premierStamp = {};
+  if (snap.get("reigningPremierId") === undefined) {
+    const lastFinalized = await db
+      .collection("seasonResults")
+      .orderBy("finalizedAt", "desc")
+      .limit(1)
+      .get();
+    const last = lastFinalized.docs[0];
+    const titleHolder = last ? (last.get("premierId") ?? last.get("championId")) : null;
+    premierStamp = { reigningPremierId: typeof titleHolder === "string" ? titleHolder : null };
+  }
+
   const active = await db.collection("seasons").where("active", "==", true).get();
   const batch = db.batch();
   for (const doc of active.docs) {
     batch.update(doc.ref, { active: false });
   }
-  batch.update(ref, { active: true, activatedAt: FieldValue.serverTimestamp() });
+  batch.update(ref, {
+    active: true,
+    activatedAt: FieldValue.serverTimestamp(),
+    ...premierStamp,
+  });
   await batch.commit();
   await writeSeasonJoinCode(seasonId, joinCode);
   return { ok: true, seasonId };

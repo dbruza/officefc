@@ -11,6 +11,7 @@ import {
   getK,
   compareStandings,
   expectedScore,
+  PREMIER_HANDICAP_ELO,
 } from "../functions/lib/elo.js";
 
 // ---------------------------------------------------------------------------
@@ -489,4 +490,80 @@ test("calculateSeason: same-millisecond matches order deterministically by id, r
   // m1 (id-first) is processed before m2 whichever order they arrive in.
   assert.equal(rA.matches.find((m) => m.id === "m1").aEloBefore, 1500, "m1 replays first");
   assert.notEqual(rA.matches.find((m) => m.id === "m2").aEloBefore, 1500, "m2 replays second");
+});
+
+// ---------------------------------------------------------------------------
+// Reigning-Premier handicap
+// ---------------------------------------------------------------------------
+
+const PREMIER_MATCH = (aGoals, bGoals) => [
+  { id: "m1", aId: "p1", bId: "p2", aGoals, bGoals, dateMillis: 1000 },
+];
+
+test("premier handicap: title holder's win earns less, loss costs more", () => {
+  const win = calculateSeason(PREMIER_MATCH(3, 1), ["p1", "p2"], 0, { premierId: "p1" });
+  const winPlain = calculateSeason(PREMIER_MATCH(3, 1), ["p1", "p2"], 0);
+  assert.equal(winPlain.matches[0].aDelta, 10, "3-1 win without handicap");
+  assert.equal(win.matches[0].aDelta, 4, "3-1 win as reigning Premier earns less");
+
+  const loss = calculateSeason(PREMIER_MATCH(1, 3), ["p1", "p2"], 0, { premierId: "p1" });
+  const lossPlain = calculateSeason(PREMIER_MATCH(1, 3), ["p1", "p2"], 0);
+  assert.equal(lossPlain.matches[0].aDelta, -10, "1-3 loss without handicap");
+  assert.equal(loss.matches[0].aDelta, -16, "1-3 loss as reigning Premier costs more");
+});
+
+test("premier handicap: a draw moves rating against the title holder", () => {
+  const r = calculateSeason(PREMIER_MATCH(2, 2), ["p1", "p2"], 0, { premierId: "p1" });
+  assert.equal(r.matches[0].aDelta, -6, "Premier loses rating on a draw");
+  assert.equal(r.matches[0].bDelta, 6, "opponent gains rating for drawing the Premier");
+});
+
+test("premier handicap: expected score uses the shifted rating and eloExplain reports the net adj", () => {
+  const r = calculateSeason(PREMIER_MATCH(1, 1), ["p1", "p2"], 0, { premierId: "p2" });
+  const ex = r.matches[0].eloExplain;
+  // PREMIER_HANDICAP_ELO on B's side only: expected computed as 1500 vs 1500+100.
+  assert.equal(ex.bExpected, expectedScore(1500 + PREMIER_HANDICAP_ELO, 1500));
+  assert.equal(ex.aExpected, expectedScore(1500, 1500 + PREMIER_HANDICAP_ELO));
+  assert.equal(ex.aPremierAdj, -PREMIER_HANDICAP_ELO, "net adj is mirrored on the opponent");
+  assert.equal(ex.bPremierAdj, PREMIER_HANDICAP_ELO, "title holder carries the positive adj");
+});
+
+test("premier handicap: matches not involving the title holder are untouched", () => {
+  const r = calculateSeason(PREMIER_MATCH(2, 0), ["p1", "p2", "p3"], 0, { premierId: "p3" });
+  const plain = calculateSeason(PREMIER_MATCH(2, 0), ["p1", "p2", "p3"], 0);
+  assert.equal(r.matches[0].aDelta, plain.matches[0].aDelta);
+  assert.equal(r.matches[0].bDelta, plain.matches[0].bDelta);
+  assert.equal(r.matches[0].eloExplain.aPremierAdj, 0);
+  assert.equal(r.matches[0].eloExplain.bPremierAdj, 0);
+});
+
+test("premier handicap: stacks with the team-strength handicap", () => {
+  const r = calculateSeason(
+    [
+      {
+        id: "m1",
+        aId: "p1",
+        bId: "p2",
+        aGoals: 1,
+        bGoals: 1,
+        dateMillis: 1000,
+        aTeamOverall: 80,
+        bTeamOverall: 85,
+      },
+    ],
+    ["p1", "p2"],
+    0,
+    { premierId: "p1" },
+  );
+  const ex = r.matches[0].eloExplain;
+  // A: 1500 + 12*80 (team) + 100 (Premier); B: 1500 + 12*85 (team).
+  assert.equal(ex.aExpected, expectedScore(1500 + 12 * 80 + PREMIER_HANDICAP_ELO, 1500 + 12 * 85));
+  assert.equal(ex.aTeamAdj, 12 * (80 - 85), "team adj unchanged by the Premier handicap");
+  assert.equal(ex.aPremierAdj, PREMIER_HANDICAP_ELO);
+});
+
+test("premier handicap: absent or null premierId reproduces the unhandicapped season", () => {
+  const withNull = calculateSeason(PREMIER_MATCH(4, 2), ["p1", "p2"], 0, { premierId: null });
+  const without = calculateSeason(PREMIER_MATCH(4, 2), ["p1", "p2"], 0);
+  assert.deepEqual(withNull.matches, without.matches);
 });
