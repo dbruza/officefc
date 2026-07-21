@@ -28,6 +28,9 @@ export {
 // Auto-matchup fixtures (system-dealt teams)
 export { createFixture, consumeFixture } from "./fixtures";
 
+// Finals series (bracket lock, walkovers)
+export { startFinals, awardWalkover } from "./finals";
+
 // Read-model rebuild (ELO + stats materialization)
 export { rebuildLeagueReadModels } from "./readModels";
 

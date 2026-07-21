@@ -52,6 +52,24 @@ service cloud.firestore {
         && fixtureData(data.fixtureId).aTeamId == data.aTeamId
         && fixtureData(data.fixtureId).bTeamId == data.bTeamId;
     }
+    function finalsSlotData(data) {
+      return get(/databases/$(database)/documents/seasons/$(data.seasonId)/finals/bracket)
+        .data.slots[data.finalsSlot];
+    }
+    // A finals submission must mirror the open bracket tie exactly: the two players on
+    // their bracket sides with the equal teams the engine dealt. 'open' blocks double
+    // recording, and a level score is rejected outright — extra time and penalties
+    // always produce a winner on the console.
+    function honorsFinalsSlot(data) {
+      return finalsSlotData(data).status == 'open'
+        && finalsSlotData(data).homeId == data.aId
+        && finalsSlotData(data).awayId == data.bId
+        && finalsSlotData(data).homeTeamId == data.aTeamId
+        && finalsSlotData(data).awayTeamId == data.bTeamId
+        && data.aGoals != data.bGoals
+        && (!('decidedBy' in data)
+            || data.decidedBy in ['regulation', 'extra_time', 'penalties']);
+    }
 
     // Profiles: any member can read; you can always read your OWN profile (needed during
     // onboarding, before membership). You may write your own profile but never set your
@@ -125,7 +143,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'seasonId', 'submittedBy', 'aId', 'bId', 'aTeamId', 'bTeamId',
           'aTeam', 'bTeam', 'aGoals', 'bGoals', 'status', 'source', 'date', 'createdAt',
-          'fixtureId'
+          'fixtureId', 'finals', 'finalsSlot', 'decidedBy'
         ])
         && request.resource.data.submittedBy == uid()
         && (request.resource.data.aId == uid() || request.resource.data.bId == uid())
@@ -144,11 +162,22 @@ service cloud.firestore {
         && request.resource.data.status == 'pending_confirmation'
         && (
           (request.resource.data.source == 'manual'
-            && !('fixtureId' in request.resource.data))
+            && !('fixtureId' in request.resource.data)
+            && !('finals' in request.resource.data)
+            && !('finalsSlot' in request.resource.data)
+            && !('decidedBy' in request.resource.data))
           || (request.resource.data.source == 'fixture'
             && 'fixtureId' in request.resource.data
             && request.resource.data.fixtureId is string
+            && !('finals' in request.resource.data)
+            && !('finalsSlot' in request.resource.data)
+            && !('decidedBy' in request.resource.data)
             && honorsFixture(request.resource.data))
+          || (request.resource.data.source == 'finals'
+            && !('fixtureId' in request.resource.data)
+            && request.resource.data.finals == true
+            && request.resource.data.finalsSlot is string
+            && honorsFinalsSlot(request.resource.data))
         )
         && request.resource.data.date == request.time
         && request.resource.data.createdAt == request.time;

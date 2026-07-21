@@ -6,9 +6,13 @@
 import { getFirestore, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
 import { LEAGUE_ID } from "./config";
 import {
+  deriveFinalsResultActivity,
+  deriveFinalsSetActivity,
   deriveMatchActivity,
   deriveSeasonActivity,
   type ActivityEvent,
+  type FinalsResultActivityInput,
+  type FinalsSetActivityInput,
   type SeasonActivityInput,
 } from "./activity";
 
@@ -103,13 +107,29 @@ export async function emitMatchActivity(args: {
   await writeActivityEvents(db, events);
 }
 
-/** Emit champion + per-month POTM events when a season is finalized. */
+/** Emit champion + premier + per-month POTM events when a season is finalized. */
 export async function emitSeasonActivity(
   input: SeasonActivityInput,
   db?: Firestore,
 ): Promise<void> {
   const events = deriveSeasonActivity(input);
   await writeActivityEvents(db ?? getFirestore(), events);
+}
+
+/** Emit the bracket-locked announcement when finals start. */
+export async function emitFinalsSetActivity(
+  input: FinalsSetActivityInput,
+  db?: Firestore,
+): Promise<void> {
+  await writeActivityEvents(db ?? getFirestore(), deriveFinalsSetActivity(input));
+}
+
+/** Emit the result event for one decided finals tie. */
+export async function emitFinalsResultActivity(
+  input: FinalsResultActivityInput,
+  db?: Firestore,
+): Promise<void> {
+  await writeActivityEvents(db ?? getFirestore(), deriveFinalsResultActivity(input));
 }
 
 /** Backfill a single match's result event with its own timestamp; skips if it already exists. */

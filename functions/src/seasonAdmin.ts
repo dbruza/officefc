@@ -14,6 +14,14 @@ import {
 } from "./utils";
 import { sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
+import { applyFinalsResult } from "./finals";
+import {
+  bracketComplete,
+  bracketRunnerUpId,
+  type FinalsBracket,
+  type FinalsDecidedBy,
+  type FinalsSlotKey,
+} from "./finalsRules";
 
 const db = getFirestore();
 
@@ -44,10 +52,12 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     .where("seasonId", "==", seasonId)
     .where("status", "==", "confirmed")
     .get();
-  if (confirmed.empty)
+  // Finals matches decide the bracket only — they never feed POTM or the table.
+  const regularDocs = confirmed.docs.filter((doc) => doc.get("finals") !== true);
+  if (regularDocs.length === 0)
     throw new HttpsError("failed-precondition", "No confirmed matches in this season.");
 
-  const matchInputs = await seasonMatchInputsWithTeams(confirmed.docs, db);
+  const matchInputs = await seasonMatchInputsWithTeams(regularDocs, db);
 
   const standingsSnap = await db.collection(`seasons/${seasonId}/standings`).get();
   const finalStandings: Standing[] = standingsSnap.docs
@@ -56,21 +66,49 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     .filter((standing) => standing.rank >= 1)
     .sort((a, b) => a.rank - b.rank);
 
-  const championId = finalStandings[0]?.uid ?? null;
-  const runnerUpId = finalStandings[1]?.uid ?? null;
+  // Finals-format seasons: Champion = Grand Final winner, Premier = table-topper at the
+  // finals lock. Table-format seasons keep the original meaning (champion = rank 1).
+  const bracketSnap = await db.doc(`seasons/${seasonId}/finals/bracket`).get();
+  let championId: string | null;
+  let runnerUpId: string | null;
+  let premierId: string | null = null;
+  let format: "table" | "finals" = "table";
+  if (bracketSnap.exists) {
+    const bracket = bracketSnap.data() as unknown as FinalsBracket;
+    if (!bracketComplete(bracket)) {
+      throw new HttpsError(
+        "failed-precondition",
+        "The Grand Final is not decided yet. Finish the bracket (or award a walkover) first.",
+      );
+    }
+    championId = bracket.slots.gf?.winnerId ?? null;
+    runnerUpId = bracketRunnerUpId(bracket);
+    premierId = bracket.premierId;
+    format = "finals";
+  } else {
+    championId = finalStandings[0]?.uid ?? null;
+    runnerUpId = finalStandings[1]?.uid ?? null;
+  }
 
   const potmResults = computePOTM(matchInputs);
 
   const writer = db.bulkWriter();
   writer.set(
     ref,
-    { active: false, finalized: true, finalizedAt: FieldValue.serverTimestamp() },
+    {
+      active: false,
+      finalized: true,
+      finalizedAt: FieldValue.serverTimestamp(),
+      ...(format === "finals" ? { phase: "finalized" } : {}),
+    },
     { merge: true },
   );
   writer.set(db.doc(`seasonResults/${seasonId}`), {
     seasonId,
     championId,
     runnerUpId,
+    premierId,
+    format,
     finalizedAt: FieldValue.serverTimestamp(),
   });
   for (const potm of potmResults) {
@@ -88,6 +126,7 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     seasonName: String(data.name ?? seasonId),
     championId,
     runnerUpId,
+    premierId,
     potm: potmResults.map((potm) => ({
       month: potm.month,
       playerId: potm.playerId,
@@ -95,7 +134,7 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     })),
   });
 
-  return { ok: true, championId, runnerUpId, potmCount: potmResults.length };
+  return { ok: true, championId, runnerUpId, premierId, format, potmCount: potmResults.length };
 });
 
 export const createSeason = loggedOnCall("createSeason", { cors: true }, async (req) => {
@@ -267,6 +306,11 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
       bTeamId: String(data.bTeamId ?? ""),
       aTeam: String(data.aTeam ?? ""),
       bTeam: String(data.bTeam ?? ""),
+      aId: String(data.aId ?? ""),
+      bId: String(data.bId ?? ""),
+      finals: data.finals === true,
+      finalsSlot: typeof data.finalsSlot === "string" ? data.finalsSlot : null,
+      decidedBy: typeof data.decidedBy === "string" ? data.decidedBy : null,
     };
 
     if (action === "void") {
@@ -295,6 +339,12 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
         bGoals > 99
       ) {
         throw new HttpsError("invalid-argument", "Valid corrected score required.");
+      }
+      if (data.finals === true && aGoals === bGoals) {
+        throw new HttpsError(
+          "invalid-argument",
+          "Finals matches cannot end level — extra time and penalties decide a winner.",
+        );
       }
       tx.update(ref, {
         aGoals,
@@ -333,10 +383,25 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
   });
 
   if (action !== "void") {
-    const previousLeaderId = await topRankedLeaderId(db, previous.seasonId);
-    await recalcSeasonElo(previous.seasonId);
-    await recalcLeagueStats();
-    await emitMatchActivity({ db, matchId, seasonId: previous.seasonId, previousLeaderId });
+    if (previous.finals && previous.finalsSlot) {
+      // Admin-resolved finals matches advance the bracket; ELO/stats never see them.
+      // The draw guard above makes an equal confirmed score impossible.
+      const winnerId = previous.aGoals > previous.bGoals ? previous.aId : previous.bId;
+      await applyFinalsResult({
+        seasonId: previous.seasonId,
+        slotKey: previous.finalsSlot as FinalsSlotKey,
+        winnerId,
+        matchId,
+        decidedBy: (previous.decidedBy ?? "regulation") as FinalsDecidedBy,
+        winnerGoals: Math.max(previous.aGoals, previous.bGoals),
+        loserGoals: Math.min(previous.aGoals, previous.bGoals),
+      });
+    } else {
+      const previousLeaderId = await topRankedLeaderId(db, previous.seasonId);
+      await recalcSeasonElo(previous.seasonId);
+      await recalcLeagueStats();
+      await emitMatchActivity({ db, matchId, seasonId: previous.seasonId, previousLeaderId });
+    }
   }
 
   const opponentId = previous.submittedBy;

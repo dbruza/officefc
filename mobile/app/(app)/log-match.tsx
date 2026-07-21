@@ -14,12 +14,17 @@ import { useAuth } from "@/lib/auth";
 import {
   createFixture,
   getActiveSeason,
+  getBracket,
   getLeaguePlayers,
   getStandings,
   getTeams,
   previewElo,
+  submitFinalsMatch,
   submitFixtureMatch,
   submitManualMatch,
+  type FinalsBracket,
+  type FinalsDecidedBy,
+  type FinalsSlot,
   type Fixture,
   type LeaguePlayer,
   type Season,
@@ -32,14 +37,23 @@ import type { Player } from "@/types";
 
 const STEP_NAMES = ["Opponent", "Teams", "Score", "Review"];
 const AUTO_STEP_NAMES = ["Opponent", "Matchup", "Score", "Review"];
+const FINALS_STEP_NAMES = ["Tie", "Teams", "Score", "Review"];
+
+const DECIDED_BY_OPTIONS: Array<{ value: Exclude<FinalsDecidedBy, "walkover">; label: string }> = [
+  { value: "regulation", label: "Full time" },
+  { value: "extra_time", label: "Extra time" },
+  { value: "penalties", label: "Penalties" },
+];
 
 export default function LogMatch() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const [mode, setMode] = useState<"choose" | "manual" | "snap" | "auto">("choose");
+  const [mode, setMode] = useState<"choose" | "manual" | "snap" | "auto" | "finals">("choose");
   const [step, setStep] = useState(0);
   const [fixture, setFixture] = useState<Fixture | null>(null);
   const [dealing, setDealing] = useState(false);
+  const [bracket, setBracket] = useState<FinalsBracket | null>(null);
+  const [decidedBy, setDecidedBy] = useState<Exclude<FinalsDecidedBy, "walkover">>("regulation");
   const [season, setSeason] = useState<Season | null>(null);
   const [players, setPlayers] = useState<LeaguePlayer[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -62,7 +76,10 @@ export default function LogMatch() {
           setSeason(activeSeason);
           setPlayers(roster.filter((player) => player.id !== user?.uid));
           setTeams(teamList);
-          if (activeSeason) setStandings(await getStandings(activeSeason.id));
+          if (activeSeason) {
+            setStandings(await getStandings(activeSeason.id));
+            if (activeSeason.phase === "finals") setBracket(await getBracket(activeSeason.id));
+          }
           if (!activeSeason)
             setError("No active season yet. Ask an admin to initialize the league.");
           else if (teamList.length === 0) setError("No active teams are available yet.");
@@ -119,14 +136,28 @@ export default function LogMatch() {
         opponentGames,
       )
     : 0;
+  // The caller's open finals tie, if any — surfaces the finals card and locks the flow.
+  const myOpenSlot = useMemo(() => {
+    if (!bracket || !user) return null;
+    const keys = ["e1", "e2", "s1", "s2", "gf"] as const;
+    for (const key of keys) {
+      const slot = bracket.slots[key];
+      if (slot?.status === "open" && (slot.homeId === user.uid || slot.awayId === user.uid)) {
+        return slot;
+      }
+    }
+    return null;
+  }, [bracket, user]);
+
   const canContinue =
     (step === 0 && !!opponent) ||
     (step === 1 && !!myTeam && !!opponentTeam && (mode !== "auto" || (!!fixture && !dealing))) ||
-    step === 2 ||
+    (step === 2 && (mode !== "finals" || myGoals !== opponentGoals)) ||
     step === 3;
 
   function goBack() {
-    if (step === 0) setMode("choose");
+    // Finals mode enters directly at the score step; back exits to the mode chooser.
+    if (step === 0 || (mode === "finals" && step === 2)) setMode("choose");
     else setStep((current) => current - 1);
   }
 
@@ -184,6 +215,44 @@ export default function LogMatch() {
     }
   }
 
+  /** Resolve a bracket-slot side to a Team for the UI, mirroring fixtureTeam. */
+  function slotTeam(slot: FinalsSlot, wantHome: boolean): Team | null {
+    const id = wantHome ? slot.homeTeamId : slot.awayTeamId;
+    if (!id) return null;
+    const known = teams.find((team) => team.id === id);
+    if (known) return known;
+    return {
+      id,
+      name: (wantHome ? slot.homeTeamName : slot.awayTeamName) ?? id,
+      competition: "",
+      category: "men",
+      overall: wantHome ? slot.homeTeamOverall : slot.awayTeamOverall,
+      attack: null,
+      midfield: null,
+      defence: null,
+      catalogueVersion: null,
+      source: "catalogue",
+      catalogueActive: true,
+      active: true,
+    };
+  }
+
+  /** Enter finals mode: opponent and teams come from the open tie, straight to the score. */
+  function enterFinals() {
+    if (!myOpenSlot || !user) return;
+    const iAmHome = myOpenSlot.homeId === user.uid;
+    const oppId = iAmHome ? myOpenSlot.awayId : myOpenSlot.homeId;
+    setOpponent(players.find((player) => player.id === oppId) ?? null);
+    setMyTeam(slotTeam(myOpenSlot, iAmHome));
+    setOpponentTeam(slotTeam(myOpenSlot, !iAmHome));
+    setMyGoals(0);
+    setOpponentGoals(0);
+    setDecidedBy("regulation");
+    setError(null);
+    setStep(2);
+    setMode("finals");
+  }
+
   async function next() {
     if (!canContinue) return;
     if (step < 3) {
@@ -197,7 +266,18 @@ export default function LogMatch() {
     setSubmitting(true);
     setError(null);
     try {
-      if (mode === "auto") {
+      if (mode === "finals") {
+        if (!myOpenSlot) return;
+        const iAmHome = myOpenSlot.homeId === user.uid;
+        await submitFinalsMatch({
+          seasonId: season.id,
+          submittedBy: user.uid,
+          slot: myOpenSlot,
+          homeGoals: iAmHome ? myGoals : opponentGoals,
+          awayGoals: iAmHome ? opponentGoals : myGoals,
+          decidedBy,
+        });
+      } else if (mode === "auto") {
         if (!fixture) return;
         const mineIsA = fixture.aId === user.uid;
         await submitFixtureMatch({
@@ -276,6 +356,22 @@ export default function LogMatch() {
             manually.
           </Txt>
           <View style={{ gap: spacing.md }}>
+            {myOpenSlot ? (
+              <Pressable onPress={enterFinals} style={[styles.modeCard, styles.finalsCard]}>
+                <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.win, 0.12) }]}>
+                  <Icon name="trophy" size={28} color={colors.win} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Txt variant="head" size={16}>
+                    Record your {myOpenSlot.label}
+                  </Txt>
+                  <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
+                    Bracket tie with equal dealt teams. No ELO — the winner advances.
+                  </Txt>
+                </View>
+                <Icon name="chevron" size={16} color={colors.textDim} />
+              </Pressable>
+            ) : null}
             <Pressable onPress={() => setMode("snap")} style={styles.modeCard}>
               <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.accent, 0.12) }]}>
                 <Icon name="camera" size={28} color={colors.accent} />
@@ -370,20 +466,40 @@ export default function LogMatch() {
             {opponentGoals}
           </Txt>
           <Txt color={colors.textDim} style={{ textAlign: "center", lineHeight: 20 }}>
-            {opponent.name.split(" ")[0]} needs to confirm before this affects the table.
+            {mode === "finals"
+              ? `${opponent.name.split(" ")[0]} needs to confirm before the bracket advances.`
+              : `${opponent.name.split(" ")[0]} needs to confirm before this affects the table.`}
           </Txt>
           <Card style={styles.previewCard}>
-            <View>
-              <Txt variant="head" size={10.5} color={colors.textDim}>
-                ELO PREVIEW
-              </Txt>
-              <Txt variant="monoBold" size={19} style={{ marginTop: 4 }}>
-                {myElo + myDelta} <EloDelta delta={myDelta} />
-              </Txt>
-            </View>
-            <Txt size={12} color={colors.textFaint}>
-              pending
-            </Txt>
+            {mode === "finals" ? (
+              <>
+                <View>
+                  <Txt variant="head" size={10.5} color={colors.textDim}>
+                    FINALS RESULT
+                  </Txt>
+                  <Txt variant="bodyMedium" size={14} style={{ marginTop: 4 }}>
+                    No ELO change — bracket only
+                  </Txt>
+                </View>
+                <Txt size={12} color={colors.textFaint}>
+                  pending
+                </Txt>
+              </>
+            ) : (
+              <>
+                <View>
+                  <Txt variant="head" size={10.5} color={colors.textDim}>
+                    ELO PREVIEW
+                  </Txt>
+                  <Txt variant="monoBold" size={19} style={{ marginTop: 4 }}>
+                    {myElo + myDelta} <EloDelta delta={myDelta} />
+                  </Txt>
+                </View>
+                <Txt size={12} color={colors.textFaint}>
+                  pending
+                </Txt>
+              </>
+            )}
           </Card>
         </View>
         <View style={styles.footer}>
@@ -406,12 +522,24 @@ export default function LogMatch() {
             Log a match
           </Txt>
           <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
-            Step {step + 1} of 4 · {(mode === "auto" ? AUTO_STEP_NAMES : STEP_NAMES)[step]}
+            Step {step + 1} of 4 ·{" "}
+            {
+              (mode === "auto"
+                ? AUTO_STEP_NAMES
+                : mode === "finals"
+                  ? FINALS_STEP_NAMES
+                  : STEP_NAMES)[step]
+            }
           </Txt>
         </View>
       </View>
       <View style={styles.track}>
-        {(mode === "auto" ? AUTO_STEP_NAMES : STEP_NAMES).map((name, index) => (
+        {(mode === "auto"
+          ? AUTO_STEP_NAMES
+          : mode === "finals"
+            ? FINALS_STEP_NAMES
+            : STEP_NAMES
+        ).map((name, index) => (
           <View key={name} style={[styles.trackSegment, index <= step && styles.trackSegmentOn]} />
         ))}
       </View>
@@ -535,6 +663,15 @@ export default function LogMatch() {
         {step === 2 && opponent ? (
           <>
             <StepTitle>Final score</StepTitle>
+            {mode === "finals" && myOpenSlot ? (
+              <View style={styles.finalsBanner}>
+                <Icon name="trophy" size={15} color={colors.win} />
+                <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
+                  {myOpenSlot.label} — equal dealt teams, winner advances. Score after extra time
+                  counts; pick how it was decided below.
+                </Txt>
+              </View>
+            ) : null}
             <View style={styles.scoreRow}>
               <ScoreStepper
                 player={me}
@@ -552,15 +689,49 @@ export default function LogMatch() {
                 onChange={setOpponentGoals}
               />
             </View>
-            <View style={styles.eloPreview}>
-              <Icon name="bolt" size={15} color={colors.accent} />
-              <Txt size={12.5} color={colors.textDim}>
-                ELO swing preview
-              </Txt>
-              <View style={{ marginLeft: "auto" }}>
-                <EloDelta delta={myDelta} />
+            {mode === "finals" ? (
+              <>
+                <View style={styles.decidedByRow}>
+                  {DECIDED_BY_OPTIONS.map((option) => (
+                    <Pressable
+                      key={option.value}
+                      onPress={() => setDecidedBy(option.value)}
+                      style={[
+                        styles.decidedByChip,
+                        decidedBy === option.value && styles.decidedByChipActive,
+                      ]}
+                    >
+                      <Txt
+                        size={12}
+                        color={decidedBy === option.value ? colors.accent : colors.textDim}
+                      >
+                        {option.label}
+                      </Txt>
+                    </Pressable>
+                  ))}
+                </View>
+                {myGoals === opponentGoals ? (
+                  <Txt
+                    size={12}
+                    color={colors.loss}
+                    style={{ marginTop: spacing.md, textAlign: "center" }}
+                  >
+                    Finals can't end level — play extra time and penalties, then enter the decisive
+                    score.
+                  </Txt>
+                ) : null}
+              </>
+            ) : (
+              <View style={styles.eloPreview}>
+                <Icon name="bolt" size={15} color={colors.accent} />
+                <Txt size={12.5} color={colors.textDim}>
+                  ELO swing preview
+                </Txt>
+                <View style={{ marginLeft: "auto" }}>
+                  <EloDelta delta={myDelta} />
+                </View>
               </View>
-            </View>
+            )}
           </>
         ) : null}
 
@@ -584,23 +755,39 @@ export default function LogMatch() {
                 />
               </View>
               <View style={styles.divider} />
-              <View style={styles.reviewBottom}>
-                <View>
-                  <Txt variant="head" size={10.5} color={colors.textDim}>
-                    ELO CHANGE PREVIEW
-                  </Txt>
-                  <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 3 }}>
-                    Applies after opponent confirmation
-                  </Txt>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <EloDelta delta={myDelta} />
-                  <Txt variant="mono" size={11} color={colors.textDim} style={{ marginTop: 3 }}>
-                    opponent {opponentDelta >= 0 ? "+" : ""}
-                    {opponentDelta}
+              {mode === "finals" && myOpenSlot ? (
+                <View style={styles.reviewBottom}>
+                  <View>
+                    <Txt variant="head" size={10.5} color={colors.textDim}>
+                      {myOpenSlot.label.toUpperCase()}
+                    </Txt>
+                    <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 3 }}>
+                      Bracket advances after opponent confirmation
+                    </Txt>
+                  </View>
+                  <Txt variant="bodyMedium" size={12} color={colors.textDim}>
+                    {DECIDED_BY_OPTIONS.find((option) => option.value === decidedBy)?.label}
                   </Txt>
                 </View>
-              </View>
+              ) : (
+                <View style={styles.reviewBottom}>
+                  <View>
+                    <Txt variant="head" size={10.5} color={colors.textDim}>
+                      ELO CHANGE PREVIEW
+                    </Txt>
+                    <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 3 }}>
+                      Applies after opponent confirmation
+                    </Txt>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <EloDelta delta={myDelta} />
+                    <Txt variant="mono" size={11} color={colors.textDim} style={{ marginTop: 3 }}>
+                      opponent {opponentDelta >= 0 ? "+" : ""}
+                      {opponentDelta}
+                    </Txt>
+                  </View>
+                </View>
+              )}
             </Card>
           </>
         ) : null}
@@ -904,5 +1091,35 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
+  },
+  finalsCard: { borderColor: withAlpha(colors.win, 0.45) },
+  finalsBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.win, 0.3),
+    borderRadius: radius.md,
+    backgroundColor: withAlpha(colors.win, 0.07),
+  },
+  decidedByRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.x2,
+  },
+  decidedByChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+  },
+  decidedByChipActive: {
+    borderColor: withAlpha(colors.accent, 0.45),
+    backgroundColor: withAlpha(colors.accent, 0.08),
   },
 });

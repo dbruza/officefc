@@ -11,7 +11,10 @@ export type ActivityType =
   | "streak"
   | "new_number_one"
   | "potm"
-  | "champion";
+  | "champion"
+  | "premier"
+  | "finals_set"
+  | "finals_result";
 
 export interface ActivityEvent {
   /** Deterministic document id — re-deriving the same event yields the same id (idempotent). */
@@ -131,10 +134,13 @@ export interface SeasonActivityInput {
   seasonName: string;
   championId: string | null;
   runnerUpId: string | null;
+  /** Top of the ELO table for finals-format seasons; null/absent for table-format seasons
+   *  (there the champion IS the table-topper and no separate premier event is emitted). */
+  premierId?: string | null;
   potm: Array<{ month: string; playerId: string; gain: number }>;
 }
 
-/** Derive the season-finalization feed events: one champion, one POTM per month. */
+/** Derive the season-finalization feed events: champion, premier (finals format), POTM. */
 export function deriveSeasonActivity(input: SeasonActivityInput): ActivityEvent[] {
   const events: ActivityEvent[] = [];
   if (input.championId) {
@@ -150,6 +156,15 @@ export function deriveSeasonActivity(input: SeasonActivityInput): ActivityEvent[
       },
     });
   }
+  if (input.premierId) {
+    events.push({
+      id: `premier_${input.seasonId}`,
+      type: "premier",
+      seasonId: input.seasonId,
+      actorIds: [input.premierId],
+      payload: { playerId: input.premierId, seasonName: input.seasonName },
+    });
+  }
   for (const potm of input.potm) {
     events.push({
       id: `potm_${input.seasonId}_${potm.month}`,
@@ -160,4 +175,61 @@ export function deriveSeasonActivity(input: SeasonActivityInput): ActivityEvent[
     });
   }
   return events;
+}
+
+export interface FinalsSetActivityInput {
+  seasonId: string;
+  seasonName: string;
+  /** Seed order, best first. */
+  seedIds: string[];
+}
+
+/** Derive the "finals are set" announcement emitted when the bracket is locked. */
+export function deriveFinalsSetActivity(input: FinalsSetActivityInput): ActivityEvent[] {
+  return [
+    {
+      id: `finals_set_${input.seasonId}`,
+      type: "finals_set",
+      seasonId: input.seasonId,
+      actorIds: input.seedIds,
+      payload: { seedIds: input.seedIds, seasonName: input.seasonName },
+    },
+  ];
+}
+
+export interface FinalsResultActivityInput {
+  seasonId: string;
+  slotKey: string;
+  label: string;
+  round: "elimination" | "semi" | "final";
+  winnerId: string;
+  loserId: string;
+  /** Null for a walkover — there was no match. */
+  matchId: string | null;
+  winnerGoals: number | null;
+  loserGoals: number | null;
+  decidedBy: "regulation" | "extra_time" | "penalties" | "walkover";
+}
+
+/** Derive the feed event for one decided finals tie. */
+export function deriveFinalsResultActivity(input: FinalsResultActivityInput): ActivityEvent[] {
+  return [
+    {
+      id: `finals_${input.seasonId}_${input.slotKey}`,
+      type: "finals_result",
+      seasonId: input.seasonId,
+      actorIds: [input.winnerId, input.loserId],
+      payload: {
+        slotKey: input.slotKey,
+        label: input.label,
+        round: input.round,
+        winnerId: input.winnerId,
+        loserId: input.loserId,
+        matchId: input.matchId,
+        winnerGoals: input.winnerGoals,
+        loserGoals: input.loserGoals,
+        decidedBy: input.decidedBy,
+      },
+    },
+  ];
 }

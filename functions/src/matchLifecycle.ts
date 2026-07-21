@@ -6,6 +6,8 @@ import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "./auth";
 import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
 import { emitMatchActivity, topRankedLeaderId } from "./activityFeed";
+import { applyFinalsResult } from "./finals";
+import type { FinalsDecidedBy, FinalsSlotKey } from "./finalsRules";
 import { sendPush } from "./notify";
 import { responderRejection } from "./matchRules";
 
@@ -37,10 +39,36 @@ export const confirmMatch = loggedOnCall("confirmMatch", { cors: true }, async (
     return {
       seasonId: String(data.seasonId),
       submittedBy: String(data.submittedBy),
+      aId: String(data.aId),
+      bId: String(data.bId),
       aGoals: Number(data.aGoals),
       bGoals: Number(data.bGoals),
+      finals: data.finals === true,
+      finalsSlot: typeof data.finalsSlot === "string" ? data.finalsSlot : null,
+      decidedBy: typeof data.decidedBy === "string" ? data.decidedBy : null,
     };
   });
+
+  if (result.finals && result.finalsSlot) {
+    // Finals matches decide the bracket, never ELO/stats — rules guarantee no draws.
+    const winnerId = result.aGoals > result.bGoals ? result.aId : result.bId;
+    await applyFinalsResult({
+      seasonId: result.seasonId,
+      slotKey: result.finalsSlot as FinalsSlotKey,
+      winnerId,
+      matchId,
+      decidedBy: (result.decidedBy ?? "regulation") as FinalsDecidedBy,
+      winnerGoals: Math.max(result.aGoals, result.bGoals),
+      loserGoals: Math.min(result.aGoals, result.bGoals),
+    });
+    await sendPush(
+      result.submittedBy,
+      "Finals result confirmed",
+      `Your ${result.aGoals}-${result.bGoals} finals result is locked into the bracket.`,
+      { type: "match_confirmed", matchId },
+    );
+    return { ok: true };
+  }
 
   // Capture the season leader BEFORE recalc so a lead change can be detected after.
   const previousLeaderId = await topRankedLeaderId(db, result.seasonId);

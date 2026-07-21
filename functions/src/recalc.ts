@@ -26,7 +26,9 @@ export async function recalcSeasonElo(seasonId: string): Promise<void> {
   ]);
   if (!season.exists) throw new HttpsError("not-found", "Season not found.");
 
-  const matches = await seasonMatchInputsWithTeams(matchSnaps.docs, db);
+  // Finals matches decide the bracket only — they never move ELO or the table.
+  const regularDocs = matchSnaps.docs.filter((doc) => doc.get("finals") !== true);
+  const matches = await seasonMatchInputsWithTeams(regularDocs, db);
   const result = calculateSeason(
     matches,
     members.docs.map((snap) => snap.id),
@@ -93,20 +95,23 @@ export async function recalcLeagueStats(): Promise<void> {
     db.collection("playerStats").get(),
     db.collection("h2h").get(),
   ]);
-  const matches: ConfirmedMatchInput[] = matchSnaps.docs.map((snap) => {
-    const data = snap.data();
-    return {
-      id: snap.id,
-      seasonId: String(data.seasonId),
-      aId: String(data.aId),
-      bId: String(data.bId),
-      aGoals: Number(data.aGoals),
-      bGoals: Number(data.bGoals),
-      aDelta: Number(data.aDelta ?? 0),
-      bDelta: Number(data.bDelta ?? 0),
-      dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
-    };
-  });
+  const matches: ConfirmedMatchInput[] = matchSnaps.docs
+    // Finals matches decide the bracket only — excluded from playerStats and h2h.
+    .filter((snap) => snap.get("finals") !== true)
+    .map((snap) => {
+      const data = snap.data();
+      return {
+        id: snap.id,
+        seasonId: String(data.seasonId),
+        aId: String(data.aId),
+        bId: String(data.bId),
+        aGoals: Number(data.aGoals),
+        bGoals: Number(data.bGoals),
+        aDelta: Number(data.aDelta ?? 0),
+        bDelta: Number(data.bDelta ?? 0),
+        dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
+      };
+    });
   const result = deriveLeagueStats(
     matches,
     members.docs.map((snap) => snap.id),

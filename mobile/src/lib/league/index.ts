@@ -6,5 +6,6 @@ export * from "./standings";
 export * from "./headToHead";
 export * from "./matches";
 export * from "./fixtures";
+export * from "./finals";
 export * from "./activity";
 export * from "./setup";

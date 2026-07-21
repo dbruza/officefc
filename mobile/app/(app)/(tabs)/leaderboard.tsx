@@ -119,6 +119,24 @@ export default function Leaderboard() {
             </Pressable>
           ))}
         </ScrollView>
+        {selectedSeason?.active && selectedSeason.phase === "finals" ? (
+          <Pressable
+            onPress={() => router.push("/finals")}
+            style={styles.finalsBanner}
+            accessibilityRole="button"
+          >
+            <Icon name="trophy" size={20} color={colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="head" size={14}>
+                Finals are live
+              </Txt>
+              <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
+                The table is locked — the bracket decides the champion.
+              </Txt>
+            </View>
+            <Icon name="chevron" size={16} color={colors.textDim} />
+          </Pressable>
+        ) : null}
         <View style={styles.search}>
           <Icon name="search" size={16} color={colors.textDim} />
           <TextInput
@@ -245,6 +263,17 @@ const styles = StyleSheet.create({
   },
   seasonChipActive: { borderColor: colors.accent },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
+  finalsBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+  },
   search: {
     height: 44,
     flexDirection: "row",

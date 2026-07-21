@@ -5,6 +5,30 @@ import { timed } from "../logger";
 import { asDate, asNullableDate } from "./firestoreMap";
 import type { PotmResult, Season, SeasonResult } from "./types";
 
+function mapSeason(id: string, data: Record<string, unknown>): Season {
+  const phase = data.phase === "finals" || data.phase === "finalized" ? data.phase : "regular";
+  return {
+    id,
+    name: String(data.name),
+    year: Number(data.year),
+    start: asDate(data.start),
+    end: asDate(data.end),
+    active: data.active === true,
+    phase,
+  };
+}
+
+function mapSeasonResult(id: string, get: (field: string) => unknown): SeasonResult {
+  return {
+    seasonId: id,
+    championId: String(get("championId")),
+    runnerUpId: String(get("runnerUpId")),
+    premierId: typeof get("premierId") === "string" ? (get("premierId") as string) : null,
+    format: get("format") === "finals" ? "finals" : "table",
+    finalizedAt: asNullableDate(get("finalizedAt")),
+  };
+}
+
 export async function getActiveSeason(): Promise<Season | null> {
   return timed("getActiveSeason", async () => {
     const snap = await getDocs(
@@ -12,70 +36,34 @@ export async function getActiveSeason(): Promise<Season | null> {
     );
     const doc = snap.docs[0];
     if (!doc) return null;
-    const data = doc.data();
-    return {
-      id: doc.id,
-      name: String(data.name),
-      year: Number(data.year),
-      start: asDate(data.start),
-      end: asDate(data.end),
-      active: true,
-    };
+    return mapSeason(doc.id, doc.data());
   });
 }
 
 export async function getSeasons(): Promise<Season[]> {
   const snap = await getDocs(collection(db, "seasons"));
   return snap.docs
-    .map((seasonDoc) => {
-      const data = seasonDoc.data();
-      return {
-        id: seasonDoc.id,
-        name: String(data.name),
-        year: Number(data.year),
-        start: asDate(data.start),
-        end: asDate(data.end),
-        active: data.active === true,
-      };
-    })
+    .map((seasonDoc) => mapSeason(seasonDoc.id, seasonDoc.data()))
     .sort((a, b) => b.start.getTime() - a.start.getTime());
 }
 
 export async function getSeason(seasonId: string): Promise<Season | null> {
   const snap = await getDoc(doc(db, "seasons", seasonId));
   if (!snap.exists()) return null;
-  const data = snap.data();
-  return {
-    id: snap.id,
-    name: String(data.name),
-    year: Number(data.year),
-    start: asDate(data.start),
-    end: asDate(data.end),
-    active: data.active === true,
-  };
+  return mapSeason(snap.id, snap.data());
 }
 
 export async function getSeasonResult(seasonId: string): Promise<SeasonResult | null> {
   const snap = await getDoc(doc(db, "seasonResults", seasonId));
   if (!snap.exists()) return null;
-  return {
-    seasonId,
-    championId: String(snap.get("championId")),
-    runnerUpId: String(snap.get("runnerUpId")),
-    finalizedAt: asNullableDate(snap.get("finalizedAt")),
-  };
+  return mapSeasonResult(seasonId, (field) => snap.get(field));
 }
 
 /** All finalized season results, most recently finalized first. */
 export async function getSeasonResults(): Promise<SeasonResult[]> {
   const snap = await getDocs(collection(db, "seasonResults"));
   return snap.docs
-    .map((resultDoc) => ({
-      seasonId: resultDoc.id,
-      championId: String(resultDoc.get("championId")),
-      runnerUpId: String(resultDoc.get("runnerUpId")),
-      finalizedAt: asNullableDate(resultDoc.get("finalizedAt")),
-    }))
+    .map((resultDoc) => mapSeasonResult(resultDoc.id, (field) => resultDoc.get(field)))
     .sort((a, b) => (b.finalizedAt?.getTime() ?? 0) - (a.finalizedAt?.getTime() ?? 0));
 }
 

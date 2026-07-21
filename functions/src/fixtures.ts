@@ -47,7 +47,7 @@ function fixturePayload(id: string, data: Record<string, unknown>) {
 
 /** Team ids `uid` used in their most recent season matches, newest first, capped at the
  *  novelty window. Voided matches still count — the team was played either way. */
-function recentTeamIds(
+export function recentTeamIds(
   matchDocs: Array<{ get(field: string): unknown }>,
   uid: string,
 ): Set<string> {
@@ -61,6 +61,29 @@ function recentTeamIds(
     if (teamId) ids.add(teamId);
   }
   return ids;
+}
+
+/** Everything team-dealing needs for one season: the rated active-team pool and the
+ *  season's matches newest-first (for the novelty exclusion). Shared with finals dealing. */
+export async function loadDealingContext(seasonId: string): Promise<{
+  pool: FixtureTeam[];
+  seasonMatchesByDateDesc: Array<{ get(field: string): unknown }>;
+}> {
+  const [teamsSnap, seasonMatches] = await Promise.all([
+    db.collection("teams").where("active", "==", true).get(),
+    db.collection("matches").where("seasonId", "==", seasonId).get(),
+  ]);
+  const pool: FixtureTeam[] = teamsSnap.docs
+    .map((doc) => ({
+      id: doc.id,
+      name: String(doc.get("name") ?? doc.id),
+      overall: Number(doc.get("overall")),
+    }))
+    .filter((team) => Number.isFinite(team.overall));
+  const seasonMatchesByDateDesc = [...seasonMatches.docs].sort(
+    (a, b) => dateMillis(b.get("date")) - dateMillis(a.get("date")),
+  );
+  return { pool, seasonMatchesByDateDesc };
 }
 
 /**
@@ -97,24 +120,12 @@ export const createFixture = loggedOnCall("createFixture", { cors: true }, async
     throw new HttpsError("failed-precondition", "No rerolls left for this matchup.");
   }
 
-  const [aStanding, bStanding, teamsSnap, seasonMatches] = await Promise.all([
+  const [aStanding, bStanding, dealing] = await Promise.all([
     db.doc(`seasons/${seasonId}/standings/${uid}`).get(),
     db.doc(`seasons/${seasonId}/standings/${opponentId}`).get(),
-    db.collection("teams").where("active", "==", true).get(),
-    db.collection("matches").where("seasonId", "==", seasonId).get(),
+    loadDealingContext(seasonId),
   ]);
-
-  const pool: FixtureTeam[] = teamsSnap.docs
-    .map((doc) => ({
-      id: doc.id,
-      name: String(doc.get("name") ?? doc.id),
-      overall: Number(doc.get("overall")),
-    }))
-    .filter((team) => Number.isFinite(team.overall));
-
-  const byDateDesc = [...seasonMatches.docs].sort(
-    (a, b) => dateMillis(b.get("date")) - dateMillis(a.get("date")),
-  );
+  const { pool, seasonMatchesByDateDesc: byDateDesc } = dealing;
   const aRecent = recentTeamIds(byDateDesc, uid);
   const bRecent = recentTeamIds(byDateDesc, opponentId);
   // A reroll must actually change the deal: exclude the currently-dealt teams too.

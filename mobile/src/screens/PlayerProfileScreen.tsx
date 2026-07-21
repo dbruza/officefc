@@ -112,7 +112,15 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   const form = standing?.form ?? [];
   const isReigningChampion = seasonResults.length > 0 && uid === seasonResults[0].championId;
   const seasonsById = new Map(seasons.map((item) => [item.id, item]));
-  const titles = seasonResults.filter((result) => result.championId === uid);
+  // Honours: Champion (table-topper historically; Grand Final winner for finals-format
+  // seasons), Premier (finals-format table-topper), or The Double for both in one season.
+  const titles = seasonResults.flatMap((result) => {
+    const champion = result.championId === uid;
+    const premier = result.format === "finals" && result.premierId === uid;
+    const kind =
+      champion && premier ? "double" : champion ? "champion" : premier ? "premier" : null;
+    return kind ? [{ seasonId: result.seasonId, kind }] : [];
+  });
   const achievements = computeAchievements(uid, stats, matches);
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
   const recentMatches = matches.slice().reverse();
@@ -318,20 +326,45 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                 <View style={{ gap: spacing.sm }}>
                   {titles.map((title) => {
                     const titleSeason = seasonsById.get(title.seasonId);
+                    const label =
+                      title.kind === "double"
+                        ? "The Double"
+                        : title.kind === "premier"
+                          ? "Premier"
+                          : "Champion";
+                    const sub =
+                      title.kind === "double"
+                        ? "Premier + Champion"
+                        : title.kind === "premier"
+                          ? "Top of the table"
+                          : "League title";
                     return (
-                      <View key={title.seasonId} style={styles.titleRow}>
+                      <View key={`${title.seasonId}-${title.kind}`} style={styles.titleRow}>
                         <View style={styles.trophyTile}>
-                          <Icon name="trophy" size={18} color={colors.gold} />
+                          <Icon
+                            name={
+                              title.kind === "double"
+                                ? "crown"
+                                : title.kind === "premier"
+                                  ? "medal"
+                                  : "trophy"
+                            }
+                            size={18}
+                            color={colors.gold}
+                          />
                         </View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <Txt variant="bodyMedium" size={13.5} numberOfLines={1}>
-                            {titleSeason?.name ?? "Season"} Champion
+                            {titleSeason?.name ?? "Season"} {label}
                           </Txt>
                           <Txt variant="mono" size={10.5} color={colors.textDim}>
-                            {titleSeason ? `${titleSeason.year} · ` : ""}League title
+                            {titleSeason ? `${titleSeason.year} · ` : ""}
+                            {sub}
                           </Txt>
                         </View>
-                        {isReigningChampion && title.seasonId === seasonResults[0]?.seasonId ? (
+                        {isReigningChampion &&
+                        title.kind !== "premier" &&
+                        title.seasonId === seasonResults[0]?.seasonId ? (
                           <View style={styles.reigning}>
                             <Txt variant="monoBold" size={8} color={colors.gold}>
                               REIGNING

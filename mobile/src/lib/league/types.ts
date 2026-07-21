@@ -8,13 +8,51 @@ export interface Season {
   start: Date;
   end: Date;
   active: boolean;
+  /** "finals" once the bracket is locked; absent/"regular" during the home-and-away rounds. */
+  phase: "regular" | "finals" | "finalized";
 }
 
 export interface SeasonResult {
   seasonId: string;
   championId: string;
   runnerUpId: string;
+  /** Table-topper at the finals lock — only finals-format seasons have one. */
+  premierId: string | null;
+  /** "finals" = champion won the Grand Final; "table" = champion topped the table (legacy). */
+  format: "table" | "finals";
   finalizedAt: Date | null;
+}
+
+export type FinalsSlotKey = "e1" | "e2" | "s1" | "s2" | "gf";
+export type FinalsDecidedBy = "regulation" | "extra_time" | "penalties" | "walkover";
+
+export interface FinalsSlot {
+  key: FinalsSlotKey;
+  round: "elimination" | "semi" | "final";
+  label: string;
+  homeSeed: number | null;
+  awaySeed: number | null;
+  homeFrom: FinalsSlotKey | null;
+  awayFrom: FinalsSlotKey | null;
+  homeId: string | null;
+  awayId: string | null;
+  homeTeamId: string | null;
+  homeTeamName: string | null;
+  homeTeamOverall: number | null;
+  awayTeamId: string | null;
+  awayTeamName: string | null;
+  awayTeamOverall: number | null;
+  status: "pending" | "open" | "decided";
+  matchId: string | null;
+  winnerId: string | null;
+  decidedBy: FinalsDecidedBy | null;
+}
+
+export interface FinalsBracket {
+  structure: "top6" | "top4" | "top2";
+  seeds: Array<{ uid: string; rank: number; elo: number }>;
+  premierId: string;
+  slots: Partial<Record<FinalsSlotKey, FinalsSlot>>;
 }
 
 export interface PotmResult {

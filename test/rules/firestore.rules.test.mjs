@@ -100,6 +100,21 @@ beforeEach(async () => {
       bTeamId: "team-b",
       status: "submitted",
     });
+    // Finals bracket: e1 is an open tie (alice v dave), gf not yet reachable.
+    await setDoc(doc(db, "seasons/s1/finals/bracket"), {
+      structure: "top6",
+      premierId: "alice",
+      slots: {
+        e1: {
+          status: "open",
+          homeId: "alice",
+          awayId: "dave",
+          homeTeamId: "team-a",
+          awayTeamId: "team-b",
+        },
+        gf: { status: "pending", homeId: null, awayId: null, homeTeamId: null, awayTeamId: null },
+      },
+    });
     await setDoc(doc(db, "activity/result_m1"), {
       type: "match_result",
       leagueId: "office",
@@ -260,8 +275,66 @@ test("an already-played fixture cannot be recorded again", async () => {
 });
 
 test("source 'fixture' without a fixtureId is rejected", async () => {
-  const { fixtureId: _omitted, ...withoutFixtureId } = fixtureMatch();
+  const withoutFixtureId = fixtureMatch();
+  delete withoutFixtureId.fixtureId;
   await assertFails(setDoc(doc(member(), "matches/fxm4"), withoutFixtureId));
+});
+
+function finalsMatch(overrides = {}) {
+  return {
+    seasonId: "s1",
+    submittedBy: "alice",
+    aId: "alice",
+    bId: "dave",
+    aTeamId: "team-a",
+    bTeamId: "team-b",
+    aTeam: "Crimson Albion",
+    bTeam: "Royal Vega",
+    aGoals: 3,
+    bGoals: 2,
+    status: "pending_confirmation",
+    source: "finals",
+    finals: true,
+    finalsSlot: "e1",
+    decidedBy: "penalties",
+    date: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    ...overrides,
+  };
+}
+
+test("a finals submission mirroring the open bracket tie is allowed", async () => {
+  await assertSucceeds(setDoc(doc(member(), "matches/fnm1"), finalsMatch()));
+});
+
+test("a level finals score is rejected — extra time and pens decide it", async () => {
+  await assertFails(setDoc(doc(member(), "matches/fnm2"), finalsMatch({ aGoals: 2, bGoals: 2 })));
+});
+
+test("a finals submission with the wrong teams is rejected", async () => {
+  await assertFails(
+    setDoc(
+      doc(member(), "matches/fnm3"),
+      finalsMatch({
+        aTeamId: "team-b",
+        bTeamId: "team-a",
+        aTeam: "Royal Vega",
+        bTeam: "Crimson Albion",
+      }),
+    ),
+  );
+});
+
+test("a finals submission for a not-yet-open slot is rejected", async () => {
+  await assertFails(setDoc(doc(member(), "matches/fnm4"), finalsMatch({ finalsSlot: "gf" })));
+});
+
+test("client-side walkover is not a valid decidedBy", async () => {
+  await assertFails(setDoc(doc(member(), "matches/fnm5"), finalsMatch({ decidedBy: "walkover" })));
+});
+
+test("manual submissions cannot smuggle finals fields", async () => {
+  await assertFails(setDoc(doc(member(), "matches/fnm6"), finalsMatch({ source: "manual" })));
 });
 
 test("fixtures are member-readable but never client-writable", async () => {

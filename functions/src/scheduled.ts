@@ -45,7 +45,11 @@ export const weeklySnapshot = onSchedule("0 0 * * 0", async () => {
     db.collection(`seasons/${seasonId}/snapshots`).get(),
   ]);
 
-  const matches = await seasonMatchInputsWithTeams(matchSnaps.docs, db);
+  // Finals matches decide the bracket only — exclude them like every other ELO consumer.
+  const matches = await seasonMatchInputsWithTeams(
+    matchSnaps.docs.filter((doc) => doc.get("finals") !== true),
+    db,
+  );
 
   const result = calculateSeason(
     matches,

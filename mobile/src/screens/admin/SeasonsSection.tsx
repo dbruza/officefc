@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, TextInput, View } from "react-native";
 import { Button, Card, Txt } from "@/components";
-import { createSeason, activateSeason, finalizeSeason, listSeasons } from "@/lib/league";
+import {
+  createSeason,
+  activateSeason,
+  finalizeSeason,
+  listSeasons,
+  startFinals,
+} from "@/lib/league";
 import { colors, spacing } from "@/theme";
 import { showAlert } from "@/lib/dialogs";
 import { errorMessage, formStyles } from "./common";
 
-type Season = { id: string; name: string; active: boolean; finalized: boolean };
+type Season = {
+  id: string;
+  name: string;
+  active: boolean;
+  finalized: boolean;
+  phase?: string;
+};
 
 export function SeasonsSection() {
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -116,7 +128,13 @@ export function SeasonsSection() {
                 {s.name}
               </Txt>
               <Txt size={11} color={colors.textDim} style={{ marginTop: 2 }}>
-                {s.active ? "Active" : s.finalized ? "Finalized" : "Inactive"}
+                {s.active
+                  ? s.phase === "finals"
+                    ? "Active · Finals"
+                    : "Active"
+                  : s.finalized
+                    ? "Finalized"
+                    : "Inactive"}
               </Txt>
             </View>
             <View style={{ flexDirection: "row", gap: spacing.sm }}>
@@ -125,11 +143,32 @@ export function SeasonsSection() {
                   size="sm"
                   variant="dark"
                   onPress={async () => {
-                    await activateSeason(s.id);
+                    try {
+                      await activateSeason(s.id);
+                    } catch (error: unknown) {
+                      showAlert("Error", errorMessage(error));
+                    }
                     load();
                   }}
                 >
                   Activate
+                </Button>
+              ) : null}
+              {s.active && s.phase !== "finals" ? (
+                <Button
+                  size="sm"
+                  variant="dark"
+                  onPress={async () => {
+                    try {
+                      // Locks the top-6 seeds and the Premier; the bracket takes over.
+                      await startFinals(s.id);
+                    } catch (error: unknown) {
+                      showAlert("Error", errorMessage(error));
+                    }
+                    load();
+                  }}
+                >
+                  Start finals
                 </Button>
               ) : null}
               {s.active ? (
@@ -137,7 +176,11 @@ export function SeasonsSection() {
                   size="sm"
                   variant="dark"
                   onPress={async () => {
-                    await finalizeSeason(s.id);
+                    try {
+                      await finalizeSeason(s.id);
+                    } catch (error: unknown) {
+                      showAlert("Error", errorMessage(error));
+                    }
                     load();
                   }}
                 >
