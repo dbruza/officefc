@@ -14,6 +14,38 @@ export const DEFAULT_SLOW_MS = 1500;
 /** Startup is naturally slower than a single read (cold start + auth restore + reads). */
 export const STARTUP_SLOW_MS = 4000;
 
+/** Event names shared between the emitters and the Sentry dedupe rule — never inline these. */
+export const UNCAUGHT_ERROR_EVENT = "uncaught_error";
+export const RENDER_ERROR_EVENT = "render_error";
+
+/** Matches Sentry's SeverityLevel strings without importing the SDK into this pure module. */
+export type SentryBreadcrumbLevel = "debug" | "info" | "warning" | "error";
+
+/** Errors Sentry already captures with real stack traces (global handler / error boundary) —
+ *  forwarding them again as messages would file duplicate, worse-grouped issues. */
+const SENTRY_CAPTURED_ELSEWHERE: ReadonlySet<string> = new Set([
+  UNCAUGHT_ERROR_EVENT,
+  RENDER_ERROR_EVENT,
+]);
+
+const SENTRY_LEVELS: Record<LogLevel, SentryBreadcrumbLevel> = {
+  debug: "debug",
+  info: "info",
+  warn: "warning",
+  error: "error",
+};
+
+/** Pure: how a log entry maps onto Sentry — breadcrumb level, and whether to file an issue. */
+export function sentryPlanForLog(
+  level: LogLevel,
+  event: string,
+): { breadcrumbLevel: SentryBreadcrumbLevel; captureAsMessage: boolean } {
+  return {
+    breadcrumbLevel: SENTRY_LEVELS[level],
+    captureAsMessage: level === "error" && !SENTRY_CAPTURED_ELSEWHERE.has(event),
+  };
+}
+
 const REDACT_KEY = /token|secret|password|auth|email|credential|cookie|key/i;
 const MAX_CONTEXT_KEYS = 20;
 const MAX_STRING_LEN = 500;

@@ -5,6 +5,7 @@ import {
   type CallableOptions,
 } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
+import { captureServerFault } from "./sentry";
 
 /** Functions error codes we treat as *expected* client-facing rejections, not server faults. */
 const EXPECTED_CODES = new Set([
@@ -37,6 +38,7 @@ type LoggerLike = {
 interface InstrumentDeps {
   log?: LoggerLike;
   now?: () => number;
+  capture?: typeof captureServerFault;
 }
 
 /**
@@ -50,6 +52,7 @@ export function instrumentCallable<R>(
 ): (req: CallableRequest) => Promise<R> {
   const log = deps.log ?? logger;
   const now = deps.now ?? Date.now;
+  const capture = deps.capture ?? captureServerFault;
   return async (req: CallableRequest): Promise<R> => {
     const start = now();
     const uid = req.auth?.uid ?? null;
@@ -77,6 +80,14 @@ export function instrumentCallable<R>(
           uid,
           durationMs,
         });
+        // Server faults only (expected rejections stay out of Sentry); awaited because a
+        // background send can be lost when the instance freezes after the response. Guarded
+        // (incl. sync throws) so a faulty capture impl can never replace the original error.
+        try {
+          await capture(error, { fn: name, uid, durationMs });
+        } catch {
+          // Reporting must never mask the original failure.
+        }
       }
       throw error;
     }

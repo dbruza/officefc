@@ -35,6 +35,11 @@ Set `EXPO_PUBLIC_USE_EMULATORS=1` to point Auth/Firestore/Storage/Functions at t
 **Firebase Emulator Suite** (run `firebase emulators:start` from the repo root; needs
 `firebase-tools` installed).
 
+`EXPO_PUBLIC_SENTRY_DSN` / `EXPO_PUBLIC_SENTRY_ENV` control Sentry crash reporting (also a
+public identifier). Leave the DSN empty to keep Sentry off; it is disabled in dev builds
+regardless. Native builds take these from `eas.json`; see
+[`../docs/firebase-setup.md`](../docs/firebase-setup.md) for the full observability setup.
+
 ## Layout
 
 ```
@@ -60,7 +65,8 @@ src/
   components/        ← UI primitives (Txt, Avatar, StatCard, PlayerRow, LineChart,
                        Button, Icon, Card, chips, SnapFlow, etc.)
   lib/               ← auth, league data access, notifications, upload, profiles,
-                       membership, constants, formatting, color math
+                       membership, constants, formatting, color math, logging
+                       (logger/ → Cloud Logging, sentry.ts → crash reporting)
   types.ts           ← shared domain types
 assets/              ← app icon / splash / favicon
 ```

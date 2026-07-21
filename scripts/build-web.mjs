@@ -8,6 +8,9 @@ const result = spawnSync("npm", ["--prefix", "mobile", "run", "export:web"], {
     ...process.env,
     NODE_ENV: "production",
     EXPO_PUBLIC_USE_EMULATORS: "0",
+    // mobile/.env carries EXPO_PUBLIC_SENTRY_ENV=development for local dev; the production
+    // web bundle must never inherit that label or web events land in the wrong environment.
+    EXPO_PUBLIC_SENTRY_ENV: "production",
   },
   stdio: "inherit",
 });

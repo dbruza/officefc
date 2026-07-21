@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import * as Sentry from "@sentry/react-native";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 import {
@@ -7,12 +8,13 @@ import {
   sanitizeContext,
   extractDuration,
   isSlow,
+  sentryPlanForLog,
   DEFAULT_SLOW_MS,
   type LogEntry,
   type LogLevel,
 } from "./core";
 
-export { STARTUP_SLOW_MS } from "./core";
+export { STARTUP_SLOW_MS, UNCAUGHT_ERROR_EVENT, RENDER_ERROR_EVENT } from "./core";
 
 // React Native / Expo define this global at runtime; declare it for the type checker.
 declare const __DEV__: boolean;
@@ -30,6 +32,7 @@ let ctxRoute: string | null = null;
 /** Wired from the auth provider so every entry carries the signed-in uid. */
 export function setLogUid(uid: string | null): void {
   ctxUid = uid;
+  Sentry.setUser(uid ? { id: uid } : null);
   if (uid) void flush(); // drain anything buffered before sign-in
 }
 
@@ -58,6 +61,24 @@ function emit(level: LogLevel, event: string, context?: unknown): void {
   if (level === "error") console.error(`[${event}]`, entry.context);
   else if (level === "warn") console.warn(`[${event}]`, entry.context);
   else if (__DEV__) console.log(`[${level}] ${event}`, entry.context);
+
+  // Every log is a Sentry breadcrumb (context trailing a crash); error-level events are
+  // also filed as issues, fingerprinted by event name so grouping follows our taxonomy.
+  // The mapping/dedupe decision lives in core.ts (sentryPlanForLog) where it is unit-tested.
+  const plan = sentryPlanForLog(level, event);
+  Sentry.addBreadcrumb({
+    category: "log",
+    message: event,
+    level: plan.breadcrumbLevel,
+    data: entry.context,
+  });
+  if (plan.captureAsMessage) {
+    Sentry.captureMessage(event, {
+      level: "error",
+      extra: entry.context,
+      fingerprint: ["log", event],
+    });
+  }
 
   if (REMOTE_ENABLED && (level === "warn" || level === "error")) {
     buffer.push(entry);

@@ -66,6 +66,13 @@
         {
           "color": "#00ff87"
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "david-b-z0",
+          "project": "officefc-mobile"
+        }
       ]
     ],
     "experiments": {

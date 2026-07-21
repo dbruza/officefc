@@ -1,4 +1,4 @@
-import { logger, flush } from "./index";
+import { logger, flush, UNCAUGHT_ERROR_EVENT } from "./index";
 
 let installed = false;
 
@@ -18,7 +18,7 @@ export function installGlobalErrorLogging(): void {
   const prev = errorUtils?.getGlobalHandler?.();
   errorUtils?.setGlobalHandler?.((error, isFatal) => {
     try {
-      logger.error("uncaught_error", {
+      logger.error(UNCAUGHT_ERROR_EVENT, {
         isFatal: !!isFatal,
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,

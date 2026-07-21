@@ -9,14 +9,20 @@
       "distribution": "internal",
       "environment": "development",
       "env": {
-        "EXPO_PUBLIC_USE_EMULATORS": "0"
+        "EXPO_PUBLIC_USE_EMULATORS": "0",
+        "EXPO_PUBLIC_SENTRY_ENV": "development",
+        "EXPO_PUBLIC_SENTRY_DSN": "",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "preview": {
       "distribution": "internal",
       "environment": "preview",
       "env": {
-        "EXPO_PUBLIC_USE_EMULATORS": "0"
+        "EXPO_PUBLIC_USE_EMULATORS": "0",
+        "EXPO_PUBLIC_SENTRY_ENV": "preview",
+        "EXPO_PUBLIC_SENTRY_DSN": "",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
@@ -24,7 +30,10 @@
       "environment": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_USE_EMULATORS": "0"
+        "EXPO_PUBLIC_USE_EMULATORS": "0",
+        "EXPO_PUBLIC_SENTRY_ENV": "production",
+        "EXPO_PUBLIC_SENTRY_DSN": "",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   },

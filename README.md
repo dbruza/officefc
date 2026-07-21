@@ -25,6 +25,7 @@ scheduled jobs.
 - Private match-photo storage with temporary signed access
 - Admin tools for seasons, teams, invites, disputes, and catalogue synchronization
 - Push reminders, weekly snapshots, and abandoned-draft cleanup
+- Sentry crash and error reporting across the app and Cloud Functions
 - Responsive Expo app targeting web, iOS, and Android
 
 ## Technology
@@ -34,6 +35,7 @@ scheduled jobs.
 | App | Expo 56, React Native, Expo Router, TypeScript |
 | Backend | Firebase Auth, Firestore, Storage, Cloud Functions |
 | AI assist | Anthropic vision extraction with human review |
+| Observability | Sentry (app and functions), Google Cloud Logging |
 | Quality | Node test runner, Firebase Rules Unit Testing, ESLint, Prettier |
 | Delivery | Firebase Hosting, EAS configuration, GitHub Actions |
 

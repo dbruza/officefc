@@ -147,6 +147,10 @@ production data as a rollback mechanism.
 - Firebase Console -> Functions: confirm `cleanupAbandonedDrafts` is scheduled daily and
   `sendReminders`/`weeklySnapshot` are healthy.
 - Cloud Logging: monitor extraction failures, rate limits, and scheduled cleanup errors.
+- Sentry: once DSNs are provisioned (mobile `eas.json`/`.env`, functions `.env` — see
+  [firebase-setup.md](firebase-setup.md)), watch the `officefc-mobile` and
+  `officefc-functions` projects for new issues. Until then Sentry is dormant and a
+  `sentry_disabled` warning appears in Cloud Logging.
 - Firebase Usage and billing: set budget alerts for the project.
 - Rotate `ANTHROPIC_API_KEY` immediately if exposed, then redeploy Functions.
 - Keep native/EAS configuration buildable, but do not include App Store or Play Store work

@@ -109,6 +109,28 @@ UI shows the same entries locally).
   `mobile/src/lib/logger`; the server-side caps (batch size, byte limits, per-uid rate limit)
   live in `functions/src/clientLogs`.
 
-Future hardening — reliable fatal-crash capture (a native crash reporter) and App Check for
-the sink — is documented in
-`docs/superpowers/specs/2026-06-15-firebase-logging-observability-design.md`.
+### Sentry crash and fault reporting
+
+Sentry sits alongside Cloud Logging (added in v1.1.0.0):
+
+- **Mobile** (`mobile/src/lib/sentry.ts`): captures native and fatal JS crashes, render
+  errors, and error-level log events; every log entry also becomes a breadcrumb. Configure
+  with `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_SENTRY_ENV` (`mobile/.env` for local dev
+  and the web deploy, `mobile/eas.json` for native builds). Disabled in dev builds.
+- **Functions** (`functions/src/sentry.ts`): callables report unexpected server faults
+  with function name, uid, and duration; scheduled jobs and Firestore triggers report with
+  the function name (expected `HttpsError` rejections are never sent, and the one-off
+  `backfillSeasonCodes` migration endpoint is not instrumented). Configure with
+  `SENTRY_DSN` in `functions/.env` on the deploying machine (copy
+  `functions/.env.example`). Disabled in the emulator.
+- **Dormant by default:** DSNs are public identifiers, not secrets, but they ship empty.
+  With no DSN, captures no-op and a `sentry_disabled` warning is logged so the dormant
+  state stays visible.
+- **Source maps:** `mobile/metro.config.js` wraps the Expo Metro config so bundles carry
+  debug IDs. Automatic source-map upload is off in every EAS profile
+  (`SENTRY_DISABLE_AUTO_UPLOAD=true` in `mobile/eas.json`); symbolicated native releases
+  need a `SENTRY_AUTH_TOKEN` **and** that flag removed or set to `false`.
+
+Future hardening — App Check for the `ingestLog` sink — is documented in
+`docs/superpowers/specs/2026-06-15-firebase-logging-observability-design.md`. The other
+item from that spec, reliable fatal-crash capture, shipped via Sentry in v1.1.0.0.

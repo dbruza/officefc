@@ -1,6 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sanitizeContext, LogBuffer, isSlow, extractDuration } from "./core";
+import {
+  sanitizeContext,
+  LogBuffer,
+  isSlow,
+  extractDuration,
+  sentryPlanForLog,
+  UNCAUGHT_ERROR_EVENT,
+  RENDER_ERROR_EVENT,
+} from "./core";
 
 test("sanitizeContext keeps bounded scalars and redacts sensitive keys", () => {
   const out = sanitizeContext({ uid: "u1", count: 3, ok: true, authToken: "secret", note: null });
@@ -51,4 +59,25 @@ test("extractDuration leaves context untouched when durationMs is absent", () =>
   const r = extractDuration({ label: "x" });
   assert.equal(r.durationMs, undefined);
   assert.deepEqual(r.context, { label: "x" });
+});
+
+test("sentryPlanForLog maps every level to its Sentry breadcrumb level", () => {
+  assert.equal(sentryPlanForLog("debug", "read").breadcrumbLevel, "debug");
+  assert.equal(sentryPlanForLog("info", "read").breadcrumbLevel, "info");
+  assert.equal(sentryPlanForLog("warn", "slow_read").breadcrumbLevel, "warning");
+  assert.equal(sentryPlanForLog("error", "save_failed").breadcrumbLevel, "error");
+});
+
+test("sentryPlanForLog files an issue only for error-level events", () => {
+  assert.equal(sentryPlanForLog("error", "save_failed").captureAsMessage, true);
+  assert.equal(sentryPlanForLog("warn", "save_failed").captureAsMessage, false);
+  assert.equal(sentryPlanForLog("info", "save_failed").captureAsMessage, false);
+  assert.equal(sentryPlanForLog("debug", "save_failed").captureAsMessage, false);
+});
+
+test("sentryPlanForLog skips events Sentry already captures natively (no duplicate issues)", () => {
+  assert.equal(sentryPlanForLog("error", UNCAUGHT_ERROR_EVENT).captureAsMessage, false);
+  assert.equal(sentryPlanForLog("error", RENDER_ERROR_EVENT).captureAsMessage, false);
+  // ...but they still get a breadcrumb for crash context.
+  assert.equal(sentryPlanForLog("error", UNCAUGHT_ERROR_EVENT).breadcrumbLevel, "error");
 });

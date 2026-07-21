@@ -1,5 +1,6 @@
-import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
+import { HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
+import { loggedOnCall } from "./logging";
 import { sanitizeLogBatch, type Severity } from "./clientLogs/sanitize";
 import { checkRateLimit } from "./clientLogs/rateLimit";
 
@@ -16,7 +17,7 @@ const EMIT: Record<Severity, (msg: string, data: unknown) => void> = {
 };
 
 /** Authenticated-only client→Cloud Logging sink. Treats all payload fields as untrusted. */
-export const ingestLog = onCall({ cors: true }, async (req: CallableRequest) => {
+export const ingestLog = loggedOnCall("ingestLog", { cors: true }, async (req: CallableRequest) => {
   if (!req.auth) throw new HttpsError("unauthenticated", "Sign in first.");
   const uid = req.auth.uid; // the ONLY authoritative uid
   const now = Date.now();

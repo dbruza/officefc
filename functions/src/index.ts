@@ -4,6 +4,8 @@
  * This is the deploy entry point: it initializes the Admin SDK once and re-exports
  * every callable. The handlers themselves live in focused domain modules.
  */
+// Sentry first so its handlers exist before any domain module loads.
+import "./sentry";
 import { initializeApp } from "firebase-admin/app";
 
 initializeApp();

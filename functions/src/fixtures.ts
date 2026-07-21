@@ -3,6 +3,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { loggedOnCall } from "./logging";
+import { instrumentBackground } from "./sentry";
 import { LEAGUE_ID } from "./config";
 import { requireAuth, assertMember } from "./auth";
 import { BASE_ELO } from "./elo";
@@ -197,15 +198,18 @@ export const createFixture = loggedOnCall("createFixture", { cors: true }, async
 /** Mark a fixture as played when a match referencing it lands, so the pair can deal a
  *  fresh one. Duplicate submissions are blocked upstream (rules / callable require the
  *  fixture to still be `proposed`). */
-export const consumeFixture = onDocumentCreated("matches/{matchId}", async (event) => {
-  const fixtureId = event.data?.get("fixtureId");
-  if (typeof fixtureId !== "string" || !fixtureId) return;
-  await db.doc(`fixtures/${fixtureId}`).set(
-    {
-      status: "submitted",
-      matchId: event.params.matchId,
-      consumedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
-});
+export const consumeFixture = onDocumentCreated(
+  "matches/{matchId}",
+  instrumentBackground("consumeFixture", async (event) => {
+    const fixtureId = event.data?.get("fixtureId");
+    if (typeof fixtureId !== "string" || !fixtureId) return;
+    await db.doc(`fixtures/${fixtureId}`).set(
+      {
+        status: "submitted",
+        matchId: event.params.matchId,
+        consumedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+  }),
+);

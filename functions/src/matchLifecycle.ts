@@ -1,5 +1,6 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import { loggedOnCall } from "./logging";
+import { instrumentBackground } from "./sentry";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
@@ -124,18 +125,21 @@ export const disputeMatch = loggedOnCall("disputeMatch", { cors: true }, async (
 });
 
 /** Notify the opponent when any valid client creates a pending match. */
-export const notifyMatchSubmitted = onDocumentCreated("matches/{matchId}", async (event) => {
-  const data = event.data?.data();
-  if (!data || data.status !== "pending_confirmation") return;
-  const opponentId = data.submittedBy === data.aId ? data.bId : data.aId;
-  if (typeof opponentId !== "string") return;
-  await sendPush(
-    opponentId,
-    "Result needs your nod",
-    `Confirm or dispute the ${data.aGoals}-${data.bGoals} score.`,
-    { type: "match_pending", matchId: event.params.matchId },
-  );
-});
+export const notifyMatchSubmitted = onDocumentCreated(
+  "matches/{matchId}",
+  instrumentBackground("notifyMatchSubmitted", async (event) => {
+    const data = event.data?.data();
+    if (!data || data.status !== "pending_confirmation") return;
+    const opponentId = data.submittedBy === data.aId ? data.bId : data.aId;
+    if (typeof opponentId !== "string") return;
+    await sendPush(
+      opponentId,
+      "Result needs your nod",
+      `Confirm or dispute the ${data.aGoals}-${data.bGoals} score.`,
+      { type: "match_pending", matchId: event.params.matchId },
+    );
+  }),
+);
 
 /** Delete a match photo from storage and clear the reference. Owner only. */
 export const deleteMatchPhoto = loggedOnCall("deleteMatchPhoto", { cors: true }, async (req) => {

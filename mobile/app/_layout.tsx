@@ -2,8 +2,12 @@
  * Root layout: loads fonts, provides auth state, and gates navigation between the
  * (auth) → (onboarding) → (app) route groups based on the user's onboarding stage.
  */
+// MUST stay the first import: evaluating it runs Sentry.init, so crashes anywhere in the
+// firebase/auth import graph below are captured. Reordering silently loses that coverage.
+import { navigationIntegration } from "@/lib/sentry";
 import { useEffect } from "react";
-import { Slot, useRouter, useSegments } from "expo-router";
+import * as Sentry from "@sentry/react-native";
+import { Slot, useNavigationContainerRef, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
@@ -76,13 +80,19 @@ function RootNavigator() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontError] = useAppFonts();
   const router = useRouter();
+  const navRef = useNavigationContainerRef();
 
   useEffect(() => {
     installGlobalErrorLogging();
   }, []);
+
+  useEffect(() => {
+    // Guard on .current: the SDK unwraps it at call time and silently gives up on null.
+    if (navRef?.current) navigationIntegration.registerNavigationContainer(navRef);
+  }, [navRef]);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -128,6 +138,8 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({
   viewport: {

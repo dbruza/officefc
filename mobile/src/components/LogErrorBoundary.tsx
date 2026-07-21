@@ -1,5 +1,6 @@
 import React from "react";
-import { logger } from "@/lib/logger";
+import * as Sentry from "@sentry/react-native";
+import { logger, RENDER_ERROR_EVENT } from "@/lib/logger";
 
 interface Props {
   children: React.ReactNode;
@@ -15,7 +16,10 @@ export class LogErrorBoundary extends React.Component<Props, { hasError: boolean
   }
 
   componentDidCatch(error: unknown, info: { componentStack?: string }) {
-    logger.error("render_error", {
+    // A boundary swallows the error before Sentry's global handler can see it, so report
+    // the real exception here (the logger's "render_error" event is breadcrumb/CL-only).
+    Sentry.captureException(error, { extra: { componentStack: info?.componentStack } });
+    logger.error(RENDER_ERROR_EVENT, {
       message: error instanceof Error ? error.message : String(error),
       componentStack: info?.componentStack,
     });

@@ -17,6 +17,7 @@
     "@expo-google-fonts/jetbrains-mono": "^0.2.3",
     "@expo/metro-runtime": "~56.0.14",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@sentry/react-native": "~7.11.0",
     "expo": "^56.0.9",
     "expo-asset": "~56.0.16",
     "expo-camera": "^56.0.7",
