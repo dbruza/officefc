@@ -12,12 +12,15 @@ import { useRouter } from "expo-router";
 import { Avatar, Button, Card, EloDelta, Icon, SnapFlow, TeamPicker, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
+  createFixture,
   getActiveSeason,
   getLeaguePlayers,
   getStandings,
   getTeams,
   previewElo,
+  submitFixtureMatch,
   submitManualMatch,
+  type Fixture,
   type LeaguePlayer,
   type Season,
   type Standing,
@@ -28,12 +31,15 @@ import { withAlpha } from "@/lib/color";
 import type { Player } from "@/types";
 
 const STEP_NAMES = ["Opponent", "Teams", "Score", "Review"];
+const AUTO_STEP_NAMES = ["Opponent", "Matchup", "Score", "Review"];
 
 export default function LogMatch() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const [mode, setMode] = useState<"choose" | "manual" | "snap">("choose");
+  const [mode, setMode] = useState<"choose" | "manual" | "snap" | "auto">("choose");
   const [step, setStep] = useState(0);
+  const [fixture, setFixture] = useState<Fixture | null>(null);
+  const [dealing, setDealing] = useState(false);
   const [season, setSeason] = useState<Season | null>(null);
   const [players, setPlayers] = useState<LeaguePlayer[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -115,7 +121,7 @@ export default function LogMatch() {
     : 0;
   const canContinue =
     (step === 0 && !!opponent) ||
-    (step === 1 && !!myTeam && !!opponentTeam) ||
+    (step === 1 && !!myTeam && !!opponentTeam && (mode !== "auto" || (!!fixture && !dealing))) ||
     step === 2 ||
     step === 3;
 
@@ -124,10 +130,66 @@ export default function LogMatch() {
     else setStep((current) => current - 1);
   }
 
+  function selectOpponent(player: LeaguePlayer) {
+    if (player.id === opponent?.id) return;
+    setOpponent(player);
+    if (mode === "auto") {
+      // A fixture is per-pair: switching opponent invalidates the dealt teams.
+      setFixture(null);
+      setMyTeam(null);
+      setOpponentTeam(null);
+    }
+  }
+
+  /** Resolve a dealt fixture side to a Team for the preview/review UI. Falls back to a
+   *  minimal Team built from the fixture snapshot if the catalogue read is missing it. */
+  function fixtureTeam(dealt: Fixture, wantSideA: boolean): Team {
+    const id = wantSideA ? dealt.aTeamId : dealt.bTeamId;
+    const known = teams.find((team) => team.id === id);
+    if (known) return known;
+    return {
+      id,
+      name: wantSideA ? dealt.aTeamName : dealt.bTeamName,
+      competition: "",
+      category: "men",
+      overall: wantSideA ? dealt.aTeamOverall : dealt.bTeamOverall,
+      attack: null,
+      midfield: null,
+      defence: null,
+      catalogueVersion: null,
+      source: "catalogue",
+      catalogueActive: true,
+      active: true,
+    };
+  }
+
+  async function dealFixture(reroll = false) {
+    if (!opponent || !user) return;
+    setDealing(true);
+    setError(null);
+    try {
+      const dealt = await createFixture(opponent.id, reroll);
+      const mineIsA = dealt.aId === user.uid;
+      setFixture(dealt);
+      setMyTeam(fixtureTeam(dealt, mineIsA));
+      setOpponentTeam(fixtureTeam(dealt, !mineIsA));
+    } catch (dealError) {
+      setError(
+        dealError instanceof Error && dealError.message
+          ? dealError.message
+          : "Couldn't deal a matchup. Try again.",
+      );
+    } finally {
+      setDealing(false);
+    }
+  }
+
   async function next() {
     if (!canContinue) return;
     if (step < 3) {
+      const enteringMatchup = mode === "auto" && step === 0 && !fixture;
       setStep((current) => current + 1);
+      if (enteringMatchup) void dealFixture();
       return;
     }
     if (!user || !season || !opponent || !myTeam || !opponentTeam) return;
@@ -135,15 +197,26 @@ export default function LogMatch() {
     setSubmitting(true);
     setError(null);
     try {
-      await submitManualMatch({
-        seasonId: season.id,
-        submittedBy: user.uid,
-        opponentId: opponent.id,
-        myTeam,
-        opponentTeam,
-        myGoals,
-        opponentGoals,
-      });
+      if (mode === "auto") {
+        if (!fixture) return;
+        const mineIsA = fixture.aId === user.uid;
+        await submitFixtureMatch({
+          fixture,
+          submittedBy: user.uid,
+          aGoals: mineIsA ? myGoals : opponentGoals,
+          bGoals: mineIsA ? opponentGoals : myGoals,
+        });
+      } else {
+        await submitManualMatch({
+          seasonId: season.id,
+          submittedBy: user.uid,
+          opponentId: opponent.id,
+          myTeam,
+          opponentTeam,
+          myGoals,
+          opponentGoals,
+        });
+      }
       setSubmitted(true);
     } catch {
       setError("The match couldn't be submitted. Check the emulators and try again.");
@@ -199,7 +272,8 @@ export default function LogMatch() {
             size={13}
             style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}
           >
-            Upload or take a photo for AI-assisted auto-fill, or enter the score manually.
+            Snap the result screen, let the system deal a balanced matchup, or enter
+            everything manually.
           </Txt>
           <View style={{ gap: spacing.md }}>
             <Pressable onPress={() => setMode("snap")} style={styles.modeCard}>
@@ -213,6 +287,27 @@ export default function LogMatch() {
                 <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
                   Upload the end-of-match screen. AI Beta suggests the score and stats for you to
                   verify.
+                </Txt>
+              </View>
+              <Icon name="chevron" size={16} color={colors.textDim} />
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setStep(0);
+                setMode("auto");
+              }}
+              style={styles.modeCard}
+            >
+              <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.accent, 0.12) }]}>
+                <Icon name="swords" size={28} color={colors.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Txt variant="head" size={16}>
+                  Auto matchup
+                </Txt>
+                <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
+                  Pick an opponent and the system deals both teams, balanced to your ELOs.
+                  Play the fixture, then record the score.
                 </Txt>
               </View>
               <Icon name="chevron" size={16} color={colors.textDim} />
@@ -311,12 +406,12 @@ export default function LogMatch() {
             Log a match
           </Txt>
           <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
-            Step {step + 1} of 4 · {STEP_NAMES[step]}
+            Step {step + 1} of 4 · {(mode === "auto" ? AUTO_STEP_NAMES : STEP_NAMES)[step]}
           </Txt>
         </View>
       </View>
       <View style={styles.track}>
-        {STEP_NAMES.map((name, index) => (
+        {(mode === "auto" ? AUTO_STEP_NAMES : STEP_NAMES).map((name, index) => (
           <View key={name} style={[styles.trackSegment, index <= step && styles.trackSegmentOn]} />
         ))}
       </View>
@@ -334,7 +429,7 @@ export default function LogMatch() {
               {players.map((player) => (
                 <Pressable
                   key={player.id}
-                  onPress={() => setOpponent(player)}
+                  onPress={() => selectOpponent(player)}
                   style={[styles.pickRow, opponent?.id === player.id && styles.pickRowActive]}
                 >
                   <Avatar player={player} size={42} jersey />
@@ -360,7 +455,7 @@ export default function LogMatch() {
           </>
         ) : null}
 
-        {step === 1 && opponent ? (
+        {step === 1 && opponent && mode !== "auto" ? (
           <>
             <StepTitle>Which teams did you use?</StepTitle>
             <TeamPicker
@@ -378,6 +473,62 @@ export default function LogMatch() {
               value={opponentTeam}
               onChange={setOpponentTeam}
             />
+          </>
+        ) : null}
+
+        {step === 1 && opponent && mode === "auto" ? (
+          <>
+            <StepTitle>Your matchup</StepTitle>
+            {dealing ? (
+              <View style={styles.dealLoading}>
+                <ActivityIndicator color={colors.accent} />
+                <Txt color={colors.textDim} size={13}>
+                  Dealing teams…
+                </Txt>
+              </View>
+            ) : fixture && myTeam && opponentTeam ? (
+              <>
+                <FixtureTeamCard player={me} label="You" team={myTeam} />
+                <View style={styles.vsRow}>
+                  <Icon name="swords" size={16} color={colors.textDim} />
+                  <Txt variant="head" size={12} color={colors.textDim}>
+                    VS
+                  </Txt>
+                </View>
+                <FixtureTeamCard
+                  player={opponent}
+                  label={opponent.name.split(" ")[0]}
+                  team={opponentTeam}
+                />
+                <View style={styles.eloPreview}>
+                  <Icon name="bolt" size={15} color={colors.accent} />
+                  <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
+                    Dealt to level this matchup at your current ELOs. Play with these exact
+                    teams — the result won't record otherwise.
+                  </Txt>
+                </View>
+                {fixture.rerollCount < 1 ? (
+                  <Pressable
+                    onPress={() => dealFixture(true)}
+                    disabled={dealing}
+                    style={styles.rerollButton}
+                  >
+                    <Icon name="bolt" size={15} color={colors.textDim} />
+                    <Txt size={13} color={colors.textDim}>
+                      Reroll teams (once)
+                    </Txt>
+                  </Pressable>
+                ) : (
+                  <Txt
+                    size={11.5}
+                    color={colors.textFaint}
+                    style={{ marginTop: spacing.md, textAlign: "center" }}
+                  >
+                    Reroll used — these teams are locked in.
+                  </Txt>
+                )}
+              </>
+            ) : null}
           </>
         ) : null}
 
@@ -529,6 +680,43 @@ function ScoreStepper({
   );
 }
 
+function FixtureTeamCard({
+  player,
+  label,
+  team,
+}: {
+  player: Player | null;
+  label: string;
+  team: Team;
+}) {
+  return (
+    <View style={styles.fixtureCard}>
+      <Avatar player={player} size={42} jersey />
+      <View style={{ flex: 1 }}>
+        <Txt variant="head" size={11} color={colors.textDim}>
+          {label.toUpperCase()}
+        </Txt>
+        <Txt variant="bodyMedium" size={15} style={{ marginTop: 3 }}>
+          {team.name}
+        </Txt>
+        {team.competition ? (
+          <Txt size={10.5} color={colors.textDim} numberOfLines={1} style={{ marginTop: 3 }}>
+            {team.competition}
+          </Txt>
+        ) : null}
+      </View>
+      <View style={styles.overallBadge}>
+        <Txt variant="monoBold" size={18} color={colors.accent}>
+          {team.overall ?? "—"}
+        </Txt>
+        <Txt size={8.5} color={colors.textDim}>
+          OVR
+        </Txt>
+      </View>
+    </View>
+  );
+}
+
 function ReviewPlayer({
   player,
   label,
@@ -674,5 +862,47 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+  },
+  dealLoading: {
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.x3,
+  },
+  vsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginVertical: spacing.md,
+  },
+  fixtureCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.accent, 0.35),
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+  },
+  overallBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface2,
+  },
+  rerollButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
   },
 });

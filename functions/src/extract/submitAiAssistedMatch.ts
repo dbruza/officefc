@@ -35,6 +35,7 @@ export const submitAiAssistedMatch = loggedOnCall(
       mySide,
       myTeamId,
       opponentTeamId,
+      fixtureId,
       submittedGoalsAndStats,
     } = req.data as {
       draftId?: string;
@@ -43,6 +44,7 @@ export const submitAiAssistedMatch = loggedOnCall(
       mySide?: "home" | "away";
       myTeamId?: string;
       opponentTeamId?: string;
+      fixtureId?: string;
       submittedGoalsAndStats?: Record<string, unknown>;
     };
 
@@ -88,6 +90,7 @@ export const submitAiAssistedMatch = loggedOnCall(
       const memberSnap = await tx.get(opponentMemberRef);
       const myTeamSnap = await tx.get(myTeamRef);
       const opponentTeamSnap = await tx.get(opponentTeamRef);
+      const fixtureSnap = fixtureId ? await tx.get(db.doc(`fixtures/${fixtureId}`)) : null;
       const draft = draftSnap.exists
         ? (draftSnap.data() as DraftState & Record<string, unknown>)
         : null;
@@ -110,6 +113,29 @@ export const submitAiAssistedMatch = loggedOnCall(
       if (!opponentTeamSnap.exists || !opponentTeamSnap.get("active"))
         throw new HttpsError("invalid-argument", "Opponent team not active.");
 
+      // Auto-matchup submissions must honor the dealt fixture: same season, same pair,
+      // and each player using exactly the team the engine assigned them.
+      if (fixtureSnap) {
+        if (!fixtureSnap.exists) throw new HttpsError("not-found", "Fixture not found.");
+        const fixture = fixtureSnap.data()!;
+        if (fixture.seasonId !== seasonId)
+          throw new HttpsError("failed-precondition", "Fixture is for a different season.");
+        if (fixture.status !== "proposed")
+          throw new HttpsError("failed-precondition", "Fixture has already been played.");
+        const pairMatches =
+          (fixture.aId === uid && fixture.bId === opponentId) ||
+          (fixture.aId === opponentId && fixture.bId === uid);
+        if (!pairMatches)
+          throw new HttpsError("permission-denied", "Fixture is for different players.");
+        const myFixtureTeam = fixture.aId === uid ? fixture.aTeamId : fixture.bTeamId;
+        const oppFixtureTeam = fixture.aId === uid ? fixture.bTeamId : fixture.aTeamId;
+        if (myTeamId !== myFixtureTeam || opponentTeamId !== oppFixtureTeam)
+          throw new HttpsError(
+            "failed-precondition",
+            "Teams don't match the fixture. Play with the dealt teams or record manually.",
+          );
+      }
+
       const extraction = draft?.raw as Record<string, unknown> | undefined;
       const suggestion = (extraction?.suggestion ?? {}) as Record<string, unknown>;
       const isHomeSide = mySide === "home";
@@ -131,6 +157,7 @@ export const submitAiAssistedMatch = loggedOnCall(
         bGoals: isHomeSide ? oppGoals : myGoals,
         status: "pending_confirmation",
         source: "ai_assisted",
+        ...(fixtureId ? { fixtureId } : {}),
         date: FieldValue.serverTimestamp(),
         createdAt: FieldValue.serverTimestamp(),
         photoPath: (draft?.storagePath as string) ?? null,

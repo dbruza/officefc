@@ -38,6 +38,20 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/teams/$(teamId)).data.active == true
         && get(/databases/$(database)/documents/teams/$(teamId)).data.name == teamName;
     }
+    function fixtureData(fixtureId) {
+      return get(/databases/$(database)/documents/fixtures/$(fixtureId)).data;
+    }
+    // An auto-matchup submission must mirror its fixture exactly: same season, same
+    // players on the same sides, and the teams the engine dealt. Status 'proposed'
+    // stops a fixture from being recorded twice.
+    function honorsFixture(data) {
+      return fixtureData(data.fixtureId).seasonId == data.seasonId
+        && fixtureData(data.fixtureId).status == 'proposed'
+        && fixtureData(data.fixtureId).aId == data.aId
+        && fixtureData(data.fixtureId).bId == data.bId
+        && fixtureData(data.fixtureId).aTeamId == data.aTeamId
+        && fixtureData(data.fixtureId).bTeamId == data.bTeamId;
+    }
 
     // Profiles: any member can read; you can always read your OWN profile (needed during
     // onboarding, before membership). You may write your own profile but never set your
@@ -87,6 +101,13 @@ service cloud.firestore {
       allow read: if isMember();
       allow write: if false;
     }
+
+    // Auto-matchup fixtures: dealt by the createFixture callable, consumed by a trigger
+    // when the referencing match lands. Members read (to see their dealt teams).
+    match /fixtures/{fixtureId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
     match /teamCatalogues/{catalogueId} {
       allow read: if isMember();
       allow write: if false;
@@ -103,7 +124,8 @@ service cloud.firestore {
         ])
         && request.resource.data.keys().hasOnly([
           'seasonId', 'submittedBy', 'aId', 'bId', 'aTeamId', 'bTeamId',
-          'aTeam', 'bTeam', 'aGoals', 'bGoals', 'status', 'source', 'date', 'createdAt'
+          'aTeam', 'bTeam', 'aGoals', 'bGoals', 'status', 'source', 'date', 'createdAt',
+          'fixtureId'
         ])
         && request.resource.data.submittedBy == uid()
         && (request.resource.data.aId == uid() || request.resource.data.bId == uid())
@@ -120,7 +142,14 @@ service cloud.firestore {
         && request.resource.data.bGoals >= 0
         && request.resource.data.bGoals <= 99
         && request.resource.data.status == 'pending_confirmation'
-        && request.resource.data.source == 'manual'
+        && (
+          (request.resource.data.source == 'manual'
+            && !('fixtureId' in request.resource.data))
+          || (request.resource.data.source == 'fixture'
+            && 'fixtureId' in request.resource.data
+            && request.resource.data.fixtureId is string
+            && honorsFixture(request.resource.data))
+        )
         && request.resource.data.date == request.time
         && request.resource.data.createdAt == request.time;
       allow update, delete: if false; // function/admin-only

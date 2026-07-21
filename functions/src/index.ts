@@ -25,6 +25,9 @@ export {
   deleteMatchPhoto,
 } from "./matchLifecycle";
 
+// Auto-matchup fixtures (system-dealt teams)
+export { createFixture, consumeFixture } from "./fixtures";
+
 // Read-model rebuild (ELO + stats materialization)
 export { rebuildLeagueReadModels } from "./readModels";
 

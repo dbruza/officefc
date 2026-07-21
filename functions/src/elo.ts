@@ -300,40 +300,23 @@ function getMonthKey(ms: number): string {
 type MonthlyGains = Map<string, { totalGain: number; games: number; endingElo: number }>;
 
 /** Player of the month per calendar month: the largest total ELO gain among players with at
- *  least POTM_MIN_GAMES games that month. Ties break by ending ELO, then lexical uid. */
+ *  least POTM_MIN_GAMES games that month. Ties break by ending ELO, then lexical uid.
+ *  Replays the season through calculateSeason and accumulates its per-match deltas, so POTM
+ *  can never drift from the rating walk that produces the actual standings. */
 export function computePOTM(
   matches: SeasonMatchInput[],
 ): Array<{ month: string; playerId: string; gain: number; games: number }> {
-  const sorted = [...matches].sort(
-    (a, b) => a.dateMillis - b.dateMillis || a.id.localeCompare(b.id),
-  );
-  const ratings = new Map<string, number>();
-  const gamesPlayed = new Map<string, number>();
+  const { matches: calculated } = calculateSeason(matches, [], 0);
   const months = new Map<string, MonthlyGains>();
   const result: Array<{ month: string; playerId: string; gain: number; games: number }> = [];
 
-  for (const match of sorted) {
-    const aBefore = ratings.get(match.aId) ?? BASE_ELO;
-    const bBefore = ratings.get(match.bId) ?? BASE_ELO;
-    const aGamesBefore = gamesPlayed.get(match.aId) ?? 0;
-    const bGamesBefore = gamesPlayed.get(match.bId) ?? 0;
-    const perfA = performanceScore(match);
-    const [aEff, bEff] = effectiveRatings(aBefore, bBefore, match.aTeamOverall, match.bTeamOverall);
-    const aDelta = Math.round(getK(aGamesBefore) * (perfA - expectedScore(aEff, bEff)));
-    const bDelta = Math.round(getK(bGamesBefore) * (1 - perfA - expectedScore(bEff, aEff)));
-    const aAfter = aBefore + aDelta;
-    const bAfter = bBefore + bDelta;
-    ratings.set(match.aId, aAfter);
-    ratings.set(match.bId, bAfter);
-    gamesPlayed.set(match.aId, aGamesBefore + 1);
-    gamesPlayed.set(match.bId, bGamesBefore + 1);
-
+  for (const match of calculated) {
     const month = getMonthKey(match.dateMillis);
     if (!months.has(month)) months.set(month, new Map());
     const gains = months.get(month)!;
     for (const [id, delta, rating] of [
-      [match.aId, aDelta, aAfter],
-      [match.bId, bDelta, bAfter],
+      [match.aId, match.aDelta, match.aEloAfter],
+      [match.bId, match.bDelta, match.bEloAfter],
     ] as const) {
       const prev = gains.get(id) ?? { totalGain: 0, games: 0, endingElo: 0 };
       prev.totalGain += delta;

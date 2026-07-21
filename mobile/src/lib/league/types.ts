@@ -204,6 +204,34 @@ export interface SubmitMatchInput {
   opponentGoals: number;
 }
 
+/** An auto-matchup deal: the engine assigns each player a team so the OVR gap offsets
+ *  the players' ELO gap. Side A is whoever dealt the fixture. */
+export interface Fixture {
+  id: string;
+  seasonId: string;
+  aId: string;
+  bId: string;
+  aTeamId: string;
+  aTeamName: string;
+  aTeamOverall: number;
+  bTeamId: string;
+  bTeamName: string;
+  bTeamOverall: number;
+  aElo: number;
+  bElo: number;
+  targetDiff: number;
+  status: "proposed" | "submitted";
+  rerollCount: number;
+  expiresAt: Date | null;
+}
+
+export interface SubmitFixtureMatchInput {
+  fixture: Fixture;
+  submittedBy: string;
+  aGoals: number;
+  bGoals: number;
+}
+
 export interface TeamCatalogueSyncResult {
   version: string;
   updated: number;
