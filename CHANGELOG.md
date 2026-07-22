@@ -3,6 +3,29 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.1.1.0] - 2026-07-22
+
+### Fixed
+
+- Native photo upload for AI-assisted match logging crashed with "Creating blobs from
+  'ArrayBuffer' and 'ArrayBufferView' are not supported": Expo SDK 56 replaces the global
+  fetch with expo/fetch, whose `Response.blob()` builds a Blob React Native rejects. The
+  picked image is now read through React Native's XMLHttpRequest into a true native Blob
+  (web keeps fetch), which is also released from native memory after upload.
+- App no longer hangs on the startup spinner on physical devices: Firestore's streaming
+  transport can stall indefinitely under React Native, so native builds now force long
+  polling (web keeps streaming). A stall beacon reports any future auth-bootstrap wedge
+  after 10 seconds.
+
+### Added
+
+- Snap-flow failures (photo pick, upload, extraction, submission) are now reported to
+  Sentry and Cloud Logging with error codes and draft IDs instead of only being shown
+  in the UI; rejected extractions and best-effort cleanup failures log as warnings.
+- The mobile Sentry DSN is set in all EAS build profiles, activating crash reporting in
+  store builds (previously the empty placeholders also made any `eas build` refuse to
+  start).
+
 ## [1.1.0.0] - 2026-07-21
 
 ### Added

@@ -14,7 +14,7 @@ import {
   // @ts-expect-error — RN persistence helper is exported but not in the web types
   getReactNativePersistence,
 } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFirestore, initializeFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { Platform } from "react-native";
@@ -40,7 +40,17 @@ export const auth =
     ? getAuth(app)
     : initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
 
-export const db = getFirestore(app);
+/**
+ * On native, force long polling: React Native's networking lacks the fetch streams
+ * Firestore's WebChannel transport prefers, and the auto-detect fallback can stall
+ * indefinitely on physical devices (build 7 hung on the startup profile reads — dark
+ * screen + spinner forever, zero traffic). Long polling is the reliable RN transport.
+ * Web keeps the default streaming transport (getFirestore), which works fine there.
+ */
+export const db =
+  Platform.OS === "web"
+    ? getFirestore(app)
+    : initializeFirestore(app, { experimentalForceLongPolling: true });
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
 

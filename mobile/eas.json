@@ -11,7 +11,7 @@
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0",
         "EXPO_PUBLIC_SENTRY_ENV": "development",
-        "EXPO_PUBLIC_SENTRY_DSN": "",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://f35ad945bc54c0f34ad3cd2a99d0ee07@o4511577853132800.ingest.us.sentry.io/4511773409214464",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -21,7 +21,7 @@
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0",
         "EXPO_PUBLIC_SENTRY_ENV": "preview",
-        "EXPO_PUBLIC_SENTRY_DSN": "",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://f35ad945bc54c0f34ad3cd2a99d0ee07@o4511577853132800.ingest.us.sentry.io/4511773409214464",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -32,7 +32,7 @@
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "0",
         "EXPO_PUBLIC_SENTRY_ENV": "production",
-        "EXPO_PUBLIC_SENTRY_DSN": "",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://f35ad945bc54c0f34ad3cd2a99d0ee07@o4511577853132800.ingest.us.sentry.io/4511773409214464",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }

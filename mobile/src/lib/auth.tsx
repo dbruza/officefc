@@ -77,7 +77,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const bootStart = Date.now();
     let reported = false;
-    return onAuthStateChanged(auth, async (u) => {
+    // Beacon, not a timeout: if bootstrap is still unresolved after this long, emit a warn
+    // (remote-logged + Sentry breadcrumb) so a wedged startup is visible from the outside —
+    // the build-7 splash hang produced zero telemetry precisely because nothing ever fired.
+    const stallTimer = setTimeout(() => {
+      if (!reported) {
+        logger.warn("auth_bootstrap_stalled", {
+          afterMs: Date.now() - bootStart,
+          signedIn: !!auth.currentUser,
+        });
+      }
+    }, 10_000);
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setEmailVerified(!!u?.emailVerified);
       setLogUid(u?.uid ?? null);
@@ -85,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setInitializing(false);
       if (!reported) {
         reported = true;
+        clearTimeout(stallTimer);
         const durationMs = Date.now() - bootStart;
         // profile + membership ready — NOT first-screen data, hence the name. Escalate to
         // warn past the startup threshold so slow boots forward to Cloud Logging.
@@ -93,6 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         else logger.info("auth_bootstrap_ready", fields);
       }
     });
+    return () => {
+      clearTimeout(stallTimer);
+      unsubscribe();
+    };
   }, [loadProfileAndMembership]);
 
   const signUp = useCallback(async (email: string, password: string) => {

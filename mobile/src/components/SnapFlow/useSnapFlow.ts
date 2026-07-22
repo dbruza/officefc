@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform, useWindowDimensions } from "react-native";
+import { logger } from "@/lib/logger";
 import { uploadMatchPhoto } from "@/lib/upload";
 import { pickMatchPhoto } from "@/lib/photoPicker";
 import {
@@ -12,6 +13,15 @@ import {
 } from "@/lib/league";
 import type { Player } from "@/types";
 import type { ExtractionResult, SnapFlowProps, SnapStep } from "./types";
+
+/** Bounded error fields for logging; `code` picks up UploadError/Firebase error codes. */
+function errorContext(err: unknown): { message: string; code: string | null } {
+  const code =
+    err && typeof err === "object" && "code" in err
+      ? String((err as { code: unknown }).code)
+      : null;
+  return { message: err instanceof Error ? err.message : String(err), code };
+}
 
 export function useSnapFlow(props: SnapFlowProps) {
   const { uid, profile, season, players, teams, standings, onCancel, onManualFallback, onDone } =
@@ -126,6 +136,7 @@ export function useSnapFlow(props: SnapFlowProps) {
       setImageUri(selected.uri);
       await handleUpload(selected.uri, selected.mimeType, selected.fileSize);
     } catch (err) {
+      logger.error("snap_select_failed", { ...errorContext(err), source });
       setError(err instanceof Error ? err.message : "Could not open that photo.");
       setStep("capture");
     }
@@ -135,8 +146,9 @@ export function useSnapFlow(props: SnapFlowProps) {
     cancelRequested.current = true;
     try {
       await cleanupDraft();
-    } catch {
+    } catch (err) {
       // Daily server cleanup is the fallback if the browser is offline while leaving.
+      logger.warn("snap_cleanup_failed", errorContext(err));
     }
     if (destination === "manual") onManualFallback();
     else onCancel();
@@ -155,6 +167,7 @@ export function useSnapFlow(props: SnapFlowProps) {
       }
       await handleExtract(upload.draftId, upload.storagePath);
     } catch (err) {
+      logger.error("snap_upload_failed", errorContext(err));
       const msg = err instanceof Error ? err.message : "Upload failed.";
       setError(msg);
       setStep("capture");
@@ -169,6 +182,8 @@ export function useSnapFlow(props: SnapFlowProps) {
       setExtraction(ext);
 
       if (!ext.ok) {
+        // Expected user mistake (wrong screen photographed) — warn keeps the error band actionable.
+        logger.warn("snap_extract_rejected", { reason: "not_stats_screen", draftId: id });
         setError("This doesn't look like a stats screen. Try a different photo, or log manually.");
         setStep("capture");
         return;
@@ -178,12 +193,14 @@ export function useSnapFlow(props: SnapFlowProps) {
         ext.suggestion.home.goals == null &&
         ext.suggestion.away.goals == null
       ) {
+        logger.warn("snap_extract_rejected", { reason: "score_unreadable", draftId: id });
         setError("Couldn't read the score from this image. Try a clearer photo, or log manually.");
         setStep("capture");
         return;
       }
       setStep("side");
     } catch (err) {
+      logger.error("snap_extract_failed", { ...errorContext(err), draftId: id });
       const msg = err instanceof Error ? err.message : "Extraction failed.";
       setError(msg);
       setStep("capture");
@@ -216,6 +233,7 @@ export function useSnapFlow(props: SnapFlowProps) {
       activeDraftId.current = null;
       setStep("done");
     } catch (err) {
+      logger.error("snap_submit_failed", { ...errorContext(err), draftId });
       setError(err instanceof Error ? err.message : "Submission failed.");
     } finally {
       setIsSubmitting(false);
