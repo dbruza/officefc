@@ -5,6 +5,7 @@ import { Icon, type IconName } from "./Icon";
 import { Txt } from "./Txt";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
+import { emitTabRetap } from "@/lib/tabRetap";
 
 export type AppTab = "home" | "leaderboard" | "seasons" | "profile";
 
@@ -25,7 +26,7 @@ export function AppTabBar({ active }: { active: AppTab }) {
           key={tab.id}
           tab={tab}
           active={active === tab.id}
-          onPress={() => router.navigate(tab.href)}
+          onPress={() => (active === tab.id ? emitTabRetap(tab.id) : router.navigate(tab.href))}
         />
       ))}
       <View style={styles.fabSlot}>
@@ -38,7 +39,7 @@ export function AppTabBar({ active }: { active: AppTab }) {
           key={tab.id}
           tab={tab}
           active={active === tab.id}
-          onPress={() => router.navigate(tab.href)}
+          onPress={() => (active === tab.id ? emitTabRetap(tab.id) : router.navigate(tab.href))}
         />
       ))}
     </View>

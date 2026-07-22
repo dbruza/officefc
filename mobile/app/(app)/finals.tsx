@@ -305,7 +305,7 @@ function SlotSide({
           accessibilityLabel={`Award walkover to ${player?.name ?? id}`}
         >
           <Txt size={10} color={colors.textDim}>
-            W/O
+            Walkover
           </Txt>
         </Pressable>
       ) : null}

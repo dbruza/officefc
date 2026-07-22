@@ -65,10 +65,12 @@ export default function VerifyEmail() {
       <Button full variant="dark" onPress={resend}>
         Resend verification email
       </Button>
-      <Txt size={11.5} color={colors.textFaint} style={{ lineHeight: 17 }}>
-        Dev tip: when running against the Auth emulator, no real email is sent — open the
-        verification link from the Emulator UI (Auth tab) or the emulator console output.
-      </Txt>
+      {__DEV__ ? (
+        <Txt size={11.5} color={colors.textFaint} style={{ lineHeight: 17 }}>
+          Dev tip: when running against the Auth emulator, no real email is sent — open the
+          verification link from the Emulator UI (Auth tab) or the emulator console output.
+        </Txt>
+      ) : null}
     </FormScreen>
   );
 }

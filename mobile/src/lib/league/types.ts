@@ -222,6 +222,7 @@ export type ActivityType =
   | "streak"
   | "new_number_one"
   | "potm"
+  | "premier"
   | "champion";
 
 /** One entry in the league activity feed. Payload holds uids + facts; names resolve client-side. */

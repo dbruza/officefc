@@ -37,7 +37,10 @@ export type IconName =
   | "shield"
   | "crosshair"
   | "award"
-  | "handshake";
+  | "handshake"
+  | "settings"
+  | "eye"
+  | "eyeOff";
 
 export interface IconProps {
   name: IconName;
@@ -195,6 +198,27 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
         <Path d="m21 3 1 11h-2" {...common} />
         <Path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" {...common} />
         <Path d="M3 4h8" {...common} />
+      </G>
+    ),
+    settings: (
+      <G {...common}>
+        <Path d="M4 7h2.8M11.2 7H20M4 12h8.8M17.2 12H20M4 17h0.8M9.2 17H20" {...common} />
+        <Circle cx="9" cy="7" r="2.2" {...common} />
+        <Circle cx="15" cy="12" r="2.2" {...common} />
+        <Circle cx="7" cy="17" r="2.2" {...common} />
+      </G>
+    ),
+    eye: (
+      <G {...common}>
+        <Path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" {...common} />
+        <Circle cx="12" cy="12" r="3" {...common} />
+      </G>
+    ),
+    eyeOff: (
+      <G {...common}>
+        <Path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" {...common} />
+        <Circle cx="12" cy="12" r="3" {...common} />
+        <Path d="M4 4l16 16" {...common} />
       </G>
     ),
   };

@@ -2,11 +2,12 @@ import { useCallback } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card, Icon, ScreenHeader, SeasonMatchRow, Txt } from "@/components";
+import { Card, Icon, ScreenHeader, SeasonMatchRow, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
   getPlayerMatches,
+  getSeasons,
   type LeagueMatch,
   type LeaguePlayer,
 } from "@/lib/league";
@@ -17,6 +18,7 @@ import { colors, spacing } from "@/theme";
 interface GamesData {
   players: Map<string, LeaguePlayer>;
   matches: LeagueMatch[];
+  seasonNames: Map<string, string>;
 }
 
 export default function GamesRoute() {
@@ -28,16 +30,27 @@ export default function GamesRoute() {
   const { data, loading } = useFocusData<GamesData>(
     `games:${uid}`,
     useCallback(async () => {
-      if (!uid) return { players: new Map<string, LeaguePlayer>(), matches: [] };
-      const [roster, played] = await Promise.all([getLeaguePlayers(), getPlayerMatches(uid)]);
+      if (!uid)
+        return {
+          players: new Map<string, LeaguePlayer>(),
+          matches: [],
+          seasonNames: new Map<string, string>(),
+        };
+      const [roster, played, seasons] = await Promise.all([
+        getLeaguePlayers(),
+        getPlayerMatches(uid),
+        getSeasons(),
+      ]);
       return {
         players: new Map(roster.map((player) => [player.id, player])),
         matches: played.slice().reverse(),
+        seasonNames: new Map(seasons.map((season) => [season.id, season.name])),
       };
     }, [uid]),
   );
   const players = data?.players ?? new Map<string, LeaguePlayer>();
   const matches = data?.matches ?? [];
+  const seasonNames = data?.seasonNames ?? new Map<string, string>();
 
   const isYou = uid === user?.uid;
   const player = players.get(uid);
@@ -54,23 +67,30 @@ export default function GamesRoute() {
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
         {!loading ? (
           <View style={{ gap: 7 }}>
-            {matches.map((match) => {
+            {matches.map((match, index) => {
               const playerA = players.get(match.aId);
               const playerB = players.get(match.bId);
               if (!playerA || !playerB) return null;
+              const newSeason = index === 0 || matches[index - 1].seasonId !== match.seasonId;
               return (
-                <SeasonMatchRow
-                  key={match.id}
-                  match={match}
-                  playerA={playerA}
-                  playerB={playerB}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(app)/match/[id]",
-                      params: { id: match.id },
-                    } as Href)
-                  }
-                />
+                <View key={match.id} style={{ gap: 7 }}>
+                  {newSeason ? (
+                    <SectionLabel style={index > 0 ? { marginTop: spacing.md } : undefined}>
+                      {seasonNames.get(match.seasonId) ?? "Earlier season"}
+                    </SectionLabel>
+                  ) : null}
+                  <SeasonMatchRow
+                    match={match}
+                    playerA={playerA}
+                    playerB={playerB}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(app)/match/[id]",
+                        params: { id: match.id },
+                      } as Href)
+                    }
+                  />
+                </View>
               );
             })}
             {matches.length === 0 ? (

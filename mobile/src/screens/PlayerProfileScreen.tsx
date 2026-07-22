@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,7 +36,10 @@ import {
   type Standing,
 } from "@/lib/league";
 import { computeAchievements } from "@/lib/awards";
+import { confirmAction } from "@/lib/dialogs";
+import { plural } from "@/lib/format";
 import { useFocusData } from "@/lib/useFocusData";
+import { useTabRetap } from "@/lib/tabRetap";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 
@@ -58,6 +61,8 @@ interface ProfileData {
 export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?: boolean }) {
   const router = useRouter();
   const { user, signOutUser } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
+  useTabRetap(root ? "profile" : "", () => scrollRef.current?.scrollTo({ y: 0, animated: true }));
 
   const {
     data,
@@ -144,8 +149,34 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
         title={isYou ? "Your profile" : (player?.name ?? "Player profile")}
         subtitle={player ? `@${player.handle} · #${player.jersey}` : undefined}
         back={!root}
+        right={
+          isYou && root ? (
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => router.push("/(app)/edit-profile")}
+                style={styles.headerButton}
+                accessibilityRole="button"
+                accessibilityLabel="Edit profile"
+              >
+                <Icon name="edit" size={17} color={colors.textDim} />
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/(app)/settings")}
+                style={styles.headerButton}
+                accessibilityRole="button"
+                accessibilityLabel="Settings"
+              >
+                <Icon name="settings" size={17} color={colors.textDim} />
+              </Pressable>
+            </View>
+          ) : undefined
+        }
       />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
         {error ? (
           <Card>
@@ -421,7 +452,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                           {opponent.name}
                         </Txt>
                         <Txt variant="mono" size={10.5} color={colors.textDim}>
-                          {games} meetings
+                          {plural(games, "meeting")}
                         </Txt>
                       </View>
                       {row.losses > row.wins && games >= 3 ? (
@@ -463,7 +494,20 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
             </View>
 
             {isYou && root ? (
-              <Button full variant="ghost" style={{ marginTop: spacing.x2 }} onPress={signOutUser}>
+              <Button
+                full
+                variant="ghost"
+                style={{ marginTop: spacing.x2 }}
+                onPress={() =>
+                  confirmAction({
+                    title: "Sign out?",
+                    message: "You can sign back in any time — your record stays on the table.",
+                    confirmLabel: "Sign out",
+                    destructive: true,
+                    onConfirm: () => void signOutUser(),
+                  })
+                }
+              >
                 Sign out
               </Button>
             ) : null}
@@ -525,6 +569,17 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   achievementCell: { width: "48.7%" },
+  headerActions: { flexDirection: "row", gap: spacing.sm },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   h2hRow: {
     minHeight: 62,
     flexDirection: "row",

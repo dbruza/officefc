@@ -3,6 +3,7 @@ import { Platform, useWindowDimensions } from "react-native";
 import { logger } from "@/lib/logger";
 import { uploadMatchPhoto } from "@/lib/upload";
 import { pickMatchPhoto } from "@/lib/photoPicker";
+import { filterTeams } from "@/lib/teamSearch";
 import {
   abandonMatchDraft,
   callExtractMatchStats,
@@ -13,6 +14,13 @@ import {
 } from "@/lib/league";
 import type { Player } from "@/types";
 import type { ExtractionResult, SnapFlowProps, SnapStep } from "./types";
+
+/** Best catalogue match for a team name the AI read off the photo, or null. */
+function matchCatalogueTeam(teams: Team[], name: string | null | undefined): Team | null {
+  if (!name?.trim()) return null;
+  const [best] = filterTeams(teams, { query: name, category: "all", overall: "all" });
+  return best ?? null;
+}
 
 /** Bounded error fields for logging; `code` picks up UploadError/Firebase error codes. */
 function errorContext(err: unknown): { message: string; code: string | null } {
@@ -109,7 +117,38 @@ export function useSnapFlow(props: SnapFlowProps) {
     setOpponentShots(oppExtract.shots);
     setMyShotsOnTarget(myExtract.shots_on_target);
     setOpponentShotsOnTarget(oppExtract.shots_on_target);
-  }, [mySide, extraction]);
+  }, [mySide, extraction, usesExtraction]);
+
+  // Catalogue teams matched from the team names the AI read, mapped to my/opponent side.
+  const teamGuesses = useMemo(() => {
+    if (!usesExtraction || !extraction?.suggestion) return { my: null, opp: null };
+    const s = extraction.suggestion;
+    const isHome = mySide === "home";
+    return {
+      my: matchCatalogueTeam(teams, (isHome ? s.home : s.away).team_name),
+      opp: matchCatalogueTeam(teams, (isHome ? s.away : s.home).team_name),
+    };
+  }, [usesExtraction, extraction, mySide, teams]);
+
+  // Apply the guesses without clobbering a manual pick: a slot stays auto (remappable on
+  // side change) until the user chooses a team themselves in the Teams step.
+  const autoTeamRef = useRef({ my: false, opp: false });
+  useEffect(() => {
+    if (teamGuesses.my) {
+      setMyTeam((current) => {
+        if (current && !autoTeamRef.current.my) return current;
+        autoTeamRef.current.my = true;
+        return teamGuesses.my;
+      });
+    }
+    if (teamGuesses.opp) {
+      setOpponentTeam((current) => {
+        if (current && !autoTeamRef.current.opp) return current;
+        autoTeamRef.current.opp = true;
+        return teamGuesses.opp;
+      });
+    }
+  }, [teamGuesses]);
 
   async function cleanupDraft(id = activeDraftId.current): Promise<void> {
     if (!id) return;
@@ -257,9 +296,16 @@ export function useSnapFlow(props: SnapFlowProps) {
     me,
     ratingByUid,
     myTeam,
-    setMyTeam,
+    setMyTeam: (team: Team | null) => {
+      autoTeamRef.current.my = false;
+      setMyTeam(team);
+    },
     opponentTeam,
-    setOpponentTeam,
+    setOpponentTeam: (team: Team | null) => {
+      autoTeamRef.current.opp = false;
+      setOpponentTeam(team);
+    },
+    teamsPrefilled: Boolean(teamGuesses.my || teamGuesses.opp),
     myGoals,
     setMyGoals,
     opponentGoals,

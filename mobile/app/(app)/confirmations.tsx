@@ -2,8 +2,9 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Avatar, Button, Card, Icon, Txt } from "@/components";
+import { Avatar, Button, Card, Icon, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
+import { showAlert } from "@/lib/dialogs";
 import {
   confirmMatch,
   disputeMatch,
@@ -21,7 +22,11 @@ export default function Confirmations() {
   const { user } = useAuth();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { matches, loaded: pendingLoaded } = usePendingConfirmations(user?.uid, {
+  const {
+    matches,
+    outgoing,
+    loaded: pendingLoaded,
+  } = usePendingConfirmations(user?.uid, {
     onError: () => setError("The live confirmation inbox disconnected. Refocus the tab to retry."),
   });
 
@@ -37,8 +42,13 @@ export default function Confirmations() {
     setBusyId(match.id);
     setError(null);
     try {
-      if (action === "confirm") await confirmMatch(match.id);
-      else await disputeMatch(match.id, "Opponent disputed the submitted result.");
+      if (action === "confirm") {
+        await confirmMatch(match.id);
+        showAlert("Result confirmed", "It's in the table now — ratings update in a moment.");
+      } else {
+        await disputeMatch(match.id, "Opponent disputed the submitted result.");
+        showAlert("Result disputed", "An admin will review it and settle the score.");
+      }
       // The live listener drops the row once the backend moves the match out of
       // pending_confirmation; no optimistic local mutation (which would race the listener).
     } catch {
@@ -95,6 +105,32 @@ export default function Confirmations() {
             />
           );
         })}
+        {pendingLoaded && outgoing.length > 0 ? (
+          <View style={{ marginTop: spacing.x2 }}>
+            <SectionLabel>Waiting on them</SectionLabel>
+            {outgoing.map((match) => {
+              const meIsA = match.aId === user?.uid;
+              const opponentId = meIsA ? match.bId : match.aId;
+              const opponent = players.get(opponentId);
+              const myGoals = meIsA ? match.aGoals : match.bGoals;
+              const opponentGoals = meIsA ? match.bGoals : match.aGoals;
+              return (
+                <Card key={match.id} style={styles.outgoingCard}>
+                  <Avatar player={opponent} size={38} jersey />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Txt variant="bodyMedium" size={13.5} numberOfLines={1}>
+                      You {myGoals}–{opponentGoals} {opponent?.name.split(" ")[0] ?? "Opponent"}
+                    </Txt>
+                    <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
+                      Waiting for {opponent?.name.split(" ")[0] ?? "your opponent"} to confirm —
+                      nothing counts until they do.
+                    </Txt>
+                  </View>
+                </Card>
+              );
+            })}
+          </View>
+        ) : null}
         {error ? (
           <Txt color={colors.loss} style={{ marginTop: spacing.md }}>
             {error}
@@ -210,4 +246,10 @@ const styles = StyleSheet.create({
     marginVertical: spacing.x2,
   },
   actions: { flexDirection: "row", gap: spacing.sm },
+  outgoingCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
 });

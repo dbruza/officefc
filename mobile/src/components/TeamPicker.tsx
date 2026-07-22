@@ -6,6 +6,7 @@ import type { Team } from "@/lib/league";
 import type { Player } from "@/types";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
+import { plural } from "@/lib/format";
 import { Avatar } from "./Avatar";
 import { Icon } from "./Icon";
 import { Txt } from "./Txt";
@@ -113,7 +114,7 @@ export function TeamPicker({ label, player, teams, value, onChange }: TeamPicker
                     {label}
                   </Txt>
                   <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
-                    {results.length} teams
+                    {plural(results.length, "team")}
                   </Txt>
                 </View>
               </View>
@@ -128,6 +129,7 @@ export function TeamPicker({ label, player, teams, value, onChange }: TeamPicker
                     placeholderTextColor={colors.textFaint}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    autoFocus
                     style={styles.searchInput}
                   />
                   {query ? (

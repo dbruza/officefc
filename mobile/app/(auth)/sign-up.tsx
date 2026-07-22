@@ -32,7 +32,7 @@ export default function SignUp() {
   return (
     <FormScreen
       title="Join the league"
-      subtitle="Create an account, then enter your office's join code."
+      subtitle="Create an account, set up your player profile, then join with your office's code."
       footer={
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 6 }}>
           <Txt size={13} color={colors.textDim}>
@@ -60,11 +60,11 @@ export default function SignUp() {
         label="Password"
         value={password}
         onChangeText={setPassword}
-        placeholder="At least 6 characters"
-        secureTextEntry
+        placeholder="Pick something memorable"
+        secure
         autoCapitalize="none"
         autoComplete="new-password"
-        hint="We'll email you a verification link."
+        hint="At least 6 characters. We'll email you a verification link."
         onSubmitEditing={submit}
         returnKeyType="go"
       />

@@ -325,10 +325,14 @@ function kCell(k: number): string {
 function explainCopy(match: LeagueMatch): string {
   const aSurprise = match.aGoals > match.bGoals && (match.aDelta ?? 0) <= 0;
   const bSurprise = match.bGoals > match.aGoals && (match.bDelta ?? 0) <= 0;
+  const premierNote =
+    match.eloExplain && match.eloExplain.aPremierAdj !== 0
+      ? " The reigning premier carries a handicap: they're rated as slightly stronger than their ELO, so wins pay them less and upsets against them pay more."
+      : "";
   if (aSurprise || bSurprise) {
-    return "Ratings blend the scoreline with shots on target and possession. Here the result went one way but the underlying stats favoured the other player, so the rating moved against the scoreboard.";
+    return `Ratings blend the scoreline with shots on target and possession. Here the result went one way but the underlying stats favoured the other player, so the rating moved against the scoreboard.${premierNote}`;
   }
-  return "Your rating change is the gap between how you performed — goals blended with shots on target and possession — and how likely you were to win. Beating expectations earns more. New players use a higher K-factor (·P) while their rating settles.";
+  return `Your rating change is the gap between how you performed — goals blended with shots on target and possession — and how likely you were to win. Beating expectations earns more. New players use a higher K-factor (·P) while their rating settles.${premierNote}`;
 }
 
 function EloExplainPanel({ match }: { match: LeagueMatch }) {
@@ -342,7 +346,7 @@ function EloExplainPanel({ match }: { match: LeagueMatch }) {
       <Card style={styles.statsPanel}>
         <View style={{ gap: spacing.sm }}>
           <StatsRow label="Win chance" a={pct(ex.aExpected)} b={pct(ex.bExpected)} />
-          <StatsRow label="Match quality" a={pct(ex.perfA)} b={pct(ex.perfB)} />
+          <StatsRow label="Performance share" a={pct(ex.perfA)} b={pct(ex.perfB)} />
           {ex.aTeamAdj !== 0 ? (
             <StatsRow label="Team handicap" a={signed(ex.aTeamAdj)} b={signed(ex.bTeamAdj)} />
           ) : null}

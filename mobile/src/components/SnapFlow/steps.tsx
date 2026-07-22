@@ -113,7 +113,7 @@ export function ProcessingStep({ flow }: { flow: SnapFlowState }) {
 export function SideStep({ flow }: { flow: SnapFlowState }) {
   return (
     <View style={styles.full}>
-      <ProgressBar current={0} total={4} label="Which side were you?" />
+      <ProgressBar current={0} total={5} label="Which side were you?" />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }}>
           Which side were you on?
@@ -179,7 +179,7 @@ export function SideStep({ flow }: { flow: SnapFlowState }) {
           </Pressable>
         </View>
       </ScrollView>
-      <FlowFooter onBack={() => void flow.handleLeave("cancel")} onSkip={() => {}} hideNext />
+      <FlowFooter onBack={() => void flow.handleLeave("cancel")} onNext={() => {}} hideNext />
     </View>
   );
 }
@@ -187,7 +187,7 @@ export function SideStep({ flow }: { flow: SnapFlowState }) {
 export function OpponentStep({ flow }: { flow: SnapFlowState }) {
   return (
     <View style={styles.full}>
-      <ProgressBar current={1} total={4} label="Opponent" />
+      <ProgressBar current={1} total={5} label="Opponent" />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }}>
           Who did you play?
@@ -223,7 +223,7 @@ export function OpponentStep({ flow }: { flow: SnapFlowState }) {
           ) : null}
         </View>
       </ScrollView>
-      <FlowFooter onBack={() => flow.setStep("side")} onSkip={() => {}} hideNext />
+      <FlowFooter onBack={() => flow.setStep("side")} onNext={() => {}} hideNext />
     </View>
   );
 }
@@ -231,11 +231,21 @@ export function OpponentStep({ flow }: { flow: SnapFlowState }) {
 export function TeamsStep({ flow }: { flow: SnapFlowState }) {
   return (
     <View style={styles.full}>
-      <ProgressBar current={2} total={4} label="Teams" />
+      <ProgressBar current={2} total={5} label="Teams" />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
-        <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }}>
+        <Txt variant="head" size={22} style={{ marginBottom: spacing.sm }}>
           Which teams did you use?
         </Txt>
+        {flow.teamsPrefilled ? (
+          <View style={styles.prefillHint}>
+            <Icon name="bolt" size={13} color={colors.accent} />
+            <Txt size={11.5} color={colors.textDim} style={{ flex: 1, lineHeight: 16 }}>
+              Pre-picked from the team names on your photo — double-check before continuing.
+            </Txt>
+          </View>
+        ) : (
+          <View style={{ height: spacing.sm }} />
+        )}
         <TeamPicker
           label="Your team"
           player={flow.me}
@@ -260,7 +270,7 @@ export function TeamsStep({ flow }: { flow: SnapFlowState }) {
       </ScrollView>
       <FlowFooter
         onBack={() => flow.setStep("opponent")}
-        onSkip={() => (flow.myTeam && flow.opponentTeam ? flow.setStep("prefill") : null)}
+        onNext={() => (flow.myTeam && flow.opponentTeam ? flow.setStep("prefill") : null)}
         nextDisabled={!flow.myTeam || !flow.opponentTeam}
       />
     </View>
@@ -275,7 +285,7 @@ export function PrefillStep({ flow }: { flow: SnapFlowState }) {
 
   return (
     <View style={styles.full}>
-      <ProgressBar current={3} total={4} label="Verify stats" />
+      <ProgressBar current={3} total={5} label="Verify stats" />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Txt variant="head" size={22} style={{ marginBottom: spacing.sm }}>
           Verify the score and stats
@@ -363,7 +373,7 @@ export function PrefillStep({ flow }: { flow: SnapFlowState }) {
       </ScrollView>
       <FlowFooter
         onBack={() => flow.setStep("teams")}
-        onSkip={() => flow.setStep("review")}
+        onNext={() => flow.setStep("review")}
         nextLabel="Review"
       />
     </View>
@@ -373,7 +383,7 @@ export function PrefillStep({ flow }: { flow: SnapFlowState }) {
 export function ReviewStep({ flow }: { flow: SnapFlowState }) {
   return (
     <View style={styles.full}>
-      <ProgressBar current={4} total={4} label="Review" />
+      <ProgressBar current={4} total={5} label="Review" />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }}>
           Look right?
@@ -479,7 +489,7 @@ export function ReviewStep({ flow }: { flow: SnapFlowState }) {
       </ScrollView>
       <FlowFooter
         onBack={() => flow.setStep("prefill")}
-        onSkip={flow.handleSubmit}
+        onNext={flow.handleSubmit}
         nextLabel="Submit match"
         nextDisabled={false}
         loading={flow.isSubmitting}

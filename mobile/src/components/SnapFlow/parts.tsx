@@ -31,14 +31,14 @@ export function ProgressBar({
 
 export function FlowFooter({
   onBack,
-  onSkip,
+  onNext,
   nextLabel = "Continue",
   nextDisabled,
   hideNext,
   loading,
 }: {
   onBack: () => void;
-  onSkip: () => void;
+  onNext: () => void;
   nextLabel?: string;
   nextDisabled?: boolean;
   hideNext?: boolean;
@@ -53,7 +53,7 @@ export function FlowFooter({
         <Button
           size="md"
           icon={nextLabel === "Submit match" ? "check" : undefined}
-          onPress={() => onSkip()}
+          onPress={() => onNext()}
           disabled={nextDisabled || loading}
         >
           {loading ? "Submitting…" : nextLabel}
@@ -89,14 +89,16 @@ export function ScoreBox({
             -
           </Txt>
         </Pressable>
-        <Txt
-          variant="monoBold"
-          size={34}
-          color={color}
-          style={{ minWidth: 44, textAlign: "center" }}
-        >
-          {value}
-        </Txt>
+        <TextInput
+          value={String(value)}
+          onChangeText={(t) => {
+            const n = Number.parseInt(t.replace(/[^0-9]/g, ""), 10);
+            onChange(Number.isFinite(n) ? Math.min(99, n) : 0);
+          }}
+          keyboardType="number-pad"
+          selectTextOnFocus
+          style={[styles.scoreInput, { color }]}
+        />
         <Pressable onPress={() => onChange(Math.min(99, value + 1))} style={styles.stepBtn}>
           <Txt variant="monoBold" size={22}>
             +

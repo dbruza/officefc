@@ -104,17 +104,17 @@ export default function HeadToHeadRoute() {
             <View style={styles.statRow}>
               <View style={{ flex: 1 }}>
                 <StatCard
-                  label="Goals for"
+                  label={`${firstName(a.name)} goals`}
                   value={oriented.goalsFor}
-                  sub={firstName(a.name)}
+                  sub="in this rivalry"
                   accent
                 />
               </View>
               <View style={{ flex: 1 }}>
                 <StatCard
-                  label="Goals against"
+                  label={`${firstName(b.name)} goals`}
                   value={oriented.goalsAgainst}
-                  sub={firstName(b.name)}
+                  sub="in this rivalry"
                 />
               </View>
             </View>
@@ -142,13 +142,17 @@ export default function HeadToHeadRoute() {
                           })
                         : "—"}
                     </Txt>
-                    <Txt variant="monoBold" size={18} style={{ flex: 1, textAlign: "center" }}>
-                      {meeting.goalsFor}
-                      <Txt variant="monoBold" size={18} color={colors.textFaint}>
-                        :
+                    <View style={styles.meetingScore}>
+                      <Avatar player={a} size={20} />
+                      <Txt variant="monoBold" size={18}>
+                        {meeting.goalsFor}
+                        <Txt variant="monoBold" size={18} color={colors.textFaint}>
+                          :
+                        </Txt>
+                        {meeting.goalsAgainst}
                       </Txt>
-                      {meeting.goalsAgainst}
-                    </Txt>
+                      <Avatar player={b} size={20} />
+                    </View>
                     <EloDelta delta={meeting.delta} size={11} />
                     <Icon name="chevron" size={14} color={colors.textFaint} />
                   </Pressable>
@@ -305,6 +309,13 @@ const styles = StyleSheet.create({
     backgroundColor: withAlpha(colors.accent, 0.08),
   },
   statRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  meetingScore: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
   meeting: {
     minHeight: 54,
     flexDirection: "row",

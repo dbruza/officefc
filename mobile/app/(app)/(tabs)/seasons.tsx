@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -31,6 +31,7 @@ import {
 } from "@/lib/league";
 import { AWARD_META, computeSeasonAwards, type SeasonAward } from "@/lib/awards";
 import { useFocusData } from "@/lib/useFocusData";
+import { useTabRetap } from "@/lib/tabRetap";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
 import { firstName } from "@/lib/format";
@@ -57,6 +58,8 @@ interface SeasonsData {
 export default function SeasonsRoute() {
   const router = useRouter();
   const [showAllResults, setShowAllResults] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabRetap("seasons", () => scrollRef.current?.scrollTo({ y: 0, animated: true }));
 
   const { data, loading } = useFocusData<SeasonsData>(
     "seasons",
@@ -131,7 +134,11 @@ export default function SeasonsRoute() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScreenHeader title="Seasons" subtitle="Hall of Fame & silverware" back={false} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
         {active ? (
           <Card style={styles.current}>
@@ -387,7 +394,15 @@ function PodiumChip({
       <View style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           <Icon name={icon} size={12} color={color} />
-          <Txt variant="head" size={8.5} color={colors.textDim} style={styles.kicker}>
+          <Txt
+            variant="head"
+            size={8.5}
+            color={colors.textDim}
+            style={[styles.kicker, { flexShrink: 1 }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
             {label.toUpperCase()}
           </Txt>
         </View>

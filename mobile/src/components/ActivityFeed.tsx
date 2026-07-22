@@ -5,6 +5,7 @@ import { Avatar } from "./Avatar";
 import { Icon, type IconName } from "./Icon";
 import { Txt } from "./Txt";
 import { colors, radius, spacing } from "@/theme";
+import { withAlpha } from "@/lib/color";
 import { firstName } from "@/lib/format";
 import type { ActivityEvent, LeaguePlayer } from "@/lib/league";
 
@@ -35,6 +36,30 @@ interface Line {
   tint: string;
   primaryId: string;
   text: string;
+  /** Milestones (crowns, streaks, silverware) get accented rows; plain results stay quiet. */
+  milestone?: boolean;
+}
+
+/**
+ * Drop repeated "new #1" events for the same player: the crown only re-announces when the
+ * lead actually changed hands. Events arrive newest-first, so walk oldest-first.
+ */
+function collapseRepeats(events: ActivityEvent[]): ActivityEvent[] {
+  const kept = new Set<string>();
+  let lastNumberOne: string | null = null;
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event.type !== "new_number_one") {
+      kept.add(event.id);
+      continue;
+    }
+    const actor = event.actorIds[0] ?? str(event.payload.playerId);
+    if (actor !== lastNumberOne) {
+      kept.add(event.id);
+      lastNumberOne = actor;
+    }
+  }
+  return events.filter((event) => kept.has(event.id));
 }
 
 function describe(event: ActivityEvent, name: (uid: string) => string): Line {
@@ -71,6 +96,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         tint: colors.accent,
         primaryId: winnerId,
         text: `Upset — ${name(winnerId)} took down ${name(str(p.loserId))}`,
+        milestone: true,
       };
     }
     case "streak": {
@@ -80,6 +106,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         tint: colors.win,
         primaryId: playerId,
         text: `${name(playerId)} is on a ${num(p.count)}-win streak`,
+        milestone: true,
       };
     }
     case "new_number_one": {
@@ -89,6 +116,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         tint: colors.accent,
         primaryId: playerId,
         text: `${name(playerId)} is the new #1`,
+        milestone: true,
       };
     }
     case "potm": {
@@ -98,6 +126,20 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         tint: colors.accent,
         primaryId: playerId,
         text: `${name(playerId)} won Player of the Month`,
+        milestone: true,
+      };
+    }
+    case "premier": {
+      const playerId = str(p.playerId);
+      const season = str(p.seasonName);
+      return {
+        icon: "medal",
+        tint: colors.gold,
+        primaryId: playerId,
+        text: season
+          ? `${name(playerId)} topped the table — ${season} Premier`
+          : `${name(playerId)} topped the table`,
+        milestone: true,
       };
     }
     case "champion": {
@@ -105,9 +147,10 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
       const season = str(p.seasonName);
       return {
         icon: "trophy",
-        tint: colors.accent,
+        tint: colors.gold,
         primaryId: playerId,
         text: season ? `${name(playerId)} won ${season}` : `${name(playerId)} won the season`,
+        milestone: true,
       };
     }
   }
@@ -146,7 +189,8 @@ export function ActivityFeed({
     );
   }
 
-  const visible = expanded ? events : events.slice(0, COLLAPSED_COUNT);
+  const feed = collapseRepeats(events);
+  const visible = expanded ? feed : feed.slice(0, COLLAPSED_COUNT);
   return (
     <View style={{ gap: spacing.sm }}>
       {visible.map((event) => {
@@ -162,7 +206,14 @@ export function ActivityFeed({
           <Pressable
             key={event.id}
             onPress={onPress}
-            style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
+            style={({ pressed }) => [
+              styles.row,
+              line.milestone && {
+                borderColor: withAlpha(line.tint, 0.35),
+                backgroundColor: withAlpha(line.tint, 0.05),
+              },
+              pressed && { opacity: 0.9 },
+            ]}
           >
             {primary ? (
               <Avatar player={primary} size={30} />
@@ -189,10 +240,10 @@ export function ActivityFeed({
           </Pressable>
         );
       })}
-      {events.length > COLLAPSED_COUNT ? (
+      {feed.length > COLLAPSED_COUNT ? (
         <Pressable onPress={() => setExpanded((value) => !value)} style={styles.more}>
           <Txt variant="head" size={11} color={colors.accent}>
-            {expanded ? "SHOW LESS" : `SHOW ${events.length - COLLAPSED_COUNT} MORE`}
+            {expanded ? "SHOW LESS" : `SHOW ${feed.length - COLLAPSED_COUNT} MORE`}
           </Txt>
         </Pressable>
       ) : null}

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -21,6 +21,7 @@ import {
   type Standing,
 } from "@/lib/league";
 import { useFocusData } from "@/lib/useFocusData";
+import { useTabRetap } from "@/lib/tabRetap";
 import { colors, spacing } from "@/theme";
 
 interface LeaderboardData {
@@ -64,6 +65,8 @@ export default function Leaderboard() {
   const activeSeasonId = data?.selectedId ?? "";
 
   const chooseSeason = (id: string) => setSeasonId(id);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabRetap("leaderboard", () => scrollRef.current?.scrollTo({ y: 0, animated: true }));
 
   const selectedSeason = seasons.find((season) => season.id === activeSeasonId) ?? null;
   const visible = useMemo(() => {
@@ -96,7 +99,11 @@ export default function Leaderboard() {
         subtitle={`${visible.length + unranked.length} contender${visible.length + unranked.length === 1 ? "" : "s"}${selectedSeason ? ` · ${selectedSeason.year}` : ""}`}
         back={false}
       />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

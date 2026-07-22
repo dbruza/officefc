@@ -57,7 +57,7 @@ export default function SignIn() {
         value={password}
         onChangeText={setPassword}
         placeholder="••••••••"
-        secureTextEntry
+        secure
         autoCapitalize="none"
         autoComplete="current-password"
         onSubmitEditing={submit}

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { redeemInvite } from "@/lib/membership";
 import { isAllowlistedAdmin } from "@/lib/constants";
 import { authErrorMessage } from "@/lib/authErrors";
+import { confirmAction } from "@/lib/dialogs";
 import { colors, spacing } from "@/theme";
 
 export default function Join() {
@@ -37,7 +38,19 @@ export default function Join() {
       }
       footer={
         <View style={{ alignItems: "center" }}>
-          <Button variant="ghost" size="sm" onPress={signOutUser}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() =>
+              confirmAction({
+                title: "Sign out?",
+                message: "You can pick up joining again the next time you sign in.",
+                confirmLabel: "Sign out",
+                destructive: true,
+                onConfirm: () => void signOutUser(),
+              })
+            }
+          >
             Sign out
           </Button>
         </View>

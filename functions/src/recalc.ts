@@ -8,7 +8,8 @@ import { dateMillis, seasonMatchInputsWithTeams } from "./utils";
 /**
  * Rebuild a season's ELO, standings, and eloHistory from its confirmed matches.
  * Stale standings/history docs (players with no remaining games) are pruned. The per-player
- * `move` indicator is carried over from the previous standings. Throws if the season is gone.
+ * `move` indicator is the rank change vs the previous standings snapshot. Throws if the
+ * season is gone.
  */
 export async function recalcSeasonElo(seasonId: string): Promise<void> {
   const db = getFirestore();
@@ -63,15 +64,18 @@ export async function recalcSeasonElo(seasonId: string): Promise<void> {
     );
   }
 
-  const previousMove = new Map<string, number>();
+  // Movement = rank change vs the previous standings snapshot (positive = climbed), so the
+  // arrows reflect what THIS recalc changed instead of carrying a stale stored value.
+  const previousRank = new Map<string, number>();
   for (const snap of oldStandings.docs) {
-    const move = snap.get("move");
-    if (typeof move === "number") previousMove.set(snap.id, move);
+    const rank = snap.get("rank");
+    if (typeof rank === "number") previousRank.set(snap.id, rank);
   }
   for (const standing of result.standings) {
+    const rankBefore = previousRank.get(standing.uid);
     writer.set(seasonRef.collection("standings").doc(standing.uid), {
       ...standing,
-      move: previousMove.get(standing.uid) ?? standing.move,
+      move: rankBefore != null ? rankBefore - standing.rank : 0,
       recalculatedAt: FieldValue.serverTimestamp(),
     });
   }

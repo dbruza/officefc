@@ -1,12 +1,20 @@
 /** Uppercase section header with an optional right-aligned action. */
 import { ReactNode } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, type ViewStyle } from "react-native";
 import { Txt } from "./Txt";
 import { colors } from "@/theme";
 
-export function SectionLabel({ children, action }: { children: string; action?: ReactNode }) {
+export function SectionLabel({
+  children,
+  action,
+  style,
+}: {
+  children: string;
+  action?: ReactNode;
+  style?: ViewStyle;
+}) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, style]}>
       <Txt variant="head" size={12} color={colors.textDim} style={styles.label}>
         {children.toUpperCase()}
       </Txt>

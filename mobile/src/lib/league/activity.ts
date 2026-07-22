@@ -10,6 +10,7 @@ const ACTIVITY_TYPES: ActivityType[] = [
   "streak",
   "new_number_one",
   "potm",
+  "premier",
   "champion",
 ];
 

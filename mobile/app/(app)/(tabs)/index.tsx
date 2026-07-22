@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -30,6 +30,7 @@ import {
 } from "@/lib/league";
 import { usePendingConfirmations } from "@/lib/usePendingConfirmations";
 import { useFocusData } from "@/lib/useFocusData";
+import { useTabRetap } from "@/lib/tabRetap";
 import { initialsOf, type Player } from "@/types";
 import { colors, spacing, radius } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
@@ -44,7 +45,7 @@ interface HomeData {
 
 export default function Home() {
   const router = useRouter();
-  const { user, profile, membership, signOutUser } = useAuth();
+  const { user, profile, membership } = useAuth();
   const isAdmin = membership?.role === "admin";
   const uid = user?.uid;
   const [inboxError, setInboxError] = useState<string | null>(null);
@@ -103,6 +104,9 @@ export default function Home() {
     ? "Couldn't load the live league data. Check the connection and retry."
     : inboxError;
 
+  const scrollRef = useRef<ScrollView>(null);
+  useTabRetap("home", () => scrollRef.current?.scrollTo({ y: 0, animated: true }));
+
   const me: Player | null = profile
     ? {
         id: user?.uid ?? "me",
@@ -123,7 +127,11 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Txt variant="head" size={10.5} color={colors.textDim} style={{ letterSpacing: 1.6 }}>
@@ -187,7 +195,13 @@ export default function Home() {
                   {playerStats.currentStreak} {streakCopy(playerStats.currentStreakType)}
                 </Txt>
               ) : null}
-              <View style={[styles.roleChip, isAdmin && { backgroundColor: colors.accent }]}>
+              <Pressable
+                disabled={!isAdmin}
+                onPress={() => router.push("/(app)/admin")}
+                hitSlop={8}
+                accessibilityRole={isAdmin ? "button" : undefined}
+                style={[styles.roleChip, isAdmin && { backgroundColor: colors.accent }]}
+              >
                 <Txt
                   variant="monoBold"
                   size={9}
@@ -196,9 +210,29 @@ export default function Home() {
                 >
                   {(membership?.role ?? "member").toUpperCase()}
                 </Txt>
-              </View>
+                {isAdmin ? <Icon name="chevron" size={10} color={colors.onAccent} /> : null}
+              </Pressable>
             </View>
           </Card>
+        ) : null}
+
+        {season?.phase === "finals" ? (
+          <Pressable
+            onPress={() => router.push("/(app)/finals")}
+            style={styles.finalsBanner}
+            accessibilityRole="button"
+          >
+            <Icon name="trophy" size={20} color={colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="head" size={14}>
+                Finals are live
+              </Txt>
+              <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
+                The table is locked — the bracket decides the champion.
+              </Txt>
+            </View>
+            <Icon name="chevron" size={16} color={colors.textDim} />
+          </Pressable>
         ) : null}
 
         <View style={styles.primaryActions}>
@@ -230,7 +264,9 @@ export default function Home() {
           </Card>
         ) : null}
 
-        {nemesis && playerStats?.nemesis ? (
+        {nemesis &&
+        playerStats?.nemesis &&
+        playerStats.nemesis.losses > playerStats.nemesis.wins ? (
           <View style={{ marginBottom: spacing.x2 }}>
             <SectionLabel>Current nemesis</SectionLabel>
             <Pressable
@@ -329,11 +365,6 @@ export default function Home() {
         ) : null}
 
         {isAdmin ? <AdminInvite /> : null}
-
-        <View style={{ height: spacing.x3 }} />
-        <Button full variant="ghost" onPress={signOutUser}>
-          Sign out
-        </Button>
       </ScrollView>
     </SafeAreaView>
   );
@@ -396,10 +427,24 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   roleChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     backgroundColor: colors.surface2,
     borderRadius: radius.pill,
     paddingHorizontal: 9,
     paddingVertical: 4,
+  },
+  finalsBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
   },
   primaryActions: {
     flexDirection: "row",

@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -315,20 +316,22 @@ export default function LogMatch() {
 
   if (mode === "snap" && user && season && profile) {
     return (
-      <SnapFlow
-        uid={user.uid}
-        profile={profile}
-        season={season}
-        players={players}
-        teams={teams}
-        standings={standings}
-        onCancel={() => setMode("choose")}
-        onManualFallback={() => {
-          setStep(0);
-          setMode("manual");
-        }}
-        onDone={() => router.replace("/(app)")}
-      />
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+        <SnapFlow
+          uid={user.uid}
+          profile={profile}
+          season={season}
+          players={players}
+          teams={teams}
+          standings={standings}
+          onCancel={() => setMode("choose")}
+          onManualFallback={() => {
+            setStep(0);
+            setMode("manual");
+          }}
+          onDone={() => router.replace("/(app)/(tabs)")}
+        />
+      </SafeAreaView>
     );
   }
 
@@ -503,7 +506,7 @@ export default function LogMatch() {
           </Card>
         </View>
         <View style={styles.footer}>
-          <Button full size="lg" onPress={() => router.replace("/(app)")}>
+          <Button full size="lg" onPress={() => router.replace("/(app)/(tabs)")}>
             Back to dashboard
           </Button>
         </View>
@@ -854,9 +857,16 @@ function ScoreStepper({
             -
           </Txt>
         </Pressable>
-        <Txt variant="monoBold" size={34} style={{ minWidth: 44, textAlign: "center" }}>
-          {value}
-        </Txt>
+        <TextInput
+          value={String(value)}
+          onChangeText={(t) => {
+            const n = Number.parseInt(t.replace(/[^0-9]/g, ""), 10);
+            onChange(Number.isFinite(n) ? Math.min(99, n) : 0);
+          }}
+          keyboardType="number-pad"
+          selectTextOnFocus
+          style={styles.scoreInput}
+        />
         <Pressable onPress={() => onChange(Math.min(99, value + 1))} style={styles.stepButton}>
           <Txt variant="monoBold" size={22}>
             +
@@ -988,6 +998,14 @@ const styles = StyleSheet.create({
   },
   scoreRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   stepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  scoreInput: {
+    minWidth: 56,
+    textAlign: "center",
+    color: colors.text,
+    fontFamily: "JetBrainsMono_700Bold",
+    fontSize: 34,
+    paddingVertical: 2,
+  },
   stepButton: {
     width: 38,
     height: 38,

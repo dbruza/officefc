@@ -1,6 +1,7 @@
 /** Labeled text input, themed to match the dark UI. */
 import { useState } from "react";
-import { View, TextInput, StyleSheet, type TextInputProps } from "react-native";
+import { Pressable, View, TextInput, StyleSheet, type TextInputProps } from "react-native";
+import { Icon } from "./Icon";
 import { Txt } from "./Txt";
 import { colors, radius, fonts } from "@/theme";
 import { withAlpha } from "@/lib/color";
@@ -12,6 +13,8 @@ export interface TextFieldProps extends TextInputProps {
   error?: boolean;
   /** Prefix glyph rendered inside the field (e.g. "@"). */
   prefix?: string;
+  /** Password-style field: hides input and adds a show/hide toggle. */
+  secure?: boolean;
 }
 
 export function TextField({
@@ -19,12 +22,14 @@ export function TextField({
   hint,
   error,
   prefix,
+  secure,
   style,
   onFocus,
   onBlur,
   ...rest
 }: TextFieldProps) {
   const [focused, setFocused] = useState(false);
+  const [hidden, setHidden] = useState(true);
   return (
     <View style={styles.wrap}>
       {label ? (
@@ -51,6 +56,7 @@ export function TextField({
         ) : null}
         <TextInput
           {...rest}
+          secureTextEntry={secure ? hidden : rest.secureTextEntry}
           onFocus={(e) => {
             setFocused(true);
             onFocus?.(e);
@@ -62,6 +68,16 @@ export function TextField({
           placeholderTextColor={colors.textFaint}
           style={[styles.input, style]}
         />
+        {secure ? (
+          <Pressable
+            onPress={() => setHidden((value) => !value)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={hidden ? "Show password" : "Hide password"}
+          >
+            <Icon name={hidden ? "eye" : "eyeOff"} size={18} color={colors.textDim} />
+          </Pressable>
+        ) : null}
       </View>
       {hint ? (
         <Txt size={11.5} color={error ? colors.loss : colors.textDim} style={{ marginTop: 5 }}>

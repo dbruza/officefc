@@ -148,6 +148,13 @@ function pendingForUser(matches: PendingMatch[], uid: string): PendingMatch[] {
     .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
 }
 
+/** Pending matches the user submitted — waiting on the opponent's verdict — newest first. */
+function pendingSubmittedBy(matches: PendingMatch[], uid: string): PendingMatch[] {
+  return matches
+    .filter((match) => match.submittedBy === uid)
+    .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+}
+
 export async function getPendingConfirmations(uid: string): Promise<PendingMatch[]> {
   const snap = await getDocs(
     query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
@@ -158,19 +165,23 @@ export async function getPendingConfirmations(uid: string): Promise<PendingMatch
   );
 }
 
+export interface PendingBuckets {
+  /** Awaiting MY verdict (opponent submitted). */
+  incoming: PendingMatch[];
+  /** My own submissions awaiting the opponent. */
+  outgoing: PendingMatch[];
+}
+
 export function subscribePendingConfirmations(
   uid: string,
-  onMatches: (matches: PendingMatch[]) => void,
+  onMatches: (buckets: PendingBuckets) => void,
   onError?: (error: Error) => void,
 ): () => void {
   return onSnapshot(
     query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
     (snapshot) => {
-      const matches = pendingForUser(
-        snapshot.docs.map((matchDoc) => mapPendingMatch(matchDoc.id, matchDoc.data())),
-        uid,
-      );
-      onMatches(matches);
+      const all = snapshot.docs.map((matchDoc) => mapPendingMatch(matchDoc.id, matchDoc.data()));
+      onMatches({ incoming: pendingForUser(all, uid), outgoing: pendingSubmittedBy(all, uid) });
     },
     (error) => onError?.(error),
   );
