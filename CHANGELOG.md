@@ -3,6 +3,18 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.2.0.0] - 2026-08-03
+
+### Added
+
+- A "Teams played" section on every player profile: the team you use most is called out
+  as your favourite with its win rate, record, rating swing per game, last-five form, and
+  goals for/against, followed by a row per other team you've played. The team with the
+  strongest record — measured only once it has a real sample and a rival that cleared the
+  same bar — is flagged as your best. Everything is derived from confirmed matches the
+  profile already loads; the team catalogue only supplies the crest rating and
+  competition, so a missing catalogue entry falls back to the name on the match.
+
 ## [1.1.1.0] - 2026-07-22
 
 ### Fixed

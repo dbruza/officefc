@@ -33,4 +33,5 @@ export { AppTabBar } from "./AppTabBar";
 export type { AppTab } from "./AppTabBar";
 export { TeamPicker } from "./TeamPicker";
 export type { TeamPickerProps } from "./TeamPicker";
+export { TeamsPlayed } from "./TeamsPlayed";
 export { SnapFlow } from "./SnapFlow";

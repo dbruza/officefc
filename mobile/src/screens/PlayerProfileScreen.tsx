@@ -14,6 +14,7 @@ import {
   SeasonMatchRow,
   SectionLabel,
   StatCard,
+  TeamsPlayed,
   Txt,
   type ChartPoint,
 } from "@/components";
@@ -27,6 +28,7 @@ import {
   getSeasonResults,
   getSeasons,
   getStandings,
+  getTeams,
   type HeadToHead,
   type LeagueMatch,
   type LeaguePlayer,
@@ -34,10 +36,13 @@ import {
   type Season,
   type SeasonResult,
   type Standing,
+  type Team,
 } from "@/lib/league";
 import { computeAchievements } from "@/lib/awards";
+import { computeTeamRecords } from "@/lib/teamRecord";
 import { confirmAction } from "@/lib/dialogs";
 import { plural } from "@/lib/format";
+import { logger } from "@/lib/logger";
 import { useFocusData } from "@/lib/useFocusData";
 import { useTabRetap } from "@/lib/tabRetap";
 import { colors, radius, spacing } from "@/theme";
@@ -56,6 +61,19 @@ interface ProfileData {
   matches: LeagueMatch[];
   history: ChartPoint[];
   headToHeads: HeadToHead[];
+  /** Catalogue lookup for the teams section — competition and OVR only. */
+  teamsById: Map<string, Team>;
+}
+
+/** Team metadata only decorates the teams section, so a failed catalogue read must not
+ *  blank the profile — the rows still render from the names stored on each match. */
+async function loadTeamCatalogue(): Promise<Map<string, Team>> {
+  try {
+    return new Map((await getTeams()).map((team) => [team.id, team]));
+  } catch (error) {
+    logger.warn("profile_team_catalogue_failed", { message: String(error) });
+    return new Map();
+  }
 }
 
 export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?: boolean }) {
@@ -72,14 +90,16 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   } = useFocusData<ProfileData>(
     `player:${uid}`,
     useCallback(async () => {
-      const [seasonRows, roster, allTime, pairs, playedMatches, results] = await Promise.all([
-        getSeasons(),
-        getLeaguePlayers(),
-        getPlayerStats(uid),
-        getHeadToHeadsForPlayer(uid),
-        getPlayerMatches(uid),
-        getSeasonResults(),
-      ]);
+      const [seasonRows, roster, allTime, pairs, playedMatches, results, teamsById] =
+        await Promise.all([
+          getSeasons(),
+          getLeaguePlayers(),
+          getPlayerStats(uid),
+          getHeadToHeadsForPlayer(uid),
+          getPlayerMatches(uid),
+          getSeasonResults(),
+          loadTeamCatalogue(),
+        ]);
       const activeSeason = seasonRows.find((item) => item.active) ?? null;
       const [table, eloPoints] = activeSeason
         ? await Promise.all([getStandings(activeSeason.id), getEloHistory(activeSeason.id, uid)])
@@ -98,6 +118,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
           rating: point.rating,
         })),
         headToHeads: pairs,
+        teamsById,
       };
     }, [uid]),
   );
@@ -111,6 +132,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   const matches = data?.matches ?? [];
   const history = data?.history ?? [];
   const headToHeads = data?.headToHeads ?? [];
+  const teamsById = data?.teamsById ?? new Map<string, Team>();
   const error = loadFailed ? "Couldn't load this profile. Check the connection and retry." : null;
 
   const isYou = uid === user?.uid;
@@ -126,6 +148,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
       champion && premier ? "double" : champion ? "champion" : premier ? "premier" : null;
     return kind ? [{ seasonId: result.seasonId, kind }] : [];
   });
+  const teamRecords = computeTeamRecords(uid, matches, teamsById);
   const achievements = computeAchievements(uid, stats, matches);
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
   const recentMatches = matches.slice().reverse();
@@ -341,6 +364,21 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                   </Card>
                 ) : null}
               </View>
+            </View>
+
+            <View style={{ marginTop: spacing.x2 }}>
+              <SectionLabel
+                action={
+                  teamRecords.teams.length ? (
+                    <Txt variant="monoBold" size={11.5} color={colors.textDim}>
+                      {plural(teamRecords.teams.length, "team")}
+                    </Txt>
+                  ) : undefined
+                }
+              >
+                Teams played
+              </SectionLabel>
+              <TeamsPlayed summary={teamRecords} />
             </View>
 
             {titles.length > 0 ? (
