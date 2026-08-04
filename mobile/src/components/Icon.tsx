@@ -40,7 +40,8 @@ export type IconName =
   | "handshake"
   | "settings"
   | "eye"
-  | "eyeOff";
+  | "eyeOff"
+  | "calendar";
 
 export interface IconProps {
   name: IconName;
@@ -219,6 +220,12 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
         <Path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" {...common} />
         <Circle cx="12" cy="12" r="3" {...common} />
         <Path d="M4 4l16 16" {...common} />
+      </G>
+    ),
+    calendar: (
+      <G {...common}>
+        <Rect x="3.5" y="5" width="17" height="15" rx="2.5" {...common} />
+        <Path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" {...common} />
       </G>
     ),
   };

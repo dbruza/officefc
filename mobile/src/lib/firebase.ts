@@ -11,6 +11,7 @@ import {
   getAuth,
   connectAuthEmulator,
   initializeAuth,
+  type Auth,
   // @ts-expect-error — RN persistence helper is exported but not in the web types
   getReactNativePersistence,
 } from "firebase/auth";
@@ -32,13 +33,23 @@ const firebaseConfig: FirebaseOptions = {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 /**
- * On native, persist auth across restarts via AsyncStorage. On web, the default
- * persistence is used (initializeAuth with RN persistence throws there).
+ * On native, persist auth across restarts via AsyncStorage. A dev reload re-evaluates this
+ * module against a Firebase app that is already live, and `initializeAuth` throws
+ * "auth/already-initialized" the second time — an uncaught red box that blocks the app until
+ * dismissed. Reuse the existing instance in that case; the first call still installs the
+ * AsyncStorage persistence, so behaviour in a release build is unchanged.
  */
-export const auth =
-  Platform.OS === "web"
-    ? getAuth(app)
-    : initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
+function nativeAuth(): Auth {
+  try {
+    return initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
+  } catch (error) {
+    if ((error as { code?: string }).code !== "auth/already-initialized") throw error;
+    return getAuth(app);
+  }
+}
+
+/** On web the default persistence is used (initializeAuth with RN persistence throws there). */
+export const auth = Platform.OS === "web" ? getAuth(app) : nativeAuth();
 
 /**
  * On native, force long polling: React Native's networking lacks the fetch streams

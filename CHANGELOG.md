@@ -3,6 +3,23 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.3.0.0] - 2026-08-04
+
+### Added
+
+- Creating a season now uses date and time pickers instead of typed ISO strings. Both
+  fields open a calendar sheet with a month grid and hour/minute rows, open on the current
+  selection, and default to a 90-day season running 09:00 to 21:00. The end can't be set
+  before the start, the form shows the season's length as you adjust it, and Create stays
+  disabled until the name and dates are valid.
+
+### Fixed
+
+- A dev reload no longer red-boxes with "auth/already-initialized". `initializeAuth` runs
+  at module scope on native, so re-evaluating the module against a live Firebase app threw
+  an uncaught error that blocked the app until dismissed; the existing instance is now
+  reused. Release builds, which evaluate the module once, are unaffected.
+
 ## [1.2.0.0] - 2026-08-03
 
 ### Added

@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "export:web": "expo export --platform web",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/lib/logger/core.test.ts src/lib/teamRecord.test.ts"
+    "test": "node --import tsx --test src/lib/logger/core.test.ts src/lib/teamRecord.test.ts src/lib/calendar.test.ts"
   },
   "dependencies": {
     "@expo-google-fonts/archivo": "^0.2.3",

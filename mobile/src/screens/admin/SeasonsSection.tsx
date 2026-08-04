@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, TextInput, View } from "react-native";
-import { Button, Card, Txt } from "@/components";
+import { Button, Card, DateTimeField, Txt } from "@/components";
 import {
   createSeason,
   activateSeason,
@@ -10,7 +10,22 @@ import {
 } from "@/lib/league";
 import { colors, spacing } from "@/theme";
 import { showAlert } from "@/lib/dialogs";
+import { durationLabel, withTime } from "@/lib/calendar";
 import { errorMessage, formStyles } from "./common";
+
+/** Seasons run a quarter by default — the admin nudges the dates from there. */
+const DEFAULT_LENGTH_DAYS = 90;
+
+/** A season opens at 09:00 on its start day and closes at 21:00 on its last one. */
+function defaultStart(): Date {
+  return withTime(new Date(), 9, 0);
+}
+
+function defaultEnd(start: Date): Date {
+  const end = new Date(start);
+  end.setDate(end.getDate() + DEFAULT_LENGTH_DAYS);
+  return withTime(end, 21, 0);
+}
 
 type Season = {
   id: string;
@@ -26,8 +41,9 @@ export function SeasonsSection() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newStart, setNewStart] = useState("");
-  const [newEnd, setNewEnd] = useState("");
+  const [newStart, setNewStart] = useState(defaultStart);
+  const [newEnd, setNewEnd] = useState(() => defaultEnd(defaultStart()));
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -46,23 +62,36 @@ export function SeasonsSection() {
     load();
   }, []);
 
+  function startCreating() {
+    const start = defaultStart();
+    setNewName("");
+    setNewStart(start);
+    setNewEnd(defaultEnd(start));
+    setCreating(true);
+  }
+
+  /** Keep the end after the start: dragging the start past it takes the end along. */
+  function changeStart(start: Date) {
+    setNewStart(start);
+    if (newEnd <= start) setNewEnd(defaultEnd(start));
+  }
+
   async function doCreate() {
-    if (!newName) return;
+    if (!canCreate) return;
+    setSaving(true);
     try {
-      await createSeason(
-        newName,
-        newStart || new Date().toISOString(),
-        newEnd || new Date(Date.now() + 90 * 86400000).toISOString(),
-      );
+      await createSeason(newName.trim(), newStart.toISOString(), newEnd.toISOString());
       setCreating(false);
-      setNewName("");
-      setNewStart("");
-      setNewEnd("");
       load();
     } catch (error: unknown) {
       showAlert("Error", errorMessage(error));
+    } finally {
+      setSaving(false);
     }
   }
+
+  const datesValid = newEnd > newStart;
+  const canCreate = newName.trim().length > 0 && datesValid && !saving;
 
   return (
     <View>
@@ -82,23 +111,20 @@ export function SeasonsSection() {
             placeholderTextColor={colors.textFaint}
             style={formStyles.input}
           />
-          <TextInput
-            value={newStart}
-            onChangeText={setNewStart}
-            placeholder="Start (ISO date)"
-            placeholderTextColor={colors.textFaint}
-            style={formStyles.input}
-          />
-          <TextInput
-            value={newEnd}
-            onChangeText={setNewEnd}
-            placeholder="End (ISO date)"
-            placeholderTextColor={colors.textFaint}
-            style={formStyles.input}
-          />
+          <View style={{ marginTop: spacing.sm }}>
+            <DateTimeField label="Starts" value={newStart} onChange={changeStart} />
+            <DateTimeField
+              label="Ends"
+              value={newEnd}
+              onChange={setNewEnd}
+              minimumDate={newStart}
+              invalid={!datesValid}
+              helper={datesValid ? durationLabel(newStart, newEnd) : "End must be after the start."}
+            />
+          </View>
           <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
-            <Button size="sm" onPress={doCreate}>
-              Create
+            <Button size="sm" onPress={doCreate} disabled={!canCreate}>
+              {saving ? "Creating…" : "Create"}
             </Button>
             <Button size="sm" variant="ghost" onPress={() => setCreating(false)}>
               Cancel
@@ -106,12 +132,7 @@ export function SeasonsSection() {
           </View>
         </Card>
       ) : (
-        <Button
-          size="md"
-          icon="plus"
-          onPress={() => setCreating(true)}
-          style={{ marginBottom: spacing.lg }}
-        >
+        <Button size="md" icon="plus" onPress={startCreating} style={{ marginBottom: spacing.lg }}>
           New Season
         </Button>
       )}
