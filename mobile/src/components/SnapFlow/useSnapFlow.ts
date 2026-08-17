@@ -86,6 +86,15 @@ export function useSnapFlow(props: SnapFlowProps) {
         myTeam?.overall,
         opponentTeam?.overall,
         myGames,
+        season?.reigningPremierId ?? null,
+        uid,
+        opponent.id,
+        {
+          myShotsOnTarget: myShotsOnTarget,
+          opponentShotsOnTarget: opponentShotsOnTarget,
+          myPossession: myPossession,
+          opponentPossession: opponentPossession,
+        },
       )
     : 0;
   const opponentDelta = opponent
@@ -97,6 +106,15 @@ export function useSnapFlow(props: SnapFlowProps) {
         opponentTeam?.overall,
         myTeam?.overall,
         opponentGames,
+        season?.reigningPremierId ?? null,
+        opponent.id,
+        uid,
+        {
+          myShotsOnTarget: opponentShotsOnTarget,
+          opponentShotsOnTarget: myShotsOnTarget,
+          myPossession: opponentPossession,
+          opponentPossession: myPossession,
+        },
       )
     : 0;
 

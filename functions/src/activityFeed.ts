@@ -62,6 +62,12 @@ export async function emitMatchActivity(args: {
   matchId: string;
   seasonId: string;
   previousLeaderId: string | null;
+  /**
+   * Skip this match's streak milestone. Streaks are read from the materialized playerStats, so
+   * when several of one player's matches are confirmed together they all observe the same
+   * post-batch streak — without this the same milestone is filed once per match.
+   */
+  suppressStreak?: boolean;
 }): Promise<void> {
   const db = args.db ?? getFirestore();
   const snap = await db.doc(`matches/${args.matchId}`).get();
@@ -75,7 +81,7 @@ export async function emitMatchActivity(args: {
 
   let winnerStreak: number | null = null;
   let winnerStreakType: "W" | "D" | "L" | null = null;
-  if (winnerId) {
+  if (winnerId && !args.suppressStreak) {
     const statsSnap = await db.doc(`playerStats/${winnerId}`).get();
     if (statsSnap.exists) {
       const streak = statsSnap.get("currentStreak");

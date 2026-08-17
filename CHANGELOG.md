@@ -3,6 +3,46 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.4.0.0] - 2026-08-13
+
+### Added
+
+- An undisputed match now auto-confirms after 1 hour. The named opponent keeps the full
+  hour to confirm or dispute, and is reminded at 30 minutes so a result never locks in
+  without warning; if they still don't respond, a scheduled job confirms the match on their
+  behalf, marks it `confirmedBy: "auto"` with an `autoConfirmedAt` timestamp, and notifies
+  both players. The check runs every 10 minutes, so a stale result lands in the table within
+  ~10 minutes of the window closing.
+
+  Finals are deliberately excluded and always wait for a human — the opponent confirming, or
+  an admin resolving it. A knockout result is where consent matters most, and advancing the
+  bracket is a side effect that cannot be replayed once the match stops being pending.
+
+  Scope is otherwise narrow: only the active, unfinalized season is swept, matches left
+  pending for more than 72 hours are treated as abandoned and left for an admin, and a run
+  confirms a bounded batch and rebuilds the tables once for the whole batch. On first deploy
+  the sweep arms itself and waits a full window, so results submitted before the feature
+  existed get a real chance to be disputed instead of being locked in en masse. If a rebuild
+  is interrupted, the affected season is recorded and repaired on the next run; a season that
+  has since been finalized is dropped rather than rebuilt, so published standings are never
+  rewritten.
+
+### Changed
+
+- The pending-match reminder now fires 30 minutes after submission instead of 48 hours,
+  so it lands inside the new dispute window rather than after the result has already
+  confirmed.
+
+### Fixed
+
+- The ELO change preview while logging a match now matches the ELO the server actually
+  commits. Previously the preview approximated with a plain win/draw/loss score, so it
+  diverged from the real, goal-margin-weighted result (e.g. a 1–0 and a 5–0 previewed
+  identically but committed differently). The preview now runs the server's exact formula —
+  goal margin blended with shots-on-target and possession when known (Snap flow), team
+  overalls, and the reigning Premier handicap — and a parity test guards the two
+  implementations from drifting apart.
+
 ## [1.3.0.0] - 2026-08-04
 
 ### Added

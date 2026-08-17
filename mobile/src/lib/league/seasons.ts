@@ -15,6 +15,8 @@ function mapSeason(id: string, data: Record<string, unknown>): Season {
     end: asDate(data.end),
     active: data.active === true,
     phase,
+    reigningPremierId:
+      typeof data.reigningPremierId === "string" ? (data.reigningPremierId as string) : null,
   };
 }
 

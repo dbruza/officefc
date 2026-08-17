@@ -115,28 +115,40 @@ export default function LogMatch() {
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
   const myGames = gamesByUid.get(user?.uid ?? "") ?? 0;
   const opponentGames = gamesByUid.get(opponent?.id ?? "") ?? 0;
-  const myDelta = opponent
-    ? previewElo(
-        myElo,
-        opponentElo,
-        myGoals,
-        opponentGoals,
-        myTeam?.overall,
-        opponentTeam?.overall,
-        myGames,
-      )
-    : 0;
-  const opponentDelta = opponent
-    ? previewElo(
-        opponentElo,
-        myElo,
-        opponentGoals,
-        myGoals,
-        opponentTeam?.overall,
-        myTeam?.overall,
-        opponentGames,
-      )
-    : 0;
+  const premierId = season?.reigningPremierId ?? null;
+  // Finals decide the bracket and are excluded from the rating walk entirely, so the server
+  // commits a delta of exactly 0 — the preview must not imply otherwise.
+  const ratesElo = mode !== "finals";
+  const myDelta =
+    opponent && ratesElo
+      ? previewElo(
+          myElo,
+          opponentElo,
+          myGoals,
+          opponentGoals,
+          myTeam?.overall,
+          opponentTeam?.overall,
+          myGames,
+          premierId,
+          user?.uid ?? null,
+          opponent.id,
+        )
+      : 0;
+  const opponentDelta =
+    opponent && ratesElo
+      ? previewElo(
+          opponentElo,
+          myElo,
+          opponentGoals,
+          myGoals,
+          opponentTeam?.overall,
+          myTeam?.overall,
+          opponentGames,
+          premierId,
+          opponent.id,
+          user?.uid ?? null,
+        )
+      : 0;
   // The caller's open finals tie, if any — surfaces the finals card and locks the flow.
   const myOpenSlot = useMemo(() => {
     if (!bracket || !user) return null;

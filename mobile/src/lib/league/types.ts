@@ -10,6 +10,9 @@ export interface Season {
   active: boolean;
   /** "finals" once the bracket is locked; absent/"regular" during the home-and-away rounds. */
   phase: "regular" | "finals" | "finalized";
+  /** Previous season's table-topper (fallback: its champion). Their ELO preview/commit carry
+   *  a handicap, so the client must know who holds the title to preview accurately. */
+  reigningPremierId: string | null;
 }
 
 export interface SeasonResult {

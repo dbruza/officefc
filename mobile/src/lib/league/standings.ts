@@ -54,42 +54,8 @@ export async function getPlayerStats(uid: string): Promise<PlayerStats | null> {
   });
 }
 
-// Mirrors functions/src/elo.ts — the server is the source of truth for ratings.
-const ELO_K = 32;
-const ELO_SCALE = 400;
-const TEAM_ELO_PER_OVERALL = 12;
-const PROVISIONAL_K = 40;
-const PROVISIONAL_GAMES = 10;
-
-/** Mirror of the server's getK: new players use a higher K for their first games this season. */
-function previewK(gamesPlayed: number): number {
-  return gamesPlayed < PROVISIONAL_GAMES ? PROVISIONAL_K : ELO_K;
-}
-
-/**
- * Approximate the ELO delta for a result, for live UI preview only. This uses a plain
- * win/draw/loss score; the committed rating comes from the server's stats-aware
- * performanceScore (goals + shots-on-target + possession), so the preview can differ slightly.
- * Team overalls handicap the expectation exactly like the server: only when both are known.
- * Pass the scoring player's games-played this season so new players see the provisional K;
- * when omitted it falls back to the settled K.
- */
-export function previewElo(
-  myElo: number,
-  opponentElo: number,
-  myGoals: number,
-  opponentGoals: number,
-  myTeamOverall?: number | null,
-  opponentTeamOverall?: number | null,
-  myGamesPlayed: number = PROVISIONAL_GAMES,
-) {
-  let myEff = myElo;
-  let opponentEff = opponentElo;
-  if (myTeamOverall != null && opponentTeamOverall != null) {
-    myEff += TEAM_ELO_PER_OVERALL * myTeamOverall;
-    opponentEff += TEAM_ELO_PER_OVERALL * opponentTeamOverall;
-  }
-  const expected = 1 / (1 + Math.pow(10, (opponentEff - myEff) / ELO_SCALE));
-  const score = myGoals > opponentGoals ? 1 : myGoals < opponentGoals ? 0 : 0.5;
-  return Math.round(previewK(myGamesPlayed) * (score - expected));
-}
+// The ELO preview math lives in ./eloMath (a dependency-free port of the server's
+// functions/src/elo.ts). Re-exported here so existing imports from the league barrel
+// keep working, and so the preview formula has a single home guarded by a parity test.
+export { previewElo } from "./eloMath";
+export type { PreviewStats } from "./eloMath";

@@ -53,7 +53,12 @@ export {
 } from "./seasonAdmin";
 
 // Scheduled jobs
-export { weeklySnapshot, sendReminders, cleanupAbandonedDrafts } from "./scheduled";
+export {
+  weeklySnapshot,
+  sendReminders,
+  cleanupAbandonedDrafts,
+  autoConfirmStaleMatches,
+} from "./scheduled";
 
 // Client log sink
 export { ingestLog } from "./clientLogs";
