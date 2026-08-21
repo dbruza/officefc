@@ -3,6 +3,23 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.5.0.0] - 2026-08-19
+
+### Added
+
+- The match detail screen now explains ELO changes in plain English. Beneath the score,
+  "Why the rating moved" gives each player a short, match-specific narration — who was
+  expected to win and why (rating gap, team-strength handicap, the reigning premier's
+  handicap), how the scoreline scored on performance, what the recorded chances said,
+  and what the outcome was worth — followed by the existing numbers table.
+
+  This answers the most common rating complaint directly: a narrow win that lands almost
+  exactly on the expected result (e.g. a strong favourite edging a one-goal win, or an
+  evenly-rated pairing splitting the chances) rounds to 0, and until now the app showed
+  only a bare "+0". The same panel also calls out the other counter-intuitive outcomes —
+  a win that costs points when the chances went the other way, and a loss that earns
+  them. Matches confirmed before the explanation data existed fall back to the numbers
+  table alone.
 ## [1.4.1.0] - 2026-08-21
 
 ### Added
@@ -151,4 +168,5 @@ existing entry was drawn from.
 - The integration ships dormant: reporting activates once the Sentry project DSNs are
   filled in (mobile `eas.json` / `.env`, functions `.env`). Until then a
   `sentry_disabled` warning is logged so the dormant state is visible.
+
 

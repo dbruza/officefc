@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./eloExplainCopy";
 export * from "./seasons";
 export * from "./teams";
 export * from "./players";

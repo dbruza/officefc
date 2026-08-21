@@ -15,6 +15,7 @@ import {
 } from "@/components";
 import {
   deleteMatchPhoto,
+  explainMatchElo,
   getLeaguePlayers,
   getMatch,
   getMatchPhotoUrl,
@@ -178,7 +179,7 @@ export default function MatchDetailRoute() {
             </View>
 
             {match.status === "confirmed" && match.eloExplain ? (
-              <EloExplainPanel match={match} />
+              <EloExplainPanel match={match} playerA={a} playerB={b} />
             ) : null}
 
             {photoUrl ? (
@@ -322,31 +323,57 @@ function kCell(k: number): string {
   return k > 32 ? `${k} ·P` : String(k);
 }
 
-function explainCopy(match: LeagueMatch): string {
-  const aSurprise = match.aGoals > match.bGoals && (match.aDelta ?? 0) <= 0;
-  const bSurprise = match.bGoals > match.aGoals && (match.bDelta ?? 0) <= 0;
-  const premierNote =
-    match.eloExplain && match.eloExplain.aPremierAdj !== 0
-      ? " The reigning premier carries a handicap: they're rated as slightly stronger than their ELO, so wins pay them less and upsets against them pay more."
-      : "";
-  if (aSurprise || bSurprise) {
-    return `Ratings blend the scoreline with shots on target and possession. Here the result went one way but the underlying stats favoured the other player, so the rating moved against the scoreboard.${premierNote}`;
-  }
-  return `Your rating change is the gap between how you performed — goals blended with shots on target and possession — and how likely you were to win. Beating expectations earns more. New players use a higher K-factor (·P) while their rating settles.${premierNote}`;
+/** One player's prose block: name kicker + the sentences the copy generator
+ *  built from this match's own eloExplain numbers. */
+function PlayerExplanation({ kicker, sentences }: { kicker: string; sentences: string[] }) {
+  return (
+    <View style={{ gap: 4 }}>
+      <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
+        {kicker}
+      </Txt>
+      <Txt size={11.5} color={colors.textDim} style={{ lineHeight: 16.5 }}>
+        {sentences.join(" ")}
+      </Txt>
+    </View>
+  );
 }
 
-function EloExplainPanel({ match }: { match: LeagueMatch }) {
+function EloExplainPanel({
+  match,
+  playerA,
+  playerB,
+}: {
+  match: LeagueMatch;
+  playerA: LeaguePlayer;
+  playerB: LeaguePlayer;
+}) {
   const ex = match.eloExplain;
   if (!ex || match.aDelta === null || match.bDelta === null) return null;
   const pct = (v: number) => `${Math.round(v * 100)}%`;
+  // Null for matches confirmed before eloExplain/persisted ratings existed —
+  // those fall back to the numbers table alone.
+  const explanation = explainMatchElo(match, firstName(playerA.name), firstName(playerB.name));
   const provisional = ex.aK > 32 || ex.bK > 32;
   return (
     <View style={{ marginTop: spacing.x2 }}>
       <SectionLabel>Why the rating moved</SectionLabel>
       <Card style={styles.statsPanel}>
+        {explanation ? (
+          <View style={{ gap: spacing.md, marginBottom: spacing.md }}>
+            <PlayerExplanation
+              kicker={`${firstName(playerA.name).toUpperCase()} · ${signed(match.aDelta ?? 0)}`}
+              sentences={explanation.a.sentences}
+            />
+            <View style={styles.explainDivider} />
+            <PlayerExplanation
+              kicker={`${firstName(playerB.name).toUpperCase()} · ${signed(match.bDelta ?? 0)}`}
+              sentences={explanation.b.sentences}
+            />
+          </View>
+        ) : null}
         <View style={{ gap: spacing.sm }}>
           <StatsRow label="Win chance" a={pct(ex.aExpected)} b={pct(ex.bExpected)} />
-          <StatsRow label="Performance share" a={pct(ex.perfA)} b={pct(ex.perfB)} />
+          <StatsRow label="Share of the game" a={pct(ex.perfA)} b={pct(ex.perfB)} />
           {ex.aTeamAdj !== 0 ? (
             <StatsRow label="Team handicap" a={signed(ex.aTeamAdj)} b={signed(ex.bTeamAdj)} />
           ) : null}
@@ -360,9 +387,6 @@ function EloExplainPanel({ match }: { match: LeagueMatch }) {
           {provisional ? <StatsRow label="K-factor" a={kCell(ex.aK)} b={kCell(ex.bK)} /> : null}
           <StatsRow label="ELO change" a={signed(match.aDelta)} b={signed(match.bDelta)} />
         </View>
-        <Txt size={11} color={colors.textDim} style={{ marginTop: spacing.md, lineHeight: 16 }}>
-          {explainCopy(match)}
-        </Txt>
       </Card>
     </View>
   );
@@ -433,6 +457,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  explainDivider: { height: 1, backgroundColor: colors.line },
   possessionTrack: {
     height: 6,
     marginTop: 5,
