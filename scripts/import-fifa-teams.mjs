@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const CATALOGUE_VERSION = "fifa23-men-v3";
+export const CATALOGUE_VERSION = "fifa23-men-v4";
 export const ID_VERSION = "fifa23";
 
 export const NATIONAL_TEAMS = [

@@ -3,6 +3,28 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.4.1.0] - 2026-08-21
+
+### Added
+
+- The FIFA 23 team catalogue is now complete to the launch snapshot. The scraped
+  dump that generated it had skipped roughly 99 real club teams — the scrape's
+  middle pages re-captured overlapping CONMEBOL-heavy rows, so most of the
+  affected squads sat in the 52–76 OVR bands and never made it into the picker.
+  Recovered clubs include Brentford, Atalanta, Torino, Lecce, Eintracht Frankfurt,
+  VfL Bochum, the four Championship 2022–23 newcomers, the 2022–23 promoted
+  Segunda sides (Leganés, Eibar, Cartagena), the full Austrian, Swiss, Danish,
+  Norwegian and Swedish top flights, Austin FC and Seattle Sounders, Al Hilal,
+  Mamelodi Sundowns, Orlando Pirates, the Argentine and Chinese/Indian/Korean
+  clubs the sweep had missed, and the CONMEBOL clubs parked in a single repeated
+  page.
+- The duplicate "Roma" entry is gone — FIFA 23 ships the licensed Roma FC
+  (80/82/77/81), and the separate "Roma" row (80/82/79/82) was a listing artifact
+  of the same club. The catalogue now carries Roma FC only.
+
+All recovered ratings are FIFA 23 launch data, matching the snapshot every
+existing entry was drawn from.
+
 ## [1.4.0.0] - 2026-08-13
 
 ### Added
@@ -129,3 +151,4 @@ Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 - The integration ships dormant: reporting activates once the Sentry project DSNs are
   filled in (mobile `eas.json` / `.env`, functions `.env`). Until then a
   `sentry_disabled` warning is logged so the dormant state is visible.
+

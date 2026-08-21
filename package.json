@@ -1,6 +1,6 @@
 {
   "name": "officefc",
-  "version": "1.4.0.0",
+  "version": "1.4.1.0",
   "description": "OfficeFC — an Expo and Firebase app for office EA Sports FC leagues, ELO ratings, and confirmed match tracking.",
   "private": true,
   "type": "commonjs",

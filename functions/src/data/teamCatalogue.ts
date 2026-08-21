@@ -13,7 +13,7 @@ export interface CatalogueTeam {
   catalogueVersion: string;
 }
 
-export const TEAM_CATALOGUE_VERSION = "fifa23-men-v3";
+export const TEAM_CATALOGUE_VERSION = "fifa23-men-v4";
 export const TEAM_CATALOGUE: CatalogueTeam[] = [
   {
     "id": "fifa23-bayern-munchen-873b4d1eb5",
@@ -24,7 +24,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 86,
     "midfield": 85,
     "defence": 83,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-manchester-city-203310c6f7",
@@ -35,7 +35,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 85,
     "midfield": 87,
     "defence": 83,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-madrid-80c659214f",
@@ -46,7 +46,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 85,
     "midfield": 86,
     "defence": 84,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-england",
@@ -57,7 +57,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 85,
     "midfield": 83,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-liverpool-b5de39d67d",
@@ -68,7 +68,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 84,
     "midfield": 81,
     "defence": 85,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-paris-saint-germain-c6a5297f8b",
@@ -79,7 +79,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 86,
     "midfield": 79,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-argentina",
@@ -90,7 +90,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 84,
     "midfield": 81,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atletico-de-madrid-d9ced04025",
@@ -101,7 +101,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 84,
     "midfield": 83,
     "defence": 81,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-barcelona-60072716c1",
@@ -112,7 +112,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 83,
     "midfield": 85,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-france",
@@ -123,7 +123,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 85,
     "midfield": 83,
     "defence": 83,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-germany",
@@ -134,7 +134,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 84,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-portugal",
@@ -145,7 +145,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 84,
     "midfield": 84,
     "defence": 83,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-spain",
@@ -156,7 +156,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 83,
     "midfield": 84,
     "defence": 83,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-arsenal-d0ef5a84a2",
@@ -167,7 +167,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 84,
     "defence": 81,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chelsea-c996007fb5",
@@ -178,7 +178,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 81,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-inter-d7e9e9b71d",
@@ -189,7 +189,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 84,
     "midfield": 82,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-italy",
@@ -200,7 +200,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 85,
     "defence": 81,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-juventus-27058eceef",
@@ -211,7 +211,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 83,
     "midfield": 81,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-manchester-united-e918e71a5b",
@@ -222,7 +222,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 84,
     "defence": 81,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-netherlands",
@@ -233,7 +233,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 83,
     "midfield": 81,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-borussia-dortmund-386c110fda",
@@ -244,7 +244,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 81,
     "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-milan-5df21308bf",
@@ -255,7 +255,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 80,
     "defence": 81,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rb-leipzig-5e818c05c8",
@@ -266,7 +266,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 83,
     "midfield": 81,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tottenham-hotspur-dfa03e63e2",
@@ -277,7 +277,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 84,
     "midfield": 80,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-belgium",
@@ -288,7 +288,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 78,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-brazil",
@@ -299,7 +299,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 80,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-napoli-7a097e2ce3",
@@ -310,7 +310,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 81,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-newcastle-united-47877c3865",
@@ -321,18 +321,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 80,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
-  },
-  {
-    "id": "fifa23-roma-724f75db15",
-    "name": "Roma",
-    "competition": "Italy Serie A (1)",
-    "category": "men",
-    "overall": 80,
-    "attack": 82,
-    "midfield": 79,
-    "defence": 82,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-roma-fc-6226abb298",
@@ -343,7 +332,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 77,
     "defence": 81,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sevilla-fc-877b617ee6",
@@ -354,7 +343,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 79,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-villarreal-cf-e2ad4115ae",
@@ -365,7 +354,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 79,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-afc-richmond-96fc71c736",
@@ -376,7 +365,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 80,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aston-villa-5c3f9b1985",
@@ -387,7 +376,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 78,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-athletic-club-de-bilbao-3c9fc0de35",
@@ -398,7 +387,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 79,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bayer-04-leverkusen-c03ae484eb",
@@ -409,7 +398,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 78,
     "defence": 80,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-benfica-f08056ae3a",
@@ -420,7 +409,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 78,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-croatia",
@@ -431,7 +420,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 82,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-lazio-4a13c61d5b",
@@ -442,7 +431,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 81,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-betis-balompie-4d63adc89f",
@@ -453,7 +442,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 80,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-sociedad-11ca025884",
@@ -464,7 +453,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 80,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-atalanta-970327cb74",
+    "name": "Atalanta",
+    "competition": "Italy Serie A (1)",
+    "category": "men",
+    "overall": 78,
+    "attack": 80,
+    "midfield": 78,
+    "defence": 77,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-denmark",
@@ -475,7 +475,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 79,
     "defence": 79,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-eintracht-frankfurt-4cfcd05531",
+    "name": "Eintracht Frankfurt",
+    "competition": "Germany 1. Bundesliga (1)",
+    "category": "men",
+    "overall": 78,
+    "attack": 79,
+    "midfield": 77,
+    "defence": 76,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-porto-e587b9fda0",
@@ -486,7 +497,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 79,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fiorentina-282f0cdec5",
@@ -497,7 +508,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 78,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-leicester-city-8c7832e58a",
@@ -508,7 +519,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 80,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-olympique-de-marseille-70cd897994",
@@ -519,7 +530,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 79,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sporting-cp-7834529a6c",
@@ -530,7 +541,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 79,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-west-ham-united-f71d60b33a",
@@ -541,7 +552,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 79,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wolverhampton-wanderers-9ed4b00351",
@@ -552,7 +563,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 78,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ajax-7f642b14f2",
@@ -563,7 +574,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 78,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-as-monaco-ec5a065c12",
@@ -574,7 +585,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 77,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-austria",
@@ -585,7 +596,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 78,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-borussia-m-gladbach-90fd4ff012",
@@ -596,7 +607,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 78,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-brighton-and-hove-albion-590140a2f7",
@@ -607,7 +618,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 77,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-galatasaray-b864686d96",
@@ -618,7 +629,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 77,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-getafe-cf-1dd16a5f33",
@@ -629,7 +640,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 78,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-mexico",
@@ -640,7 +651,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 77,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-morocco",
@@ -651,7 +662,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 76,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-nottingham-forest-4029fd74e0",
@@ -662,7 +673,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 76,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-olympique-lyonnais-ab7163af32",
@@ -673,7 +684,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 80,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-poland",
@@ -684,7 +695,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 76,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rc-celta-de-vigo-98fdcf2d7f",
@@ -695,7 +706,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 76,
     "defence": 78,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rcd-espanyol-3e952232de",
@@ -706,7 +717,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 77,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stade-rennais-fde428de17",
@@ -717,7 +728,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 76,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-braga-cc657dead7",
@@ -728,7 +739,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 77,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ca-osasuna-ff44eec1ac",
@@ -739,7 +750,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-crystal-palace-6309dd8c22",
@@ -750,7 +761,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-czech-republic",
@@ -761,7 +772,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 77,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-everton-8a89edf533",
@@ -772,7 +783,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-flamengo-9a5ac2ca07",
@@ -783,7 +794,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 75,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fulham-a8bff85d62",
@@ -794,7 +805,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 76,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-losc-lille-4206f647d2",
@@ -805,7 +816,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-norway",
@@ -816,7 +827,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 82,
     "midfield": 78,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ogc-nice-934f88c63d",
@@ -827,7 +838,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-palmeiras-044be816f4",
@@ -838,7 +849,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 77,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-psv-226b40b6ce",
@@ -849,7 +860,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 77,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rayo-vallecano-59d771c8a2",
@@ -860,7 +871,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 76,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rc-lens-7e9d803c9b",
@@ -871,7 +882,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 76,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-river-plate-a0b3549a8e",
@@ -882,7 +893,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 77,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sc-freiburg-47bf430040",
@@ -893,7 +904,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 76,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-sweden",
@@ -904,7 +915,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 77,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tsg-1899-hoffenheim-ae164b9330",
@@ -915,7 +926,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 78,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-valencia-cf-13a007f7e7",
@@ -926,7 +937,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 78,
     "midfield": 75,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vfl-wolfsburg-7735655da9",
@@ -937,7 +948,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 77,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-union-berlin-28fc813352",
@@ -948,7 +959,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 74,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fsv-mainz-05-b41f65eb87",
@@ -959,7 +970,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 75,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ac-monza-ec142489ea",
@@ -970,7 +981,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 75,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atletico-mineiro-ebc8f3f97d",
@@ -981,7 +992,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 77,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-besiktas-314f1d1513",
@@ -992,7 +1003,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 75,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-boca-juniors-858d854462",
@@ -1003,7 +1014,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 75,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bologna-90f2ced20e",
@@ -1014,7 +1025,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 75,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-brentford-6d764bf00b",
+    "name": "Brentford",
+    "competition": "England Premier League (1)",
+    "category": "men",
+    "overall": 75,
+    "attack": 74,
+    "midfield": 75,
+    "defence": 76,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cadiz-cf-8d5fec2107",
@@ -1025,7 +1047,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 75,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-club-brugge-8d3d83fb9f",
@@ -1036,7 +1058,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 76,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fenerbahce-985ee8df0a",
@@ -1047,7 +1069,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 75,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-feyenoord-ecedb015d2",
@@ -1058,7 +1080,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 76,
     "defence": 77,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-ghana",
@@ -1069,7 +1091,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 81,
     "midfield": 75,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-girona-fc-47d6bf2329",
@@ -1080,7 +1102,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 76,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-leeds-united-65f9e5c6f3",
@@ -1091,7 +1113,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 76,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rcd-mallorca-817c8535a6",
@@ -1102,7 +1124,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 79,
     "midfield": 75,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-valladolid-da4a48b0da",
@@ -1113,7 +1135,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 74,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sassuolo-71b339a094",
@@ -1124,7 +1146,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 75,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-scotland",
@@ -1135,7 +1157,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 75,
     "defence": 76,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-southampton-0886d2bf34",
@@ -1146,7 +1168,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 74,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-torino-16bfd6b684",
+    "name": "Torino",
+    "competition": "Italy Serie A (1)",
+    "category": "men",
+    "overall": 75,
+    "attack": 77,
+    "midfield": 75,
+    "defence": 74,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-trabzonspor-2a88d1f7f6",
@@ -1157,7 +1190,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 75,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-udinese-0bbbbb8c48",
@@ -1168,7 +1201,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 75,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-ukraine",
@@ -1179,7 +1212,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 77,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-united-states",
@@ -1190,7 +1223,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 75,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-koln-5402db3019",
@@ -1201,7 +1234,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 75,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aek-522d35e699",
@@ -1212,7 +1245,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 75,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-afc-bournemouth-2ce8899f70",
@@ -1223,7 +1256,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 73,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-athletico-paranaense-df17bb5ff3",
@@ -1234,7 +1267,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 72,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-az-b25e698b4f",
@@ -1245,7 +1278,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 74,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-celtic-eed3d59625",
@@ -1256,7 +1289,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 74,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-elche-cf-e11940ea91",
@@ -1267,7 +1300,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 73,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-empoli-0697b2b91d",
@@ -1278,7 +1311,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 74,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-augsburg-8d2530ae06",
@@ -1289,7 +1322,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-nantes-9b817069e4",
@@ -1300,7 +1333,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 73,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hellas-verona-792b333730",
@@ -1311,7 +1344,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 74,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hertha-bsc-61f0f9cb48",
@@ -1322,7 +1355,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 75,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-internacional-63297d6530",
@@ -1333,7 +1366,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 73,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-internacional-27d21f45ce",
@@ -1344,7 +1377,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 73,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-montpellier-hsc-2bce6972e3",
@@ -1355,7 +1388,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 75,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-racing-club-de-avellaneda-448ce656c4",
@@ -1366,7 +1399,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rb-bragantino-94eea60c38",
@@ -1377,7 +1410,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 74,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rb-bragantino-d289bd14af",
@@ -1388,7 +1421,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 74,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rc-strasbourg-8a3a267c9e",
@@ -1399,7 +1432,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 74,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-salernitana-d08fc4d811",
@@ -1410,7 +1443,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 73,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-slavia-praha-500d392ad8",
@@ -1421,7 +1454,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ud-almeria-ad771ebf18",
@@ -1432,7 +1465,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 74,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vfb-stuttgart-6a86b3ba29",
@@ -1443,7 +1476,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 75,
     "defence": 75,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-al-hilal-6cfac08279",
+    "name": "Al Hilal",
+    "competition": "Saudi Pro League (1)",
+    "category": "men",
+    "overall": 73,
+    "attack": 74,
+    "midfield": 75,
+    "defence": 71,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-nassr-d3aa8a7888",
@@ -1454,7 +1498,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 87,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-antwerp-07919f4835",
@@ -1465,7 +1509,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 72,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-burnley-d527727b49",
@@ -1476,7 +1520,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-canada",
@@ -1487,7 +1531,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 73,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-corinthians-711ecb6504",
@@ -1498,7 +1542,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-lorient-2fa4c8b180",
@@ -1509,7 +1553,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 72,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-genk-fac484e3a7",
@@ -1520,7 +1564,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 74,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-granada-cf-d9667fcc1a",
@@ -1531,7 +1575,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 73,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-hungary",
@@ -1542,7 +1586,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 72,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-lecce-233eeaf18d",
+    "name": "Lecce",
+    "competition": "Italy Serie A (1)",
+    "category": "men",
+    "overall": 73,
+    "attack": 74,
+    "midfield": 73,
+    "defence": 73,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-levante-ud-d4a92b8fe4",
@@ -1553,7 +1608,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 75,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-panathinaikos-88e6c80a00",
@@ -1564,7 +1619,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 73,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-paok-74545b7f97",
@@ -1575,7 +1630,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 73,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rangers-4d846bb2c6",
@@ -1586,7 +1641,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-santos-7f810c09e5",
@@ -1597,7 +1652,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 72,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sao-paulo-aaeb787e8d",
@@ -1608,7 +1663,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 73,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sparta-praha-928d3f90f0",
@@ -1619,7 +1674,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 72,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-spezia-c5ff657a60",
@@ -1630,7 +1685,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 75,
     "midfield": 71,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stade-brestois-29-e2c28d1a47",
@@ -1641,7 +1696,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 73,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stade-de-reims-52d7022f34",
@@ -1652,7 +1707,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 73,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-toulouse-fc-25e993f78b",
@@ -1663,7 +1718,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 75,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ud-las-palmas-5a22385091",
@@ -1674,7 +1729,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 74,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-vfl-bochum-75a821d541",
+    "name": "VfL Bochum",
+    "competition": "Germany 1. Bundesliga (1)",
+    "category": "men",
+    "overall": 73,
+    "attack": 73,
+    "midfield": 72,
+    "defence": 73,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-viktoria-plzen-3384a38618",
@@ -1685,7 +1751,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 73,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-wales",
@@ -1696,7 +1762,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 72,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-werder-bremen-fcac62d92f",
@@ -1707,7 +1773,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 71,
     "defence": 74,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-anderlecht-da96270e24",
@@ -1718,7 +1784,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 72,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atletico-go-26766f96f7",
@@ -1729,7 +1795,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ceara-sc-1a80ff5b05",
@@ -1740,7 +1806,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 72,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dinamo-zagreb-c79615567c",
@@ -1751,7 +1817,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 72,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dynamo-kyiv-df96d615df",
@@ -1762,7 +1828,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-estac-troyes-b07d70c0c6",
@@ -1773,7 +1839,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 73,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-k-benhavn-a3586292bc",
@@ -1784,7 +1850,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 72,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-schalke-04-b47cc8015d",
@@ -1795,7 +1861,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 72,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-twente-f94d83eb41",
@@ -1806,7 +1872,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 72,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fluminense-adebc2b27d",
@@ -1817,7 +1883,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 73,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fluminense-20178f7f1d",
@@ -1828,7 +1894,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 73,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gent-2ade0d4dc4",
@@ -1839,7 +1905,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 72,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-ireland",
@@ -1850,7 +1916,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 71,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-istanbul-basaksehir-fk-673fa95b7d",
@@ -1861,7 +1927,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 72,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-los-angeles-fc-ab24d13e39",
@@ -1872,7 +1938,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-middlesbrough-6ab1e4127d",
@@ -1883,7 +1949,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rb-salzburg-8ebed560ff",
@@ -1894,7 +1960,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 73,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sampdoria-e720bc3559",
@@ -1905,7 +1971,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sheffield-united-bf77989242",
@@ -1916,7 +1982,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 72,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-union-saint-gilloise-e2f0212577",
@@ -1927,7 +1993,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 73,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-watford-61aebbf90f",
@@ -1938,7 +2004,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 72,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-adana-demirspor-d6d64d8de9",
@@ -1949,7 +2015,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aj-auxerre-027f7e4b67",
@@ -1960,7 +2026,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-ittihad-8453f61044",
@@ -1971,7 +2037,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 73,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-alanyaspor-bc628bcd6d",
@@ -1982,7 +2048,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-angers-sco-655427e2b1",
@@ -1993,7 +2059,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 72,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-antalyaspor-9ee9c832cb",
@@ -2004,7 +2070,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 72,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-argentinos-juniors-ed322a64ce",
@@ -2015,7 +2081,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 69,
     "defence": 73,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-as-saint-etienne-8aa45e905a",
@@ -2026,7 +2092,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 69,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atletico-nacional-96c5968e3a",
@@ -2037,7 +2103,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atletico-nacional-a0045da0b5",
@@ -2048,7 +2114,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-australia",
@@ -2059,7 +2125,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-barcelona-sc-guayaquil-577922e23d",
@@ -2070,7 +2136,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 71,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-barcelona-sc-guayaquil-de1146a48e",
@@ -2081,7 +2147,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 71,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-botafogo-23aa45c08e",
+    "name": "Botafogo",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 71,
+    "attack": 71,
+    "midfield": 71,
+    "defence": 71,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bsc-young-boys-1293772084",
@@ -2092,7 +2169,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 72,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-clermont-foot-4efc7400b2",
@@ -2103,7 +2180,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 72,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cremonese-15a7096ee9",
@@ -2114,7 +2191,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportivo-alaves-02e5b9d59e",
@@ -2125,7 +2202,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 72,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-estudiantes-de-la-plata-71db41013c",
@@ -2136,7 +2213,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 73,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-utrecht-9f1de48044",
@@ -2147,7 +2224,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ferencvarosi-tc-3467632124",
@@ -2158,7 +2235,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-finland",
@@ -2169,7 +2246,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fortaleza-d96e44ee0d",
@@ -2180,7 +2257,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fortaleza-101405b5a3",
@@ -2191,7 +2268,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fortuna-dusseldorf-9b01d5dbf3",
@@ -2202,7 +2279,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-genoa-b3f569d008",
@@ -2213,7 +2290,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gil-vicente-fc-1a2cb1a265",
@@ -2224,7 +2301,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hamburger-sv-2b73592693",
@@ -2235,7 +2312,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 72,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-independiente-del-valle-0be45fcd17",
+    "name": "Independiente del Valle",
+    "competition": "CONMEBOL Libertadores",
+    "category": "men",
+    "overall": 71,
+    "attack": 71,
+    "midfield": 72,
+    "defence": 70,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kas-mpasa-4d24a68775",
@@ -2246,7 +2334,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-lanus-6782d3de62",
@@ -2257,7 +2345,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-libertad-86846d0a4e",
@@ -2268,7 +2356,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 65,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-mamelodi-sundowns-d57fc14814",
+    "name": "Mamelodi Sundowns",
+    "competition": "Rest of World",
+    "category": "men",
+    "overall": 71,
+    "attack": 67,
+    "midfield": 70,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-millonarios-d72b702e3c",
@@ -2279,7 +2378,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-nacional-de-montevideo-789037a187",
@@ -2290,7 +2389,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-norwich-city-646ca3e4f9",
+    "name": "Norwich City",
+    "competition": "England Championship (2)",
+    "category": "men",
+    "overall": 71,
+    "attack": 72,
+    "midfield": 71,
+    "defence": 71,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-philadelphia-union-31abc1e239",
@@ -2301,7 +2411,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-romania",
@@ -2312,7 +2422,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 73,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sd-eibar-62d0677d5a",
+    "name": "SD Eibar",
+    "competition": "Spain Segunda División (2)",
+    "category": "men",
+    "overall": 71,
+    "attack": 70,
+    "midfield": 71,
+    "defence": 71,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-shakhtar-donetsk-c5ef193822",
@@ -2323,7 +2444,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sv-darmstadt-98-baf3905039",
@@ -2334,7 +2455,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 70,
     "defence": 72,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-talleres-de-cordoba-f53ff4a482",
@@ -2345,7 +2466,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tigre-89c95c0d93",
@@ -2356,7 +2477,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-west-brom-65d3c54a52",
+    "name": "West Brom",
+    "competition": "England Championship (2)",
+    "category": "men",
+    "overall": 71,
+    "attack": 68,
+    "midfield": 72,
+    "defence": 71,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ac-ajaccio-9b9770dadc",
@@ -2367,7 +2499,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-shabab-8ae74b4ee0",
@@ -2378,7 +2510,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-alianza-lima-504fb7a2dd",
@@ -2389,7 +2521,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-america-de-cali-10074cb8b2",
@@ -2400,7 +2532,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-america-mineiro-54c99a21b1",
@@ -2411,7 +2543,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-america-mineiro-968b9fa2f0",
@@ -2422,7 +2554,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-arouca-0d99bead73",
@@ -2433,7 +2565,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-blackburn-rovers-a034982a32",
@@ -2444,7 +2576,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-boavista-1cfe979557",
@@ -2455,7 +2587,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cagliari-0509d454ab",
@@ -2466,7 +2598,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-casa-pia-a33f2d1676",
@@ -2477,7 +2609,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chaves-653fe88b42",
@@ -2488,7 +2620,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-colo-colo-294733ef7c",
+    "name": "Colo-Colo",
+    "competition": "CONMEBOL Libertadores",
+    "category": "men",
+    "overall": 70,
+    "attack": 69,
+    "midfield": 69,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-colon-500671aa1e",
+    "name": "Colón",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 71,
+    "midfield": 69,
+    "defence": 72,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-coventry-city-4eac151af2",
@@ -2499,7 +2653,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 71,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cuiaba-8dd3e15ddf",
@@ -2510,7 +2664,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-d-c-united-eea4bfbcbd",
@@ -2521,7 +2675,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 70,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-defensa-y-justicia-ab8b40b05e",
+    "name": "Defensa y Justicia",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 71,
+    "midfield": 69,
+    "defence": 70,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-estoril-ed9e70cf38",
@@ -2532,7 +2697,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-famalicao-ad06e4aef8",
@@ -2543,7 +2708,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fatih-karagumruk-s-k-6af30245e5",
@@ -2554,7 +2719,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 71,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-cartagena-5083be378d",
+    "name": "FC Cartagena",
+    "competition": "Spain Segunda División (2)",
+    "category": "men",
+    "overall": 70,
+    "attack": 68,
+    "midfield": 71,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-cincinnati-61e7c78d34",
@@ -2565,7 +2741,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 71,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fk-bod-glimt-778949984d",
@@ -2576,7 +2752,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 72,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-frosinone-756e1bf06c",
@@ -2587,7 +2763,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-godoy-cruz-acc59b47ba",
@@ -2598,7 +2774,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hajduk-split-bde1138c06",
@@ -2609,7 +2785,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-heart-of-midlothian-3b54f9308c",
@@ -2620,7 +2796,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hull-city-a62334fdc2",
@@ -2631,7 +2807,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-huracan-1ca0ed32ca",
+    "name": "Huracán",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 72,
+    "midfield": 71,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-iceland",
@@ -2642,7 +2829,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-independiente-25e10a31a6",
+    "name": "Independiente",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 70,
+    "midfield": 69,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-independiente-medellin-11af3a3322",
@@ -2653,7 +2851,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-junior-de-barranquilla-9f91ab0795",
@@ -2664,7 +2862,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 71,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-konyaspor-71030ef8aa",
@@ -2675,7 +2873,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 72,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-lask-f20c813add",
@@ -2686,7 +2884,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 72,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ldu-quito-b82b000fb8",
@@ -2697,7 +2895,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-luton-town-2b72926414",
@@ -2708,7 +2906,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-malmo-ff-19c2075083",
+    "name": "Malmö FF",
+    "competition": "Sweden Allsvenskan (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 71,
+    "midfield": 68,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-millwall-dcaf3fa525",
@@ -2719,7 +2928,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 71,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-new-england-revolution-139a5ca178",
@@ -2730,7 +2939,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-olimpia-634d53baab",
+    "name": "Olimpia",
+    "competition": "CONMEBOL Libertadores",
+    "category": "men",
+    "overall": 70,
+    "attack": 69,
+    "midfield": 69,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-penarol-ae16f2d118",
@@ -2741,7 +2961,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 72,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-portimonense-d8fb81da61",
@@ -2752,7 +2972,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-portland-timbers-5e9c7b632a",
@@ -2763,7 +2983,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-preston-north-end-0117120d54",
@@ -2774,7 +2994,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-queens-park-rangers-831c4ae93c",
@@ -2785,7 +3005,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-oviedo-33f82b6c00",
@@ -2796,7 +3016,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 69,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-zaragoza-82391cd857",
@@ -2807,7 +3027,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rio-ave-2f8aa57850",
@@ -2818,7 +3038,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-san-lorenzo-de-almagro-a6f730cf50",
@@ -2829,7 +3049,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 69,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-seattle-sounders-95569cf846",
+    "name": "Seattle Sounders",
+    "competition": "USA Major League Soccer (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 72,
+    "midfield": 73,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stoke-city-9d9680378f",
@@ -2840,7 +3071,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ulsan-hyundai-6fc0752c7d",
@@ -2851,7 +3082,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-universidad-catolica-f6fddb6993",
@@ -2862,7 +3093,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-velez-4f0f9b1525",
+    "name": "Vélez",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 70,
+    "attack": 70,
+    "midfield": 69,
+    "defence": 71,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vitoria-de-guimaraes-c858aeabdf",
@@ -2873,7 +3115,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 71,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vizela-8f87b1be52",
@@ -2884,7 +3126,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-heidenheim-e09feab663",
@@ -2895,7 +3137,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 69,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-kaiserslautern-3cc1d63f3e",
@@ -2906,7 +3148,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-nurnberg-3e89175a96",
@@ -2917,7 +3159,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aguilas-doradas-rionegro-de127f948f",
@@ -2928,7 +3170,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-ain-fc-uae-a8eb8bbaf7",
@@ -2939,7 +3181,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 77,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-apoel-nicosia-fc-f44e508b82",
@@ -2950,7 +3192,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-arminia-bielefeld-84c8513d6e",
@@ -2961,7 +3203,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ascoli-413a3054ad",
@@ -2972,7 +3214,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 70,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bari-5ba48338e5",
@@ -2983,7 +3225,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-birmingham-city-b60a062486",
+    "name": "Birmingham City",
+    "competition": "England Championship (2)",
+    "category": "men",
+    "overall": 69,
+    "attack": 67,
+    "midfield": 68,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bristol-city-b37c4f7a11",
@@ -2994,7 +3247,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-br-ndby-if-f42127babd",
@@ -3005,7 +3258,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-burgos-cf-9e9b391513",
@@ -3016,7 +3269,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cd-tenerife-82ed6c2d86",
@@ -3027,7 +3280,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-central-cordoba-9fe8dc9414",
@@ -3038,7 +3291,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cercle-brugge-1a1435efc0",
@@ -3049,7 +3302,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cerro-porteno-60fc9d9a91",
@@ -3060,7 +3313,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-charlotte-fc-3ff6b4d34c",
@@ -3071,7 +3324,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 70,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-china-pr",
@@ -3082,7 +3335,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-columbus-crew-1a4b2b21bf",
@@ -3093,7 +3346,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 67,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-como-44e382de81",
@@ -3104,7 +3357,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportes-tolima-22691d7cd0",
@@ -3115,7 +3368,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportes-tolima-0de4e8dac6",
@@ -3126,7 +3379,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportivo-pereira-c26ebae918",
@@ -3137,7 +3390,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-emelec-06deaad0e0",
+    "name": "Emelec",
+    "competition": "CONMEBOL Libertadores",
+    "category": "men",
+    "overall": 69,
+    "attack": 69,
+    "midfield": 67,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-basel-f43b682557",
@@ -3148,7 +3412,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-dallas-0edb78ae42",
@@ -3159,7 +3423,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 69,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-midtjylland-b2770d95f3",
@@ -3170,7 +3434,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 67,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-sochaux-5d5b8619de",
@@ -3181,7 +3445,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-st-pauli-52e3bde52c",
+    "name": "FC St. Pauli",
+    "competition": "Germany 2. Bundesliga (2)",
+    "category": "men",
+    "overall": 69,
+    "attack": 67,
+    "midfield": 70,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hannover-96-799058fa83",
@@ -3192,7 +3467,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-huddersfield-town-e46dbc8c80",
@@ -3203,7 +3478,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-independiente-santa-fe-11e88b58b8",
@@ -3214,7 +3489,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-inter-miami-1cc8bfcea1",
@@ -3225,7 +3500,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 76,
     "midfield": 66,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-jeonbuk-hyundai-motors-5b5a123836",
@@ -3236,7 +3511,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-karlsruher-sc-3ddb7fa6b9",
@@ -3247,7 +3522,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kayserispor-ad6db78c5e",
@@ -3258,7 +3533,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 69,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-kv-mechelen-e6c71059de",
+    "name": "KV Mechelen",
+    "competition": "Belgium Pro League (1)",
+    "category": "men",
+    "overall": 69,
+    "attack": 70,
+    "midfield": 71,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-lech-poznan-1236b3eb1d",
@@ -3269,7 +3555,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-los-angeles-galaxy-0a5c0ef370",
@@ -3280,7 +3566,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 69,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-maritimo-bffc1e7073",
@@ -3291,7 +3577,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 68,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-minnesota-united-fc-ddba16bfd8",
@@ -3302,7 +3588,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 69,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-mke-ankaragucu-ab58246038",
@@ -3313,7 +3599,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-nashville-sc-9d7b1fd631",
@@ -3324,7 +3610,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 69,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-nec-nijmegen-5dd383a441",
@@ -3335,7 +3621,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 72,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-new-york-city-fc-8400b032b3",
@@ -3346,7 +3632,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-newell-s-old-boys-32897dd725",
@@ -3357,7 +3643,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-northern-ireland",
@@ -3368,7 +3654,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 69,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-oh-leuven-6b5bbbc279",
+    "name": "OH Leuven",
+    "competition": "Belgium Pro League (1)",
+    "category": "men",
+    "overall": 69,
+    "attack": 74,
+    "midfield": 70,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-orlando-city-sc-b2a8be46d4",
@@ -3379,7 +3676,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-orlando-pirates-e9e6c02b9e",
+    "name": "Orlando Pirates",
+    "competition": "Rest of World",
+    "category": "men",
+    "overall": 69,
+    "attack": 70,
+    "midfield": 69,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-palermo-8f5d88e5f9",
@@ -3390,7 +3698,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-paris-fc-9b033b0a99",
@@ -3401,7 +3709,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-parma-016162407b",
@@ -3412,7 +3720,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-pisa-1f86bc2d9c",
@@ -3423,7 +3731,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 71,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-reading-c00a092d2d",
@@ -3434,7 +3742,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-salt-lake-fbe78af9ba",
@@ -3445,7 +3753,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-real-sporting-de-gijon-0bda52516c",
@@ -3456,7 +3764,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rosario-central-662848edc6",
@@ -3467,7 +3775,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-san-jose-earthquakes-c12f811178",
@@ -3478,7 +3786,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-santa-clara-1df74861a5",
@@ -3489,7 +3797,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sarmiento-31b28512ff",
@@ -3500,7 +3808,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sc-heerenveen-121371963a",
@@ -3511,7 +3819,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sc-paderborn-b09ea321eb",
+    "name": "SC Paderborn",
+    "competition": "Germany 2. Bundesliga (2)",
+    "category": "men",
+    "overall": 69,
+    "attack": 70,
+    "midfield": 69,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sd-huesca-b1f3ce14fa",
@@ -3522,7 +3841,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-servette-fc-d7ef926639",
@@ -3533,7 +3852,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 71,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-shanghai-port-52b5d8c226",
+    "name": "Shanghai Port",
+    "competition": "China Super League (1)",
+    "category": "men",
+    "overall": 69,
+    "attack": 70,
+    "midfield": 70,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sivasspor-546e93a824",
@@ -3544,7 +3874,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 70,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sp-charleroi-cee92ea41e",
+    "name": "Sp. Charleroi",
+    "competition": "Belgium Pro League (1)",
+    "category": "men",
+    "overall": 69,
+    "attack": 70,
+    "midfield": 70,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sporting-cristal-a7fbb42231",
@@ -3555,7 +3896,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sporting-kc-908d19ce5a",
@@ -3566,7 +3907,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-standard-liege-549ebefc4c",
+    "name": "Standard Liège",
+    "competition": "Belgium Pro League (1)",
+    "category": "men",
+    "overall": 69,
+    "attack": 68,
+    "midfield": 70,
+    "defence": 70,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sturm-graz-21c68770c6",
@@ -3577,7 +3929,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 70,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sunderland-36fdc3ee59",
+    "name": "Sunderland",
+    "competition": "England Championship (2)",
+    "category": "men",
+    "overall": 69,
+    "attack": 71,
+    "midfield": 70,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sv-sandhausen-43ca6669d6",
+    "name": "SV Sandhausen",
+    "competition": "Germany 2. Bundesliga (2)",
+    "category": "men",
+    "overall": 69,
+    "attack": 68,
+    "midfield": 69,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-swansea-city-dc97f06556",
@@ -3588,7 +3962,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-toronto-fc-9ec3186ca3",
@@ -3599,7 +3973,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 71,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-universitario-de-deportes-c13941222a",
@@ -3610,7 +3984,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-venezia-c74c9a0bf8",
@@ -3621,7 +3995,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vitesse-6c87d5499e",
@@ -3632,7 +4006,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 69,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wuhan-three-towns-f5b0332f41",
@@ -3643,7 +4017,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 73,
     "midfield": 67,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-magdeburg-96481258bf",
@@ -3654,7 +4028,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-agf-2e04575a77",
@@ -3665,7 +4039,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-fateh-0f25441424",
@@ -3676,7 +4050,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atlanta-united-fc-f1c564009d",
@@ -3687,7 +4061,40 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-atletico-tucuman-f81153af72",
+    "name": "Atlético Tucumán",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 68,
+    "attack": 68,
+    "midfield": 68,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-austin-fc-a6e5c44022",
+    "name": "Austin FC",
+    "competition": "USA Major League Soccer (1)",
+    "category": "men",
+    "overall": 68,
+    "attack": 71,
+    "midfield": 67,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-banfield-156c064ac0",
+    "name": "Banfield",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 68,
+    "attack": 68,
+    "midfield": 68,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bk-hacken-9c707ed9c9",
@@ -3698,7 +4105,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 69,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cardiff-city-fd9315e1ad",
@@ -3709,7 +4116,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-cd-leganes-bd467aefa1",
+    "name": "CD Leganés",
+    "competition": "Spain Segunda División (2)",
+    "category": "men",
+    "overall": 68,
+    "attack": 67,
+    "midfield": 69,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cfr-cluj-24681ff3f9",
@@ -3720,7 +4138,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chicago-fire-fc-8008c7c536",
@@ -3731,7 +4149,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-colorado-rapids-f1a51c54d8",
@@ -3742,7 +4160,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-djurgardens-if-297c310b18",
@@ -3753,7 +4171,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-metz-7ceb0c95ec",
@@ -3764,7 +4182,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 67,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-sion-d96fab6112",
+    "name": "FC Sion",
+    "competition": "Switzerland Super League (1)",
+    "category": "men",
+    "overall": 68,
+    "attack": 73,
+    "midfield": 67,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-zurich-c4ae2a5307",
+    "name": "FC Zürich",
+    "competition": "Switzerland Super League (1)",
+    "category": "men",
+    "overall": 68,
+    "attack": 68,
+    "midfield": 68,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fcsb-89c1e86482",
@@ -3775,7 +4215,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 69,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fortuna-sittard-ca5d2f0561",
@@ -3786,7 +4226,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 67,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-girondins-de-bordeaux-fb6ace48ad",
@@ -3797,7 +4237,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-goias-911d3a603b",
@@ -3808,7 +4248,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hansa-rostock-3f2e7247cf",
@@ -3819,7 +4259,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hatayspor-35e1986364",
@@ -3830,7 +4270,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-holstein-kiel-c6e12bf6f5",
@@ -3841,7 +4281,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-houston-dynamo-0bfe541a1a",
@@ -3852,7 +4292,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kaizer-chiefs-2312a1a782",
@@ -3863,7 +4303,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kortrijk-8556ebb321",
@@ -3874,7 +4314,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-legia-warszawa-eacaf7602c",
@@ -3885,7 +4325,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 70,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-liverpool-futbol-club-uruguay-790bb6a01e",
@@ -3896,7 +4336,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-melgar-fbc-31b0f7e443",
@@ -3907,7 +4347,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-molde-fk-1565a62150",
@@ -3918,7 +4358,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-new-york-red-bulls-f2e4078df7",
@@ -3929,7 +4369,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-oostende-457224d3ce",
@@ -3940,7 +4380,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-pacos-de-ferreira-766cd876e6",
+    "name": "Paços de Ferreira",
+    "competition": "Portugal Primeira Liga (1)",
+    "category": "men",
+    "overall": 68,
+    "attack": 68,
+    "midfield": 68,
+    "defence": 69,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-platense-179fab6796",
@@ -3951,7 +4402,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-pogon-szczecin-fd7f308821",
@@ -3962,7 +4413,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-qatar",
@@ -3973,7 +4424,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rakow-czestochowa-fd64b7568f",
@@ -3984,7 +4435,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rapid-wien-4a658dc1bb",
@@ -3995,7 +4446,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-reggina-881da80959",
@@ -4006,7 +4457,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-shandong-taishan-5b72fc62cc",
@@ -4017,7 +4468,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sint-truiden-8fe4ec1122",
@@ -4028,7 +4479,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sm-caen-5b4a59eadc",
+    "name": "SM Caen",
+    "competition": "France Ligue 2 (2)",
+    "category": "men",
+    "overall": 68,
+    "attack": 70,
+    "midfield": 67,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-spvgg-greuther-furth-81b6168208",
@@ -4039,7 +4501,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ternana-260761bcf8",
@@ -4050,7 +4512,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-union-de-santa-fe-9c9fb8c1d7",
@@ -4061,7 +4523,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 68,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vancouver-whitecaps-4510e488bf",
@@ -4072,7 +4534,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-westerlo-d03300d5bc",
@@ -4083,7 +4545,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wigan-athletic-7584ba0016",
@@ -4094,7 +4556,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 69,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-zulte-waregem-b309f9d245",
@@ -4105,7 +4567,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aab-828c7c00e4",
@@ -4116,7 +4578,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aberdeen-f78f73bb8b",
@@ -4127,7 +4589,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-academia-puerto-cabello-fcbf568a3c",
@@ -4138,7 +4600,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-aik-cb0419aee0",
@@ -4149,7 +4611,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-ettifaq-6b0dadf5c4",
@@ -4160,7 +4622,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-raed-646b38952d",
@@ -4171,7 +4633,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-taawoun-d21b07ccdc",
@@ -4182,7 +4644,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 70,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-albacete-balompie-545344a43e",
@@ -4193,7 +4655,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-austria-wien-3cdbf84127",
+    "name": "Austria Wien",
+    "competition": "Austria Bundesliga (1)",
+    "category": "men",
+    "overall": 67,
+    "attack": 68,
+    "midfield": 67,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-barracas-central-22736893f6",
+    "name": "Barracas Central",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 67,
+    "attack": 69,
+    "midfield": 69,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-beijing-guoan-7faf6c6ebb",
@@ -4204,7 +4688,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-benevento-9db2cee10a",
@@ -4215,7 +4699,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-blackpool-5f04438739",
@@ -4226,7 +4710,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cd-mirandes-eb5df0a73d",
@@ -4237,7 +4721,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 68,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cf-montreal-03819b9f5e",
@@ -4248,7 +4732,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-cienciano-db89fc6657",
+    "name": "Cienciano",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 67,
+    "attack": 69,
+    "midfield": 69,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cosenza-3f452542cd",
@@ -4259,7 +4754,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-danubio-f9cc0d1e17",
+    "name": "Danubio",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 67,
+    "attack": 67,
+    "midfield": 67,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-dep-cuenca-39ee52ce0a",
+    "name": "Dep. Cuenca",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 67,
+    "attack": 67,
+    "midfield": 68,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-derby-county-83f220869c",
@@ -4270,7 +4787,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-eintracht-braunschweig-f1548dab67",
@@ -4281,7 +4798,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-eupen-a3adb42765",
@@ -4292,7 +4809,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 68,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-groningen-e56a0da8c9",
@@ -4303,7 +4820,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-luzern-d9edf27dd4",
+    "name": "FC Luzern",
+    "competition": "Switzerland Super League (1)",
+    "category": "men",
+    "overall": 67,
+    "attack": 62,
+    "midfield": 68,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-nordsj-lland-1b89692822",
@@ -4314,7 +4842,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-seoul-fe618f388b",
@@ -4325,7 +4853,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 69,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-st-gallen-e1057a1792",
@@ -4336,7 +4864,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gimnasia-y-esgrima-la-plata-16f0e97d41",
@@ -4347,7 +4875,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 66,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-grasshopper-club-zurich-1753354286",
@@ -4358,7 +4886,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-guarani-paraguay-b4120313c2",
@@ -4369,7 +4897,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hibernian-b76748604a",
@@ -4380,7 +4908,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-incheon-united-40b9d33ded",
@@ -4391,7 +4919,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 69,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ipswich-town-420ca8a7ce",
@@ -4402,7 +4930,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-jahn-regensburg-a64b47bc88",
@@ -4413,7 +4941,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-jeju-united-0e63d2c380",
@@ -4424,7 +4952,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 63,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-le-havre-ac-159db416a7",
@@ -4435,7 +4963,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 69,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-malaga-cf-88cd632ace",
@@ -4446,7 +4974,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-melbourne-city-7d599c1bde",
+    "name": "Melbourne City",
+    "competition": "Australia A-League (1)",
+    "category": "men",
+    "overall": 67,
+    "attack": 75,
+    "midfield": 69,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-melbourne-victory-9e4fda3da5",
@@ -4457,7 +4996,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-modena-9d8d6d5e98",
@@ -4468,7 +5007,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 67,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-nimes-olympique-6dd34f5a25",
@@ -4479,7 +5018,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-nublense-6ebd12278a",
@@ -4490,7 +5029,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-palestino-5e2392f0c1",
+    "name": "Palestino",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 67,
+    "attack": 68,
+    "midfield": 66,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-perugia-11bc8450d9",
@@ -4501,7 +5051,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-pohang-steelers-c4c8b1cb3d",
@@ -4512,7 +5062,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-racing-de-santander-cbb1e19700",
@@ -4523,7 +5073,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-randers-fc-5e95498fd0",
@@ -4534,7 +5084,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-rapid-bucuresti-2adee6131f",
+    "name": "Rapid București",
+    "competition": "Romania Liga I (1)",
+    "category": "men",
+    "overall": 67,
+    "attack": 67,
+    "midfield": 66,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-river-plate-montevideo-d06c76b24f",
@@ -4545,7 +5106,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rosenborg-bk-779a3278d1",
@@ -4556,7 +5117,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rotherham-united-9602abca86",
@@ -4567,7 +5128,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sc-cambuur-6188b89304",
@@ -4578,7 +5139,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 67,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sd-ponferradina-5c98221578",
@@ -4589,7 +5150,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sheffield-wednesday-17a303d49c",
@@ -4600,7 +5161,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-spal-a5e0740c57",
@@ -4611,7 +5172,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sparta-rotterdam-e07912ab1d",
@@ -4622,7 +5183,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 68,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sudtirol-6a2dc501b1",
@@ -4633,7 +5194,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 67,
     "defence": 68,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-suwon-bluewings-a0022c4ca4",
@@ -4644,7 +5205,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-suwon-fc-a9651c68b7",
@@ -4655,7 +5216,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-u-catolica-a22f7667b4",
@@ -4666,7 +5227,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-umraniyespor-4208a9e8fb",
@@ -4677,7 +5238,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-universitatea-craiova-b1ab67dc26",
@@ -4688,7 +5249,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-1-fc-saarbrucken-d29467d8fc",
@@ -4699,7 +5260,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-fayha-4e03d20895",
@@ -4710,7 +5271,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 67,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-wehda-77548dc8b4",
@@ -4721,7 +5282,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 66,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-amiens-sc-ef36ba3722",
@@ -4732,7 +5293,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-brescia-0ec06f7707",
@@ -4743,7 +5304,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-caracas-fc-c3faacbe60",
@@ -4754,7 +5315,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-caracas-fc-f0b609c56c",
@@ -4765,7 +5326,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cd-lugo-70ce0955ce",
@@ -4776,7 +5337,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cerro-largo-7696c4920f",
@@ -4787,7 +5348,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-charlton-52011a48a9",
+    "name": "Charlton",
+    "competition": "England League One (3)",
+    "category": "men",
+    "overall": 66,
+    "attack": 64,
+    "midfield": 66,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cittadella-5ccdf73264",
@@ -4798,7 +5370,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cobresal-58e7adf699",
@@ -4809,7 +5381,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 68,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-damac-fc-b44da84047",
@@ -4820,7 +5392,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-defensor-sporting-27576ea2b3",
@@ -4831,7 +5403,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportivo-binacional-5d4d787147",
@@ -4842,7 +5414,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportivo-cali-a10f1b2b3c",
@@ -4853,7 +5425,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 68,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-deportivo-tachira-66a7da0d13",
@@ -4864,7 +5436,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dijon-fco-0a37340c8d",
@@ -4875,7 +5447,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dynamo-dresden-07640a8843",
@@ -4886,7 +5458,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-en-avant-guingamp-85f6d84ae5",
@@ -4897,7 +5469,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-excelsior-9767d2b183",
@@ -4908,7 +5480,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-farul-constanta-65330241be",
@@ -4919,7 +5491,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-andorra-ddf60e1866",
@@ -4930,7 +5502,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-emmen-070d62c406",
@@ -4941,7 +5513,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-lugano-0d6652a796",
@@ -4952,7 +5524,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 66,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gangwon-fc-0a98023aaa",
@@ -4963,7 +5535,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-gaziantep-fk-13ca77fdf2",
+    "name": "Gaziantep FK",
+    "competition": "Turkey Süper Lig (1)",
+    "category": "men",
+    "overall": 66,
+    "attack": 69,
+    "midfield": 67,
+    "defence": 68,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-giresunspor-97d76afee2",
@@ -4974,7 +5557,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 67,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-go-ahead-eagles-f9c2294023",
@@ -4985,7 +5568,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-grenoble-foot-38-9bd01525ec",
@@ -4996,7 +5579,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-hammarby-if-51b625c5fa",
+    "name": "Hammarby IF",
+    "competition": "Sweden Allsvenskan (1)",
+    "category": "men",
+    "overall": 66,
+    "attack": 63,
+    "midfield": 68,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-if-elfsborg-92d1de1caa",
+    "name": "IF Elfsborg",
+    "competition": "Sweden Allsvenskan (1)",
+    "category": "men",
+    "overall": 66,
+    "attack": 66,
+    "midfield": 64,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ifk-goteborg-b14048d96b",
@@ -5007,7 +5612,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-istanbulspor-d0745b2b96",
@@ -5018,7 +5623,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-jagiellonia-bia-ystok-67dd229aa3",
@@ -5029,7 +5634,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 66,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-la-equidad-0ec1c8c614",
@@ -5040,7 +5645,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-lillestr-m-65ea8063db",
+    "name": "Lillestrøm",
+    "competition": "Norway Eliteserien (1)",
+    "category": "men",
+    "overall": 66,
+    "attack": 68,
+    "midfield": 67,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-magallanes-2acd8e12e7",
@@ -5051,7 +5667,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 68,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-metropolitanos-fc-93d7b90091",
@@ -5062,7 +5678,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-metropolitanos-fc-01ca98010d",
@@ -5073,7 +5689,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-monagas-sport-club-f429987fe7",
@@ -5084,7 +5700,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "nt-new-zealand",
@@ -5095,7 +5711,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 64,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-peterborough-united-d6ec919730",
@@ -5106,7 +5722,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 71,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-piast-gliwice-e86924302d",
@@ -5117,7 +5733,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 64,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-plymouth-argyle-ab84908b6d",
@@ -5128,7 +5744,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-radomiak-radom-1234751d8b",
@@ -5139,7 +5755,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-rkc-waalwijk-e7275303a6",
+    "name": "RKC Waalwijk",
+    "competition": "Holland Eredivisie (1)",
+    "category": "men",
+    "overall": 66,
+    "attack": 68,
+    "midfield": 65,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sepsi-osk-ffda2207d6",
@@ -5150,7 +5777,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-sport-boys-6878b49c9a",
+    "name": "Sport Boys",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 66,
+    "attack": 66,
+    "midfield": 67,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stade-lavallois-mfc-aaaa700acd",
@@ -5161,7 +5799,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-the-strongest-290d1ecb4c",
@@ -5172,7 +5810,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tsv-1860-munchen-daa78394c9",
@@ -5183,7 +5821,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ud-ibiza-d15006ea18",
@@ -5194,7 +5832,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-universidad-cesar-vallejo-6dcf8d56b4",
@@ -5205,7 +5843,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-valenciennes-fc-401f82f6f7",
@@ -5216,7 +5854,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-valerenga-3f8daa964f",
+    "name": "Vålerenga",
+    "competition": "Norway Eliteserien (1)",
+    "category": "men",
+    "overall": 66,
+    "attack": 64,
+    "midfield": 65,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-viking-fk-a6a6e11e27",
@@ -5227,7 +5876,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-villarreal-b-01fc16e307",
@@ -5238,7 +5887,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-wanderers-212c001c20",
+    "name": "Wanderers",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 66,
+    "attack": 65,
+    "midfield": 66,
+    "defence": 66,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-western-sydney-wanderers-d777c0d909",
@@ -5249,7 +5909,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 69,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wolfsberger-ac-2de0c0b9e5",
@@ -5260,7 +5920,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-abha-club-c4c5d9f549",
@@ -5271,7 +5931,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-tai-b4c67b5429",
@@ -5282,7 +5942,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 67,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-always-ready-370d45681e",
@@ -5293,7 +5953,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-arsenal-de-sarandi-11f110ea4c",
@@ -5304,7 +5964,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-audax-italiano-29e8d21075",
@@ -5315,7 +5975,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-austria-klagenfurt-5266165d2f",
+    "name": "Austria Klagenfurt",
+    "competition": "Austria Bundesliga (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 64,
+    "midfield": 65,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-austria-lustenau-932ad8f6e3",
+    "name": "Austria Lustenau",
+    "competition": "Austria Bundesliga (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 65,
+    "midfield": 64,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-barnsley-723ef609c1",
@@ -5326,7 +6008,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bolton-wanderers-e1d56730fc",
@@ -5337,7 +6019,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chamois-niortais-fc-e177c7aa41",
@@ -5348,7 +6030,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chengdu-rongcheng-f-c-b551a6a875",
@@ -5359,7 +6041,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-club-nacional-b4a37b4ae0",
@@ -5370,7 +6052,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cracovia-69e2b62210",
@@ -5381,7 +6063,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-daegu-fc-9db7cb531f",
+    "name": "Daegu FC",
+    "competition": "Korea K League 1 (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 66,
+    "midfield": 67,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-delfin-sc-13e192f6c7",
@@ -5392,7 +6085,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dep-la-guaira-a8b7b679e2",
@@ -5403,7 +6096,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-erzgebirge-aue-08a13cae3e",
@@ -5414,7 +6107,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 65,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-estudiantes-de-merida-49d6fc6614",
@@ -5425,7 +6118,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-everton-de-vina-835db89702",
@@ -5436,7 +6129,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 70,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-annecy-d50dca364c",
@@ -5447,7 +6140,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-hermannstadt-4d1cee3652",
@@ -5458,7 +6151,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-ingolstadt-04-7abdb79790",
@@ -5469,7 +6162,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-u-craiova-1948-8fa2721bb2",
@@ -5480,7 +6173,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-volendam-ee2c454f98",
@@ -5491,7 +6184,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-voluntari-5a31699c6e",
@@ -5502,7 +6195,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gornik-zabrze-0eaac95543",
@@ -5513,7 +6206,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-guairena-f28381a22c",
@@ -5524,7 +6217,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-henan-songshan-longmen-fc-1afc4fa5a1",
@@ -5535,7 +6228,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 68,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ifk-norrkoping-4ecad18ae4",
@@ -5546,7 +6239,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ind-petrolero-a031874d41",
@@ -5557,7 +6250,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-lechia-gdansk-9605e2fc5a",
@@ -5568,7 +6261,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-odense-bk-f541463fd5",
+    "name": "Odense BK",
+    "competition": "Denmark Superliga (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 65,
+    "midfield": 66,
+    "defence": 62,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-oriente-petrolero-940507ba18",
@@ -5579,7 +6283,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-oxford-united-913c017a8f",
@@ -5590,7 +6294,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-pau-fc-35e3a8f871",
@@ -5601,7 +6305,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-petrolul-ploiesti-e251e86126",
+    "name": "Petrolul Ploiești",
+    "competition": "Romania Liga I (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 66,
+    "midfield": 65,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-portsmouth-3b77b27ed4",
@@ -5612,7 +6327,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-quevilly-rouen-metropole-c5da3960bb",
@@ -5623,7 +6338,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 64,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rodez-aveyron-football-b6d86d6e8d",
@@ -5634,7 +6349,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sc-bastia-7be0f28123",
@@ -5645,7 +6360,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-seraing-d4d8a2c162",
@@ -5656,7 +6371,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-shanghai-shenhua-9e1382f843",
@@ -5667,7 +6382,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 69,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-shrewsbury-6ba843920f",
+    "name": "Shrewsbury",
+    "competition": "England League One (3)",
+    "category": "men",
+    "overall": 65,
+    "attack": 62,
+    "midfield": 65,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-silkeborg-if-3041cef49b",
@@ -5678,7 +6404,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-slask-wroc-aw-97a02e6779",
@@ -5689,7 +6415,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sportivo-ameliano-1e29cb7421",
@@ -5700,7 +6426,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sv-elversberg-f0f3443aab",
@@ -5711,7 +6437,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 67,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sv-ried-fd2647bc11",
@@ -5722,7 +6448,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 62,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sv-waldhof-mannheim-aecca63532",
@@ -5733,7 +6459,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 66,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sv-wehen-wiesbaden-72651b6717",
@@ -5744,7 +6470,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sydney-fc-a353ba7991",
@@ -5755,7 +6481,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-tsv-hartberg-f34b15d48b",
+    "name": "TSV Hartberg",
+    "competition": "Austria Bundesliga (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 66,
+    "midfield": 66,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-union-la-calera-cdf0759d46",
@@ -5766,7 +6503,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-uta-arad-982c2f1ea2",
+    "name": "UTA Arad",
+    "competition": "Romania Liga I (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 65,
+    "midfield": 65,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vfl-osnabruck-b2af3fe390",
@@ -5777,7 +6525,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-viborg-ff-d08d8ed2a0",
+    "name": "Viborg FF",
+    "competition": "Denmark Superliga (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 65,
+    "midfield": 68,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-viktoria-koln-5c3ac6bee9",
@@ -5788,7 +6547,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 65,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-warta-poznan-7f8e2ce194",
@@ -5799,7 +6558,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 67,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-western-united-fc-50ae1da5a3",
@@ -5810,7 +6569,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 64,
     "defence": 66,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-wsg-tirol-5e361e1dd2",
+    "name": "WSG Tirol",
+    "competition": "Austria Bundesliga (1)",
+    "category": "men",
+    "overall": 65,
+    "attack": 66,
+    "midfield": 65,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wycombe-wanderers-8dd6b6d21c",
@@ -5821,7 +6591,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 66,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-zag-ebie-lubin-d54dd625aa",
@@ -5832,7 +6602,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 67,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-9-de-octubre-fc-3f3eccd359",
@@ -5843,7 +6613,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-adelaide-united-a58b31b292",
@@ -5854,7 +6624,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-adalah-f35d97a752",
@@ -5865,7 +6635,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 65,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-al-batin-5440d1e4f4",
@@ -5876,7 +6646,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 64,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-al-khaleej-03d52fa1d7",
+    "name": "Al Khaleej",
+    "competition": "Saudi Pro League (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 67,
+    "midfield": 66,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-aldosivi-5271c8a91d",
+    "name": "Aldosivi",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 59,
+    "midfield": 65,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ayacucho-08065d61b7",
@@ -5887,7 +6679,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-blooming-3cf4924758",
+    "name": "Blooming",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 64,
+    "attack": 67,
+    "midfield": 65,
+    "defence": 62,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cambridge-united-72e90d74ce",
@@ -5898,7 +6701,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-central-coast-mariners-6b5205ef46",
@@ -5909,7 +6712,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 63,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-changchun-yatai-ad0112ffa0",
@@ -5920,7 +6723,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 63,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cheltenham-town-4faafb396b",
@@ -5931,7 +6734,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chindia-targoviste-5771be9ae7",
@@ -5942,7 +6745,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dundee-united-4bf08e37b8",
@@ -5953,7 +6756,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-exeter-city-26ad864042",
+    "name": "Exeter City",
+    "competition": "England League One (3)",
+    "category": "men",
+    "overall": 64,
+    "attack": 64,
+    "midfield": 62,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-botosani-e878b969d2",
@@ -5964,7 +6778,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-winterthur-6162d32268",
+    "name": "FC Winterthur",
+    "competition": "Switzerland Super League (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 65,
+    "midfield": 64,
+    "defence": 62,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fleetwood-town-cc222fbbd8",
@@ -5975,7 +6800,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fsv-zwickau-53672fed75",
@@ -5986,7 +6811,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-general-caballero-jlm-21b93f53a5",
@@ -5997,7 +6822,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-gimcheon-sangmu-091f090d2c",
+    "name": "Gimcheon Sangmu",
+    "competition": "Korea K League 1 (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 63,
+    "midfield": 65,
+    "defence": 62,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-guabira-46ea5f210b",
@@ -6008,7 +6844,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hallescher-fc-873af65090",
@@ -6019,7 +6855,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hjk-helsinki-991645cc38",
@@ -6030,7 +6866,29 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-hnos-colmenarez-4b19d0ce24",
+    "name": "Hnos. Colmenárez",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 64,
+    "attack": 64,
+    "midfield": 65,
+    "defence": 65,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-kalmar-ff-78dc7e4734",
+    "name": "Kalmar FF",
+    "competition": "Sweden Allsvenskan (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 64,
+    "midfield": 64,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kilmarnock-b9116f8bce",
@@ -6041,7 +6899,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-lincoln-city-b76298c6b4",
+    "name": "Lincoln City",
+    "competition": "England League One (3)",
+    "category": "men",
+    "overall": 64,
+    "attack": 63,
+    "midfield": 65,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-livingston-250090d0cb",
@@ -6052,7 +6921,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-macarthur-fc-ef4165c1f4",
@@ -6063,7 +6932,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 64,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-miedz-legnica-2eeaffbd0f",
@@ -6074,7 +6943,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-milton-keynes-dons-007ef56c32",
@@ -6085,7 +6954,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-motherwell-e52e260180",
@@ -6096,7 +6965,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-msv-duisburg-38ca316b3e",
@@ -6107,7 +6976,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-mushuc-runa-471b449329",
@@ -6118,7 +6987,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-palmaflor-del-tropico-1c124c5ce6",
@@ -6129,7 +6998,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-patronato-d0d4570af9",
+    "name": "Patronato",
+    "competition": "Argentina Primera División (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 60,
+    "midfield": 65,
+    "defence": 64,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ross-county-ee697ab2ba",
@@ -6140,7 +7020,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 63,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rot-wei-essen-c6d17d3291",
@@ -6151,7 +7031,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-royal-pari-a97b288444",
@@ -6162,7 +7042,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sarpsborg-08-59908da87f",
@@ -6173,7 +7053,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sc-verl-e16700e82f",
@@ -6184,7 +7064,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-scr-altach-e7cc366c94",
+    "name": "SCR Altach",
+    "competition": "Austria Bundesliga (1)",
+    "category": "men",
+    "overall": 64,
+    "attack": 66,
+    "midfield": 64,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-st-johnstone-107acac700",
@@ -6195,7 +7086,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-st-mirren-2fd4fe6391",
@@ -6206,7 +7097,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stal-mielec-13512dbd23",
@@ -6217,7 +7108,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-str-msgodset-toppfotball-7ebf02cfd8",
@@ -6228,7 +7119,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 67,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sv-meppen-46cfcd2b64",
@@ -6239,7 +7130,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tacuary-fbc-eff9cdac17",
@@ -6250,7 +7141,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 65,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-union-espanola-2e5ed9bd71",
+    "name": "Unión Española",
+    "competition": "CONMEBOL Sudamericana",
+    "category": "men",
+    "overall": 64,
+    "attack": 65,
+    "midfield": 60,
+    "defence": 67,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wellington-phoenix-a218ee9d99",
@@ -6261,7 +7163,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 65,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-widzew-odz-0261008152",
@@ -6272,7 +7174,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wilstermann-39bafa18aa",
@@ -6283,7 +7185,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wis-a-p-ock-cba48f840b",
@@ -6294,7 +7196,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 66,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-zhejiang-professional-fc-7fa0a04e01",
@@ -6305,7 +7207,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 72,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-aalesund-6c14601280",
+    "name": "Aalesund",
+    "competition": "Norway Eliteserien (1)",
+    "category": "men",
+    "overall": 63,
+    "attack": 64,
+    "midfield": 63,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ac-horsens-ef98dd2c83",
@@ -6316,7 +7229,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-accrington-stanley-4d4cfe4ef7",
@@ -6327,7 +7240,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-antofagasta-f517722195",
@@ -6338,7 +7251,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-atk-mohun-bagan-fc-3883dab92d",
@@ -6349,7 +7262,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 64,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-borussia-dortmund-ii-f38183982f",
@@ -6360,7 +7273,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bristol-rovers-e4e63d7781",
@@ -6371,7 +7284,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 63,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-burton-albion-1d91780854",
@@ -6382,7 +7295,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cs-mioveni-a1df903187",
@@ -6393,7 +7306,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-degerfors-if-36b254dd92",
@@ -6404,7 +7317,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fc-arges-a856f1fe14",
@@ -6415,7 +7328,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fk-haugesund-c0767100c5",
+    "name": "FK Haugesund",
+    "competition": "Norway Eliteserien (1)",
+    "category": "men",
+    "overall": 63,
+    "attack": 64,
+    "midfield": 63,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-forest-green-rovers-0d22fe003e",
@@ -6426,7 +7350,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-hamkam-da028a1908",
+    "name": "HamKam",
+    "competition": "Norway Eliteserien (1)",
+    "category": "men",
+    "overall": 63,
+    "attack": 63,
+    "midfield": 63,
+    "defence": 63,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ifk-varnamo-89875e4451",
@@ -6437,7 +7372,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 64,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-ik-sirius-32bca922a7",
@@ -6448,7 +7383,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 63,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-korona-kielce-28979d4890",
@@ -6459,7 +7394,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-leyton-orient-37889f938c",
@@ -6470,7 +7405,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-lyngby-bk-47900c1e4c",
@@ -6481,7 +7416,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 64,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-morecambe-6173fd879c",
@@ -6492,7 +7427,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-northampton-town-cef81f88a6",
@@ -6503,7 +7438,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-perth-glory-4c86465cdb",
@@ -6514,7 +7449,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 61,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-port-vale-50cb92b651",
@@ -6525,7 +7460,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 64,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-salford-city-f2e8add53e",
@@ -6536,7 +7471,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 63,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sc-freiburg-ii-76b034de88",
@@ -6547,7 +7482,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 63,
     "defence": 65,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-shamrock-rovers-62bd1664b7",
@@ -6558,7 +7493,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 62,
     "defence": 64,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sol-de-america-1162aaba50",
@@ -6569,7 +7504,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 64,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stevenage-922888933d",
@@ -6580,7 +7515,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tianjin-jinmen-tiger-1c0acc15d9",
@@ -6591,7 +7526,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 65,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-troms-il-dad0a0248b",
@@ -6602,7 +7537,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 63,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-vfb-oldenburg-4ce7873de1",
@@ -6613,7 +7548,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 62,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-wrexham-7652f6912b",
@@ -6624,7 +7559,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 62,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-barrow-b55bec9a56",
@@ -6635,7 +7570,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 61,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bradford-city-eadc724c40",
@@ -6646,7 +7581,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 62,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-brisbane-roar-25694a51ad",
@@ -6657,7 +7592,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 68,
     "midfield": 62,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-cangzhou-mighty-lions-7a5c99c7f5",
@@ -6668,7 +7603,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 70,
     "midfield": 62,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-carlisle-united-712aa8eef6",
@@ -6679,7 +7614,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 64,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gillingham-7bf50b79e1",
@@ -6690,7 +7625,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kristiansund-bk-dd2fb6dd51",
@@ -6701,7 +7636,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 62,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-mansfield-town-e3b2f3047a",
@@ -6712,7 +7647,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 61,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-mjallby-aif-67b72a883d",
@@ -6723,7 +7658,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 62,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-mumbai-city-fc-66679c3de8",
@@ -6734,7 +7669,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 65,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-newcastle-jets-f22097d1fe",
@@ -6745,7 +7680,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 57,
     "midfield": 64,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-odds-ballklubb-dfdafe8e4b",
@@ -6756,7 +7691,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 60,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sandefjord-fotball-478cf6cb24",
@@ -6767,7 +7702,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 61,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-spvgg-bayreuth-0a9de48703",
@@ -6778,7 +7713,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 63,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-stockport-county-8f4405f3c5",
@@ -6789,7 +7724,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 62,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-swindon-town-4438c951e7",
@@ -6800,7 +7735,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 61,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-varbergs-bois-a4ce7408ba",
@@ -6811,7 +7746,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 57,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-walsall-3c1acbadb5",
@@ -6822,7 +7757,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 61,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-afc-wimbledon-411284c047",
@@ -6833,7 +7768,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bengaluru-fc-3997176045",
@@ -6844,7 +7779,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 59,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-colchester-united-f5e8a8016b",
@@ -6855,7 +7790,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 61,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-crawley-town-e69cd1dd77",
@@ -6866,7 +7801,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 61,
     "defence": 59,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-crewe-alexandra-ff08cf608c",
@@ -6877,7 +7812,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 60,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dalian-professional-96df4e3828",
@@ -6888,7 +7823,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 63,
     "defence": 58,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-derry-city-edcd543aac",
@@ -6899,7 +7834,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 61,
     "defence": 59,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-doncaster-rovers-08b606facc",
@@ -6910,7 +7845,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 59,
     "midfield": 60,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-gif-sundsvall-feea59c6fa",
@@ -6921,7 +7856,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 59,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-grimsby-town-3a10f82e74",
@@ -6932,7 +7867,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 62,
     "defence": 62,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-harrogate-town-f287377695",
@@ -6943,7 +7878,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 61,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-helsingborgs-if-d402050abe",
@@ -6954,7 +7889,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-kerala-blasters-fc-3193311f40",
@@ -6965,7 +7900,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 66,
     "midfield": 62,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-meizhou-hakka-2f477d88b5",
@@ -6976,7 +7911,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 55,
     "midfield": 61,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-newport-county-40d680d76d",
@@ -6987,7 +7922,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 60,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-seongnam-fc-a5073568a0",
@@ -6998,7 +7933,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 63,
     "midfield": 59,
     "defence": 59,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-shenzhen-fc-49323108ab",
@@ -7009,7 +7944,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 74,
     "midfield": 58,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sutton-united-11fe9b75c4",
@@ -7020,7 +7955,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 62,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-tranmere-rovers-ef9eac1c4c",
@@ -7031,7 +7966,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 61,
     "midfield": 61,
     "defence": 63,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-bohemians-8c8647087a",
@@ -7042,7 +7977,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 59,
     "midfield": 60,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-dundalk-04f2de601f",
@@ -7053,7 +7988,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 65,
     "midfield": 60,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-fk-jerv-8d5f84cf58",
@@ -7064,7 +7999,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 62,
     "midfield": 61,
     "defence": 58,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hartlepool-united-0a7f2a3f15",
@@ -7075,7 +8010,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 62,
     "defence": 59,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-hyderabad-fc-ebcba92223",
@@ -7086,7 +8021,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 64,
     "defence": 59,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-rochdale-db2e38fd2c",
@@ -7097,7 +8032,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 59,
     "midfield": 60,
     "defence": 61,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-st-patrick-s-athletic-d407a6c726",
@@ -7108,7 +8043,7 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 61,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-chennaiyin-fc-6f18eda2d9",
@@ -7119,7 +8054,18 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 64,
     "midfield": 59,
     "defence": 57,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-fc-goa-e450cd0ed1",
+    "name": "FC Goa",
+    "competition": "Indian Super League (1)",
+    "category": "men",
+    "overall": 59,
+    "attack": 66,
+    "midfield": 59,
+    "defence": 59,
+    "catalogueVersion": "fifa23-men-v4"
   },
   {
     "id": "fifa23-sligo-rovers-d7e065124d",
@@ -7130,6 +8076,138 @@ export const TEAM_CATALOGUE: CatalogueTeam[] = [
     "attack": 60,
     "midfield": 58,
     "defence": 60,
-    "catalogueVersion": "fifa23-men-v3"
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-east-bengal-1ff1bb8b5b",
+    "name": "East Bengal",
+    "competition": "Indian Super League (1)",
+    "category": "men",
+    "overall": 58,
+    "attack": 65,
+    "midfield": 58,
+    "defence": 57,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-guangzhou-fc-659f2b1026",
+    "name": "Guangzhou FC",
+    "competition": "China Super League (1)",
+    "category": "men",
+    "overall": 58,
+    "attack": 53,
+    "midfield": 60,
+    "defence": 57,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-jamshedpur-fc-266f0e04ce",
+    "name": "Jamshedpur FC",
+    "competition": "Indian Super League (1)",
+    "category": "men",
+    "overall": 58,
+    "attack": 61,
+    "midfield": 57,
+    "defence": 57,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-odisha-fc-5352ca4bb9",
+    "name": "Odisha FC",
+    "competition": "Indian Super League (1)",
+    "category": "men",
+    "overall": 58,
+    "attack": 60,
+    "midfield": 58,
+    "defence": 58,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-shelbourne-be80c86adf",
+    "name": "Shelbourne",
+    "competition": "Rep. Ireland Premier Division (1)",
+    "category": "men",
+    "overall": 58,
+    "attack": 59,
+    "midfield": 57,
+    "defence": 58,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-wuhan-fc-cef3230937",
+    "name": "Wuhan FC",
+    "competition": "China Super League (1)",
+    "category": "men",
+    "overall": 58,
+    "attack": 70,
+    "midfield": 59,
+    "defence": 54,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-finn-harps-8d00a80b26",
+    "name": "Finn Harps",
+    "competition": "Rep. Ireland Premier Division (1)",
+    "category": "men",
+    "overall": 57,
+    "attack": 55,
+    "midfield": 57,
+    "defence": 57,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-northeast-united-7f229af73d",
+    "name": "NorthEast United",
+    "competition": "Indian Super League (1)",
+    "category": "men",
+    "overall": 57,
+    "attack": 58,
+    "midfield": 55,
+    "defence": 56,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-drogheda-utd-b3322fbdc9",
+    "name": "Drogheda Utd",
+    "competition": "Rep. Ireland Premier Division (1)",
+    "category": "men",
+    "overall": 56,
+    "attack": 57,
+    "midfield": 58,
+    "defence": 56,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-guangzhou-city-688960f968",
+    "name": "Guangzhou City",
+    "competition": "China Super League (1)",
+    "category": "men",
+    "overall": 56,
+    "attack": 57,
+    "midfield": 60,
+    "defence": 53,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-ucd-b4cfb8cc96",
+    "name": "UCD",
+    "competition": "Rep. Ireland Premier Division (1)",
+    "category": "men",
+    "overall": 54,
+    "attack": 51,
+    "midfield": 54,
+    "defence": 56,
+    "catalogueVersion": "fifa23-men-v4"
+  },
+  {
+    "id": "fifa23-hebei-fc-65399c2700",
+    "name": "Hebei FC",
+    "competition": "China Super League (1)",
+    "category": "men",
+    "overall": 52,
+    "attack": 52,
+    "midfield": 50,
+    "defence": 54,
+    "catalogueVersion": "fifa23-men-v4"
   }
 ];

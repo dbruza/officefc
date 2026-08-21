@@ -62,9 +62,9 @@ test("the committed FIFA 23 dump produces the expected catalogue", () => {
   const source = readFileSync(new URL("../data/fifa23-team-list.txt", import.meta.url), "utf8");
   const rawTeams = parseTeamDump(source);
   const teams = buildCatalogue(source);
-  assert.equal(rawTeams.length, 648);
+  assert.equal(rawTeams.length, 746);
   assert.equal(rawTeams.filter((team) => team.category === "women").length, 36);
-  assert.equal(teams.length, 647);
+  assert.equal(teams.length, 745);
   assert.equal(teams.filter((team) => team.category === "women").length, 0);
   assert.equal(teams.filter((team) => team.category === "international").length, 35);
   assert.equal(NATIONAL_TEAMS.length, 35);
@@ -74,7 +74,7 @@ test("the committed FIFA 23 dump produces the expected catalogue", () => {
     stableTeamId("Bayern München", "Germany 1. Bundesliga (1)"),
   );
   const ratings = teams.flatMap((team) => (team.overall == null ? [] : [team.overall]));
-  assert.equal(Math.min(...ratings), 59);
+  assert.equal(Math.min(...ratings), 52);
   assert.equal(Math.max(...ratings), 85);
 });
 
@@ -90,6 +90,6 @@ test("national teams retain legacy ids and use the supplied ratings", () => {
     attack: 84,
     midfield: 81,
     defence: 82,
-    catalogueVersion: "fifa23-men-v3",
+    catalogueVersion: "fifa23-men-v4",
   });
 });

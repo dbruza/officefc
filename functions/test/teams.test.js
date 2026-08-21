@@ -87,7 +87,7 @@ test("current catalogue version skips collection rewrites", async () => {
           return {
             exists: true,
             get(field) {
-              return field === "version" ? "fifa23-men-v3" : 647;
+              return field === "version" ? "fifa23-men-v4" : 745;
             },
           };
         },
@@ -96,11 +96,11 @@ test("current catalogue version skips collection rewrites", async () => {
   };
   const result = await seedTeamCatalogue({ db });
   assert.deepEqual(result, {
-    version: "fifa23-men-v3",
+    version: "fifa23-men-v4",
     updated: 0,
     deactivated: 0,
     deleted: 0,
-    active: 647,
+    active: 745,
     skipped: true,
   });
 });
@@ -133,11 +133,11 @@ test("snapshot rebuild writes active team summaries in picker order", async () =
       };
     },
   };
-  const teams = await rebuildTeamCatalogueSnapshot(db, "fifa23-men-v3");
+  const teams = await rebuildTeamCatalogueSnapshot(db, "fifa23-men-v4");
   assert.deepEqual(
     teams.map((team) => team.id),
     [catalogueTeam.id, "custom"],
   );
   assert.equal(written.count, 2);
-  assert.equal(written.version, "fifa23-men-v3");
+  assert.equal(written.version, "fifa23-men-v4");
 });
