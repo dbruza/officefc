@@ -72,6 +72,40 @@ npm run deploy:backend   # Firestore, Storage, Functions, and scheduled jobs
 First test <https://office-fc.web.app>. Check sign-in, a nested route refresh, a manual
 match, and one photo extraction before connecting the custom domain.
 
+### Hosting cache invariants
+
+Two `firebase.json` hosting rules exist to stop a deploy from white-screening returning
+visitors. Both are easy to break by "simplifying" the config, so re-check them after any
+edit — the hosting emulator (`firebase emulators:start --only hosting`) reproduces the
+production matcher exactly:
+
+1. **Every HTML response must be uncacheable.** The no-store rule is `"source": "**"`, not
+   `"source": "/index.html"`. Header globs are matched against the _requested_ path, not
+   the rewrite destination, so a rule scoped to `/index.html` never fires for `/` or for
+   any deep route — those are the only paths real users request. A cached `index.html`
+   points at the previous release's bundle hash, which no longer exists.
+2. **The SPA rewrite must never cover `/_expo/**` or `/assets/**`.** A catch-all
+   `"source": "**"` rewrite answers a request for a missing hashed bundle with
+   `index.html` at HTTP 200 and `Content-Type: text/html`. The browser parses that as
+   JavaScript, throws `Unexpected token '<'`, and renders nothing — and because those
+   paths also carry `max-age=31536000, immutable`, it caches the broken response for a
+   year, so reloading never recovers. Excluding the two asset roots turns that case into a
+   clean 404 instead.
+
+Verify after deploying:
+
+```bash
+curl -sI https://officefc.bruza.tech/ | grep -i cache-control
+# expect: no-cache, no-store, must-revalidate
+
+curl -sI https://officefc.bruza.tech/_expo/static/js/web/entry-doesnotexist.js | head -1
+# expect: HTTP/2 404 — NOT 200
+```
+
+A visitor already stuck on a white screen from an earlier release recovers on a
+cache-bypassing reload (Ctrl/Cmd+Shift+R) or by clearing site data; a normal reload will
+not clear a poisoned immutable entry.
+
 ## 5. Connect `officefc.bruza.tech`
 
 1. Firebase Console -> Hosting -> Add custom domain.

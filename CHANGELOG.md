@@ -3,6 +3,28 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.5.0.1] - 2026-08-22
+
+### Fixed
+
+- The web app went blank for returning visitors after a release. Two Firebase Hosting
+  rules combined into a self-perpetuating failure: the no-store header was scoped to
+  `/index.html`, but header globs match the requested path rather than the rewrite
+  destination, so `/` and every deep route — the only paths anyone actually requests —
+  were served with no cache directive at all and could be held by the browser. A stale
+  `index.html` then asked for the previous release's bundle hash, which the catch-all
+  `**` rewrite answered with `index.html` itself at HTTP 200 and `Content-Type:
+  text/html`. The browser parsed HTML as JavaScript (`Unexpected token '<'`), rendered
+  nothing, and — because `/_expo/static/**` is served `max-age=31536000, immutable` —
+  cached that broken response for a year, so reloading never recovered.
+
+  The no-store rule now covers `**` (the immutable asset rules still override it for
+  `/_expo/static/**` and `/assets/**`), so every HTML response revalidates. The SPA
+  rewrite now excludes `/_expo/**` and `/assets/**`, so a missing hashed asset returns a
+  clean 404 instead of HTML masquerading as JavaScript. Both behaviours are verified
+  against the Firebase Hosting emulator, which uses the production path matcher, and the
+  invariants are written down in the launch runbook.
+
 ## [1.5.0.0] - 2026-08-19
 
 ### Added
