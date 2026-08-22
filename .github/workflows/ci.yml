@@ -72,6 +72,11 @@ jobs:
         run: npm --prefix functions run typecheck
 
       - name: Export production web app
+        # CI bundles against the placeholder config written above rather than real
+        # credentials, so the "never ship a placeholder" guard has to stand down here.
+        # The check that the bundle matches mobile/.env still runs.
+        env:
+          OFFICEFC_ALLOW_PLACEHOLDER_CONFIG: "1"
         run: npm run build:web
 
       - name: Test Cloud Functions
