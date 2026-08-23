@@ -43,7 +43,13 @@ export default function Settings() {
 
         <SectionLabel style={{ marginTop: spacing.x2 }}>About</SectionLabel>
         <Card style={styles.group} padded={false}>
-          <Row icon="info" label="Version" value={`OfficeFC ${version}`} />
+          <Row
+            icon="info"
+            label="Version"
+            value={`OfficeFC ${version}`}
+            chevron
+            onPress={() => router.push("/(app)/changelog")}
+          />
         </Card>
 
         <Button

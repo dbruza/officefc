@@ -3,6 +3,15 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.7.0.0] - 2026-08-24
+
+### Added
+
+- "What's new" in the app: Settings → About → Version now opens a changelog screen listing
+  every release, newest first, with the current release highlighted. The content is
+  generated from the repo's CHANGELOG.md at release time, so it can't drift from what
+  actually shipped.
+
 ## [1.6.0.0] - 2026-08-24
 
 ### Fixed
