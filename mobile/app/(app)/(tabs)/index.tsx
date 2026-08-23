@@ -1,5 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -57,6 +64,7 @@ export default function Home() {
   const {
     data,
     loading,
+    refreshing,
     error: loadFailed,
     reload,
   } = useFocusData<HomeData>(
@@ -131,6 +139,13 @@ export default function Home() {
         ref={scrollRef}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void reload()}
+            tintColor={colors.accent}
+          />
+        }
       >
         <View style={styles.header}>
           <View style={{ flex: 1, minWidth: 0 }}>

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Avatar, Icon, ScreenHeader, SectionLabel, Txt } from "@/components";
+import { Avatar, Button, Card, Icon, ScreenHeader, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   awardWalkover,
@@ -43,7 +43,7 @@ export default function FinalsScreen() {
   const { user, membership } = useAuth();
   const isAdmin = membership?.role === "admin";
 
-  const { data, loading, reload } = useFocusData<FinalsData>(
+  const { data, loading, error, reload } = useFocusData<FinalsData>(
     "finals-bracket",
     useCallback(async () => {
       const season = await getActiveSeason();
@@ -109,7 +109,18 @@ export default function FinalsScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading && !data ? <ActivityIndicator color={colors.accent} /> : null}
 
-        {!loading && (!season || !bracket) ? (
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              Couldn't load the finals bracket. Check the connection and retry.
+            </Txt>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+
+        {!error && !loading && (!season || !bracket) ? (
           <View style={styles.empty}>
             <Icon name="trophy" size={34} color={colors.textDim} />
             <Txt variant="head" size={17} style={{ marginTop: spacing.md }}>

@@ -1,10 +1,18 @@
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { type Href, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Avatar,
   AwardCard,
+  Button,
   Card,
   Icon,
   Podium,
@@ -61,7 +69,7 @@ export default function SeasonsRoute() {
   const scrollRef = useRef<ScrollView>(null);
   useTabRetap("seasons", () => scrollRef.current?.scrollTo({ y: 0, animated: true }));
 
-  const { data, loading } = useFocusData<SeasonsData>(
+  const { data, loading, refreshing, error, reload } = useFocusData<SeasonsData>(
     "seasons",
     useCallback(async () => {
       const [seasonRows, roster] = await Promise.all([getSeasons(), getLeaguePlayers()]);
@@ -138,9 +146,26 @@ export default function SeasonsRoute() {
         ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void reload()}
+            tintColor={colors.accent}
+          />
+        }
       >
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {active ? (
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              Couldn't load the seasons. Check the connection and retry.
+            </Txt>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+        {active && !error ? (
           <Card style={styles.current}>
             <View style={styles.currentTop}>
               <View style={{ flex: 1 }}>
@@ -359,7 +384,7 @@ export default function SeasonsRoute() {
               ) : null}
             </Pressable>
           ))}
-          {!loading && past.length === 0 ? (
+          {!loading && !error && past.length === 0 ? (
             <Card style={{ alignItems: "center", paddingVertical: spacing.x2 }}>
               <Icon name="crown" size={26} color={colors.textFaint} />
               <Txt variant="head" size={15} style={{ marginTop: spacing.sm }}>

@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card, Icon, ScreenHeader, SeasonMatchRow, SectionLabel, Txt } from "@/components";
+import { Button, Card, Icon, ScreenHeader, SeasonMatchRow, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
@@ -14,6 +14,7 @@ import {
 import { useFocusData } from "@/lib/useFocusData";
 import { firstName } from "@/lib/format";
 import { colors, spacing } from "@/theme";
+import { withAlpha } from "@/lib/color";
 
 interface GamesData {
   players: Map<string, LeaguePlayer>;
@@ -27,7 +28,7 @@ export default function GamesRoute() {
   const params = useLocalSearchParams<{ uid?: string }>();
   const uid = params.uid ?? user?.uid ?? "";
 
-  const { data, loading } = useFocusData<GamesData>(
+  const { data, loading, refreshing, error, reload } = useFocusData<GamesData>(
     `games:${uid}`,
     useCallback(async () => {
       if (!uid)
@@ -63,9 +64,29 @@ export default function GamesRoute() {
         subtitle={matches.length ? `${matches.length} confirmed · newest first` : undefined}
         back
       />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void reload()}
+            tintColor={colors.accent}
+          />
+        }
+      >
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {!loading ? (
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              Couldn't load the games. Check the connection and retry.
+            </Txt>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+        {!loading && !error ? (
           <View style={{ gap: 7 }}>
             {matches.map((match, index) => {
               const playerA = players.get(match.aId);

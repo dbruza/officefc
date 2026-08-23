@@ -11,6 +11,7 @@ import {
   SectionLabel,
   Txt,
   type PodiumEntry,
+  Button,
 } from "@/components";
 import {
   getLeaguePlayers,
@@ -26,6 +27,7 @@ import { computeSeasonAwards } from "@/lib/awards";
 import { useAuth } from "@/lib/auth";
 import { useFocusData } from "@/lib/useFocusData";
 import { colors, spacing } from "@/theme";
+import { withAlpha } from "@/lib/color";
 
 interface ArchiveData {
   season: Season | null;
@@ -39,7 +41,7 @@ export default function ArchiveRoute() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const { data, loading } = useFocusData<ArchiveData>(
+  const { data, loading, error, reload } = useFocusData<ArchiveData>(
     `archive:${id}`,
     useCallback(async () => {
       const [seasonRow, table, seasonMatches, roster] = await Promise.all([
@@ -78,7 +80,17 @@ export default function ArchiveRoute() {
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {podium.length === 3 ? (
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              Couldn't load this season's archive. Check the connection and retry.
+            </Txt>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+        {!error && podium.length === 3 ? (
           <Card padded={false} style={styles.podiumCard}>
             <Podium entries={podium} onPick={openPlayer} />
           </Card>
@@ -118,7 +130,7 @@ export default function ArchiveRoute() {
               />
             );
           })}
-          {!loading && rankedStandings.length === 0 ? (
+          {!loading && !error && rankedStandings.length === 0 ? (
             <Card style={{ alignItems: "center", paddingVertical: spacing.x2 }}>
               <Txt color={colors.textDim}>No frozen standings are available for this season.</Txt>
             </Card>

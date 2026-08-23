@@ -1,4 +1,5 @@
 import { HttpsError } from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
 import { loggedOnCall } from "./logging";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { computePOTM, type Standing } from "./elo";
@@ -15,6 +16,7 @@ import {
 import { sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
 import { applyFinalsResult } from "./finals";
+import { assertSeasonAcceptsConfirmationsTx } from "./matchLifecycle";
 import {
   bracketComplete,
   bracketRunnerUpId,
@@ -322,6 +324,12 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
     if (data.status === "confirmed" || data.status === "voided") {
       throw new HttpsError("failed-precondition", `Already ${data.status}.`);
     }
+    // Same finalized-season guard as confirmMatch: a resolve after finalizeSeason would
+    // mutate published standings with no re-publication. Voids are allowed through —
+    // removing a result can't contradict the published champion.
+    if (action !== "void") {
+      await assertSeasonAcceptsConfirmationsTx(tx, String(data.seasonId));
+    }
 
     const prev = {
       status: String(data.status),
@@ -407,20 +415,25 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
     return { ...prev, seasonId: String(data.seasonId), submittedBy: String(data.submittedBy) };
   });
 
+  let finalsApplied: boolean | null = null;
   if (action !== "void") {
     if (previous.finals && previous.finalsSlot) {
       // Admin-resolved finals matches advance the bracket; ELO/stats never see them.
       // The draw guard above makes an equal confirmed score impossible.
       const winnerId = previous.aGoals > previous.bGoals ? previous.aId : previous.bId;
-      await applyFinalsResult({
-        seasonId: previous.seasonId,
-        slotKey: previous.finalsSlot as FinalsSlotKey,
-        winnerId,
-        matchId,
-        decidedBy: (previous.decidedBy ?? "regulation") as FinalsDecidedBy,
-        winnerGoals: Math.max(previous.aGoals, previous.bGoals),
-        loserGoals: Math.min(previous.aGoals, previous.bGoals),
-      });
+      finalsApplied =
+        (await applyFinalsResult({
+          seasonId: previous.seasonId,
+          slotKey: previous.finalsSlot as FinalsSlotKey,
+          winnerId,
+          matchId,
+          decidedBy: (previous.decidedBy ?? "regulation") as FinalsDecidedBy,
+          winnerGoals: Math.max(previous.aGoals, previous.bGoals),
+          loserGoals: Math.min(previous.aGoals, previous.bGoals),
+        })) === "applied";
+      if (!finalsApplied) {
+        logger.warn("finals_resolve_lost_slot_race", { matchId, seasonId: previous.seasonId });
+      }
     } else {
       const previousLeaderId = await topRankedLeaderId(db, previous.seasonId);
       await recalcSeasonElo(previous.seasonId);
@@ -431,10 +444,14 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
 
   const opponentId = previous.submittedBy;
   if (opponentId && opponentId !== uid) {
+    // A finals resolve that lost the slot race still confirmed the match, but the bracket
+    // took the other result — don't tell the player it was resolved into anything.
     const body =
       action === "void"
         ? "A disputed match was voided by admin."
-        : "An admin has resolved a pending match.";
+        : finalsApplied === false
+          ? "Your match was confirmed by admin, but that tie had already been decided."
+          : "An admin has resolved a pending match.";
     await sendPush(opponentId, "Match resolved", body, {
       type: action === "void" ? "match_disputed" : "match_confirmed",
       matchId,

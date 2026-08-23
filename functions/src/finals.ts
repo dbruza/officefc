@@ -33,16 +33,20 @@ function bracketRef(seasonId: string) {
   return db.doc(`seasons/${seasonId}/finals/bracket`);
 }
 
+/** Everything team-dealing needs for one season, preloaded outside any transaction —
+ *  the queries behind it are ordinary reads that inform team variety only, not
+ *  correctness, so they must never re-run inside a bracket transaction's retry loop. */
+type DealingContext = Awaited<ReturnType<typeof loadDealingContext>>;
+
 /** Deal equal-OVR teams to every listed slot. Both sides are fed the same rating on
  *  purpose: finals are decided on skill, so the target OVR gap is zero regardless of the
  *  players' actual ELO. Recent teams (including earlier finals ties) are still avoided. */
 async function dealTeamsForSlots(
   bracket: FinalsBracket,
   slotKeys: FinalsSlotKey[],
-  seasonId: string,
+  { pool, seasonMatchesByDateDesc }: DealingContext,
 ): Promise<void> {
   if (slotKeys.length === 0) return;
-  const { pool, seasonMatchesByDateDesc } = await loadDealingContext(seasonId);
   for (const key of slotKeys) {
     const slot = bracket.slots[key];
     if (!slot || !slot.homeId || !slot.awayId) continue;
@@ -113,7 +117,7 @@ export const startFinals = loggedOnCall("startFinals", { cors: true }, async (re
   const openSlots = (Object.values(bracket.slots) as FinalsSlot[])
     .filter((slot) => slot.status === "open")
     .map((slot) => slot.key);
-  await dealTeamsForSlots(bracket, openSlots, seasonId);
+  await dealTeamsForSlots(bracket, openSlots, await loadDealingContext(seasonId));
 
   await bracketRef(seasonId).set({
     ...bracket,
@@ -153,7 +157,11 @@ export const startFinals = loggedOnCall("startFinals", { cors: true }, async (re
 /**
  * Apply a decided finals tie to the bracket: mark the winner, open + deal the next ties,
  * emit the feed event, and notify newly matched players. Idempotent for replays of the
- * same match; a duplicate result for an already-decided slot is logged and ignored.
+ * same match.
+ *
+ * Returns "applied" when this call decided the slot, "replay" when that exact match was
+ * already applied, or "superseded" when another result won the race for the slot — callers
+ * use it to avoid claiming success (or pushing players) about a result that was discarded.
  */
 export async function applyFinalsResult(args: {
   seasonId: string;
@@ -163,34 +171,67 @@ export async function applyFinalsResult(args: {
   decidedBy: FinalsDecidedBy;
   winnerGoals: number | null;
   loserGoals: number | null;
-}): Promise<void> {
-  const snap = await bracketRef(args.seasonId).get();
-  if (!snap.exists) {
-    throw new HttpsError("not-found", "No finals bracket exists for this season.");
-  }
-  const raw = snap.data()!;
-  const bracket = bracketFromSnap(raw);
-  const slot = bracket.slots[args.slotKey];
-  if (!slot) throw new HttpsError("not-found", `No slot ${args.slotKey} in this bracket.`);
-  if (slot.status === "decided") {
-    if (slot.matchId && slot.matchId === args.matchId) return;
-    logger.warn("finals_slot_already_decided", { ...args, existingMatchId: slot.matchId });
-    return;
-  }
+}): Promise<"applied" | "replay" | "superseded"> {
+  // Preload team-dealing data OUTSIDE the transaction: these are ordinary collection reads
+  // that inform team variety only, not correctness, so they must not re-run on contention
+  // retries or hold the bracket doc's lock window open while they run.
+  const dealing = await loadDealingContext(args.seasonId);
 
-  let advanced;
-  try {
-    advanced = advanceBracket(bracket, args.slotKey, args.winnerId, args.matchId, args.decidedBy);
-  } catch (error) {
-    throw new HttpsError("failed-precondition", (error as Error).message);
-  }
-  await dealTeamsForSlots(advanced.bracket, advanced.opened, args.seasonId);
+  // Split literal members rather than a nested union — TS narrows per-literal reliably.
+  type Decided =
+    | { outcome: "replay" }
+    | { outcome: "superseded" }
+    | {
+        outcome: "applied";
+        preAdvanceSlot: FinalsSlot;
+        advanced: ReturnType<typeof advanceBracket>;
+      };
 
-  await bracketRef(args.seasonId).set({
-    ...raw,
-    ...advanced.bracket,
-    updatedAt: FieldValue.serverTimestamp(),
+  const decided = await db.runTransaction(async (tx): Promise<Decided> => {
+    const snap = await tx.get(bracketRef(args.seasonId));
+    if (!snap.exists) {
+      throw new HttpsError("not-found", "No finals bracket exists for this season.");
+    }
+    const raw = snap.data()!;
+    const bracket = bracketFromSnap(raw);
+    const slot = bracket.slots[args.slotKey];
+    if (!slot) throw new HttpsError("not-found", `No slot ${args.slotKey} in this bracket.`);
+    if (slot.status === "decided") {
+      // Another caller's result won this slot, or this exact match was replayed. Logged by
+      // the caller after commit so retries don't re-emit the warning.
+      return {
+        outcome: slot.matchId && slot.matchId === args.matchId ? "replay" : "superseded",
+      };
+    }
+
+    let advanced: ReturnType<typeof advanceBracket>;
+    try {
+      advanced = advanceBracket(bracket, args.slotKey, args.winnerId, args.matchId, args.decidedBy);
+    } catch (error) {
+      throw new HttpsError("failed-precondition", (error as Error).message);
+    }
+    // Deal before the write so no client ever observes an open slot without teams
+    // (same ordering as startFinals). The context was preloaded above — no queries here.
+    dealTeamsForSlots(advanced.bracket, advanced.opened, dealing);
+
+    tx.set(bracketRef(args.seasonId), {
+      ...raw,
+      ...advanced.bracket,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    return { outcome: "applied", preAdvanceSlot: slot, advanced };
   });
+
+  // Nothing else to do for a replay of an already-applied result or a lost slot race —
+  // side effects below must not run, and superseded is logged once here (not inside the
+  // transaction, so retries don't re-emit it).
+  if (decided.outcome === "superseded") {
+    logger.warn("finals_slot_already_decided", { ...args });
+    return "superseded";
+  }
+  if (decided.outcome === "replay") return "replay";
+
+  const { preAdvanceSlot: slot, advanced } = decided;
 
   const loserId = args.winnerId === slot.homeId ? slot.awayId! : slot.homeId!;
   await emitFinalsResultActivity({
@@ -220,7 +261,8 @@ export async function applyFinalsResult(args: {
       ),
     );
   }
-  logger.info("applyFinalsResult", { ...args, opened: advanced.opened });
+  logger.info("applyFinalsResult", { ...args, opened: advanced.opened, outcome: "applied" });
+  return "applied";
 }
 
 /**
@@ -237,7 +279,7 @@ export const awardWalkover = loggedOnCall("awardWalkover", { cors: true }, async
   if (!seasonId || !slotKey || !winnerId)
     throw new HttpsError("invalid-argument", "seasonId, slot, and winnerId are required.");
 
-  await applyFinalsResult({
+  const outcome = await applyFinalsResult({
     seasonId,
     slotKey,
     winnerId,
@@ -246,7 +288,15 @@ export const awardWalkover = loggedOnCall("awardWalkover", { cors: true }, async
     winnerGoals: null,
     loserGoals: null,
   });
-  logger.info("awardWalkover", { seasonId, slotKey, winnerId, by: uid });
+  if (outcome === "superseded") {
+    // The slot was decided by a real result while we were working — a walkover must not
+    // claim to have overridden it, and the admin needs to know nothing was applied.
+    throw new HttpsError(
+      "failed-precondition",
+      `Slot ${slotKey} was already decided by another result.`,
+    );
+  }
+  logger.info("awardWalkover", { seasonId, slotKey, winnerId, by: uid, outcome });
   return { ok: true };
 });
 

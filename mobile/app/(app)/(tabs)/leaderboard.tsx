@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -9,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Card, Icon, PlayerRow, ScreenHeader, SectionLabel, Txt } from "@/components";
+import { Button, Card, Icon, PlayerRow, ScreenHeader, SectionLabel, Txt } from "@/components";
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
@@ -23,6 +24,7 @@ import {
 import { useFocusData } from "@/lib/useFocusData";
 import { useTabRetap } from "@/lib/tabRetap";
 import { colors, spacing } from "@/theme";
+import { withAlpha } from "@/lib/color";
 
 interface LeaderboardData {
   seasons: Season[];
@@ -39,7 +41,7 @@ export default function Leaderboard() {
   const [seasonId, setSeasonId] = useState("");
   const [queryText, setQueryText] = useState("");
 
-  const { data, loading } = useFocusData<LeaderboardData>(
+  const { data, loading, refreshing, error, reload } = useFocusData<LeaderboardData>(
     `leaderboard:${seasonId || "active"}`,
     useCallback(async () => {
       const [seasonRows, roster, results] = await Promise.all([
@@ -103,6 +105,13 @@ export default function Leaderboard() {
         ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void reload()}
+            tintColor={colors.accent}
+          />
+        }
       >
         <ScrollView
           horizontal
@@ -155,7 +164,18 @@ export default function Leaderboard() {
           />
         </View>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {!loading &&
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              Couldn't load the standings. Check the connection and retry.
+            </Txt>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+        {!error &&
+        !loading &&
         rankedStandings.length === 0 &&
         placement.length === 0 &&
         unranked.length === 0 ? (

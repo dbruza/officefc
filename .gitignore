@@ -29,6 +29,3 @@ mobile/android/
 
 # Claude: share launch.json, keep local settings out
 .claude/settings.local.json
-
-# gstack local state
-.gstack/

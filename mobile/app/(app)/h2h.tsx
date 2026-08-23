@@ -4,6 +4,7 @@ import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Avatar,
+  Button,
   Card,
   EloDelta,
   Icon,
@@ -31,7 +32,12 @@ export default function HeadToHeadRoute() {
   const [aId, setAId] = useState(params.a ?? "");
   const [bId, setBId] = useState(params.b ?? "");
 
-  const { data: roster, loading } = useFocusData(
+  const {
+    data: roster,
+    loading,
+    error,
+    reload,
+  } = useFocusData(
     "h2h-roster",
     useCallback(() => getLeaguePlayers(), []),
   );
@@ -65,7 +71,17 @@ export default function HeadToHeadRoute() {
       <ScreenHeader title="Head-to-head" />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {a && b ? (
+        {error ? (
+          <Card style={{ borderColor: withAlpha(colors.loss, 0.35), marginBottom: spacing.lg }}>
+            <Txt color={colors.loss} size={13}>
+              Couldn't load head-to-head records. Check the connection and retry.
+            </Txt>
+            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
+              Retry
+            </Button>
+          </Card>
+        ) : null}
+        {a && b && !error ? (
           <>
             <View style={styles.banner}>
               <VersusPlayer player={a} dominant={oriented.wins > oriented.losses && total >= 3} />
@@ -158,6 +174,7 @@ export default function HeadToHeadRoute() {
                   </Pressable>
                 ))}
                 {!loading && oriented.meetings.length === 0 ? (
+                  // Roster loaded fine but this pair has never met — a genuine empty state.
                   <Card style={{ alignItems: "center", paddingVertical: spacing.x2 }}>
                     <Txt color={colors.textDim}>No meetings yet. Get them on the sticks.</Txt>
                   </Card>

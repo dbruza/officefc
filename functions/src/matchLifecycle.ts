@@ -17,6 +17,30 @@ import { canAutoConfirm, responderRejection } from "./matchRules";
  *  Distinguishes auto-accepted matches from genuine confirmations in the audit trail. */
 export const AUTO_CONFIRMER = "auto";
 
+/**
+ * Refuse to confirm into a season whose results are already published. finalizeSeason
+ * snapshots champion/premier from the standings; a confirm (or admin resolve) that lands
+ * afterwards would rewrite ELO and tables with no re-publication — exactly what the
+ * auto-confirm scheduler refuses to do for a finalized season. Transaction-scoped so the
+ * season read joins the caller's transaction: a confirm that reads finalized=false and a
+ * finalize that publishes later are serialized by the caller's own match write, and the
+ * post-commit rebuild is re-checked against the season doc before it runs.
+ */
+export async function assertSeasonAcceptsConfirmationsTx(
+  tx: FirebaseFirestore.Transaction,
+  seasonId: string,
+): Promise<void> {
+  const snap = await tx.get(getFirestore().doc(`seasons/${seasonId}`));
+  if (!snap.exists) throw new HttpsError("not-found", "Match's season no longer exists.");
+  // Truthy check matches startFinals / finalizeSeason / activateSeason.
+  if (snap.get("finalized")) {
+    throw new HttpsError(
+      "failed-precondition",
+      "This season is finalized — its results can no longer change.",
+    );
+  }
+}
+
 export interface ConfirmResult {
   seasonId: string;
   submittedBy: string;
@@ -47,11 +71,14 @@ function toConfirmResult(data: FirebaseFirestore.DocumentData): ConfirmResult {
 /**
  * Advance the bracket for a confirmed finals match. Finals decide the bracket and never move
  * ELO or the table, so this is the whole of their post-confirmation work.
+ *
+ * Returns false when the slot had already been decided by another result (a concurrent admin
+ * resolve or walkover won it) — the caller must not tell players the result was applied.
  */
-async function applyFinalsConfirmation(result: ConfirmResult, matchId: string): Promise<void> {
+async function applyFinalsConfirmation(result: ConfirmResult, matchId: string): Promise<boolean> {
   // Rules guarantee no draws in finals, so the higher score is the winner.
   const winnerId = result.aGoals > result.bGoals ? result.aId : result.bId;
-  await applyFinalsResult({
+  const outcome = await applyFinalsResult({
     seasonId: result.seasonId,
     slotKey: result.finalsSlot as FinalsSlotKey,
     winnerId,
@@ -60,6 +87,7 @@ async function applyFinalsConfirmation(result: ConfirmResult, matchId: string): 
     winnerGoals: Math.max(result.aGoals, result.bGoals),
     loserGoals: Math.min(result.aGoals, result.bGoals),
   });
+  return outcome === "applied";
 }
 
 /**
@@ -75,7 +103,20 @@ async function finalizeConfirmation(
   pushBody: string,
 ): Promise<void> {
   if (result.finals && result.finalsSlot) {
-    await applyFinalsConfirmation(result, matchId);
+    const applied = await applyFinalsConfirmation(result, matchId);
+    if (!applied) {
+      // The slot was decided by another result while this confirmation was in flight. The
+      // match doc is still confirmed (correct — it was a legal result), but the bracket took
+      // the other one. Tell the submitter the truth instead of claiming it's in the bracket.
+      logger.warn("finals_confirm_lost_slot_race", { matchId, seasonId: result.seasonId });
+      await sendPush(
+        result.submittedBy,
+        "Match confirmed",
+        `Your ${result.aGoals}-${result.bGoals} result is recorded, but that tie had already been decided.`,
+        { type: "match_confirmed", matchId },
+      );
+      return;
+    }
     await sendPush(result.submittedBy, pushTitle, pushBody, {
       type: "match_confirmed",
       matchId,
@@ -123,6 +164,11 @@ export async function autoConfirmMatch(
     // Re-check inside the transaction: status may have changed since the query, and the age
     // rule is enforced here too so a match can never confirm without its full dispute window.
     if (!canAutoConfirm(data, cutoffMillis, floorMillis)) return null;
+    // Same finalized-season guard as confirmMatch: finalizeSeason may commit between the
+    // scheduler's season query and this flip. Throwing here leaves the match pending for the
+    // next run and lands in the caller's auto_confirm_flip_failed log — correct, because a
+    // confirmed-but-unpublished result is exactly what the heal logic refuses to paper over.
+    await assertSeasonAcceptsConfirmationsTx(tx, String(data.seasonId));
     tx.update(ref, {
       status: "confirmed",
       confirmedBy: AUTO_CONFIRMER,
@@ -375,6 +421,8 @@ export const confirmMatch = loggedOnCall("confirmMatch", { cors: true }, async (
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
     const data = snap.data()!;
+    // Authorization before state: a non-opponent gets permission-denied, not a hint about
+    // the season's lifecycle. The finalized guard only runs for callers with skin in the game.
     const rejection = responderRejection(data, uid);
     if (rejection === "not_opponent") {
       throw new HttpsError("permission-denied", "Only the named opponent can confirm.");
@@ -382,6 +430,8 @@ export const confirmMatch = loggedOnCall("confirmMatch", { cors: true }, async (
     if (rejection === "not_pending") {
       throw new HttpsError("failed-precondition", "This match is no longer pending.");
     }
+    // In-transaction so the season read is consistent with the match write.
+    await assertSeasonAcceptsConfirmationsTx(tx, String(data.seasonId));
     tx.update(ref, {
       status: "confirmed",
       confirmedBy: uid,

@@ -15,6 +15,7 @@ import { View, ActivityIndicator, Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAppFonts, colors } from "@/theme";
+import { Button, Txt } from "@/components";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { resolveNotificationRoute } from "@/lib/notifications";
 import { setLogRoute } from "@/lib/logger";
@@ -23,9 +24,44 @@ import { LogErrorBoundary } from "@/components/LogErrorBoundary";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/** Full-screen retry card shown when bootstrap reads fail (offline / Firestore down). */
+function BootstrapFailed({ onRetry }: { onRetry: () => void }) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.bg,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 32,
+      }}
+    >
+      <Txt variant="head" size={17}>
+        Can't reach the league
+      </Txt>
+      <Txt size={12.5} color={colors.textDim} style={{ textAlign: "center", marginTop: 8 }}>
+        Your sign-in is fine, but your profile couldn't be loaded. Check the connection and try
+        again.
+      </Txt>
+      <Button variant="dark" onPress={onRetry} style={{ marginTop: 16 }}>
+        Retry
+      </Button>
+    </View>
+  );
+}
+
 /** Decides which group the user belongs in and redirects there. */
 function RootNavigator() {
-  const { initializing, loadingProfile, user, emailVerified, profile, membership } = useAuth();
+  const {
+    initializing,
+    loadingProfile,
+    profileReadFailed,
+    user,
+    emailVerified,
+    profile,
+    membership,
+    refresh,
+  } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const ready = !initializing && !loadingProfile;
@@ -36,6 +72,9 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!ready) return;
+    // A failed bootstrap read says nothing about onboarding stage — hold position and let
+    // the user retry rather than bouncing an established user into profile-setup/join.
+    if (profileReadFailed) return;
     const segmentList: string[] = segments;
     const group = segmentList[0];
     const screen = segmentList[1];
@@ -57,7 +96,7 @@ function RootNavigator() {
       return;
     }
     if (group !== "(app)") router.replace("/(app)/(tabs)");
-  }, [ready, user, emailVerified, profile, membership, segments, router]);
+  }, [ready, profileReadFailed, user, emailVerified, profile, membership, segments, router]);
 
   if (!ready) {
     return (
@@ -72,6 +111,9 @@ function RootNavigator() {
         <ActivityIndicator color={colors.accent} />
       </View>
     );
+  }
+  if (user && profileReadFailed) {
+    return <BootstrapFailed onRetry={() => void refresh()} />;
   }
   return (
     <LogErrorBoundary>

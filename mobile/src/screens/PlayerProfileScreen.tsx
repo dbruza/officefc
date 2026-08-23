@@ -1,5 +1,12 @@
 import { useCallback, useRef } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { type Href, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -85,6 +92,7 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
   const {
     data,
     loading,
+    refreshing,
     error: loadFailed,
     reload,
   } = useFocusData<ProfileData>(
@@ -199,6 +207,13 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
         ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void reload()}
+            tintColor={colors.accent}
+          />
+        }
       >
         {loading ? <ActivityIndicator color={colors.accent} /> : null}
         {error ? (

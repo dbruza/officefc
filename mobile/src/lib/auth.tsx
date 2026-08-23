@@ -27,6 +27,12 @@ interface AuthState {
   initializing: boolean;
   /** Loading the profile/membership for a known user. */
   loadingProfile: boolean;
+  /**
+   * The last profile/membership read threw (offline / Firestore unavailable). Distinct
+   * from `profile === null`, which means the docs genuinely aren't there yet — routing
+   * must not send a set-up user to onboarding because of a network blip.
+   */
+  profileReadFailed: boolean;
   user: User | null;
   /** Tracked separately so `reloadUser()` (which mutates the user in place) re-renders. */
   emailVerified: boolean;
@@ -48,6 +54,7 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [initializing, setInitializing] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileReadFailed, setProfileReadFailed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [emailVerified, setEmailVerified] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -65,10 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [p, m] = await Promise.all([getProfile(u.uid), getMembership(u.uid)]);
       setProfile(p);
       setMembership(m);
+      setProfileReadFailed(false);
     } catch {
-      // permission-denied / offline → treat as not-yet-set-up; routing falls back safely
+      // Offline / Firestore unavailable: the docs' absence was NOT established, so null
+      // them (never carry another session's identity forward) but raise the flag — the
+      // root navigator holds position and offers a retry instead of routing to onboarding.
       setProfile(null);
       setMembership(null);
+      setProfileReadFailed(true);
     } finally {
       setLoadingProfile(false);
     }
@@ -149,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         initializing,
         loadingProfile,
+        profileReadFailed,
         user,
         emailVerified,
         profile,

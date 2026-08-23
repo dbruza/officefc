@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { timed } from "../logger";
 import { asNullableDate } from "./firestoreMap";
@@ -37,11 +37,21 @@ export async function getHeadToHead(aId: string, bId: string): Promise<HeadToHea
   return mapHeadToHead(snap.id, snap.data());
 }
 
+/** All pair summaries involving `uid`. Two indexed queries (as aId / as bId) instead of
+ *  downloading the entire league's h2h collection and filtering client-side — the old
+ *  scan grew linearly with the square of league membership on every profile view. */
 export async function getHeadToHeadsForPlayer(uid: string): Promise<HeadToHead[]> {
   return timed("getHeadToHeadsForPlayer", async () => {
-    const snap = await getDocs(collection(db, "h2h"));
-    return snap.docs
-      .filter((h2hDoc) => h2hDoc.get("aId") === uid || h2hDoc.get("bId") === uid)
-      .map((h2hDoc) => mapHeadToHead(h2hDoc.id, h2hDoc.data()));
+    const h2hCol = collection(db, "h2h");
+    const [aSnap, bSnap] = await Promise.all([
+      getDocs(query(h2hCol, where("aId", "==", uid))),
+      getDocs(query(h2hCol, where("bId", "==", uid))),
+    ]);
+    // A doc can't be both, but dedupe by id anyway in case of future schema overlap.
+    const byId = new Map<string, HeadToHead>();
+    for (const h2hDoc of [...aSnap.docs, ...bSnap.docs]) {
+      byId.set(h2hDoc.id, mapHeadToHead(h2hDoc.id, h2hDoc.data()));
+    }
+    return [...byId.values()];
   });
 }

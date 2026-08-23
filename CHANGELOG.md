@@ -3,6 +3,46 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.6.0.0] - 2026-08-24
+
+### Fixed
+
+- Finals results are now safe against races. The whole bracket lives in one Firestore
+  document, so two ties confirming at once (or a player's confirmation racing an admin
+  resolve) could previously read the same snapshot and the last whole-doc write would
+  silently erase the other tie's result, stranding the bracket. Bracket advancement now
+  runs inside a transaction — the losing writer re-reads and sees the slot already
+  decided instead of overwriting it. Team-dealing reads were also hoisted out of the
+  transaction so they don't re-run on contention retries.
+- Confirmations into a season whose results are already published are refused, on every
+  path: player confirmation, admin resolve, and the auto-confirm scheduler alike.
+  finalizeSeason snapshots champion and premier from the standings as they were, and a
+  late-landing result used to be able to rewrite those tables with no re-publication.
+- When a finals result loses a race for its slot (an admin walkover or a concurrent
+  resolve got there first), callers no longer claim it succeeded: the player gets an
+  honest push ("recorded, but that tie had already been decided"), admins get a warning
+  log or a failed-precondition error from awardWalkover, rather than a false "locked
+  into the bracket".
+- A failed profile read after sign-in (offline, transient Firestore error) is no longer
+  mistaken for a brand-new user. The app now holds routing and offers a retry screen
+  instead of dumping established players back into onboarding.
+- Six screens showed their empty state while a load was failing, telling players "no
+  confirmed games yet" over what was really a network error. Leaderboard, seasons,
+  games, head-to-head, finals, and archive now show an explicit failure card with a
+  retry button instead.
+
+### Changed
+
+- Pull-to-refresh on every data screen — home, leaderboard, seasons, games, match
+  history, profiles, head-to-head, finals. Previously the only refresh was reopening
+  the app, which also made expired match-photo URLs unfixable without a restart.
+- Player-profile head-to-head loading no longer downloads the entire h2h collection and
+  filters client-side; two indexed queries replace the scan, so cost stops growing with
+  the square of league membership.
+- CI runs on pushes to development, local Node is pinned to 22 to match CI (the mobile
+  test runner needs Node 21+ globbing), and mobile test discovery uses a recursive glob
+  so new tests can't be forgotten from the list.
+
 ## [1.5.0.1] - 2026-08-22
 
 ### Fixed
