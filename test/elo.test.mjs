@@ -38,20 +38,20 @@ test("perf: zero-sum — perfA + perfB === 1 for any match", () => {
     {
       aGoals: 2,
       bGoals: 2,
-      aShotsOnTarget: 7,
-      bShotsOnTarget: 3,
+      aXg: 2.4,
+      bXg: 0.9,
       aPossession: 60,
       bPossession: 40,
     },
-    { aGoals: 1, bGoals: 2, aShotsOnTarget: 5, bShotsOnTarget: 8 },
+    { aGoals: 1, bGoals: 2, aXg: 1.1, bXg: 3.2 },
   ];
   for (const m of cases) {
     const perfA = performanceScore(m);
     const perfB = performanceScore({
       aGoals: m.bGoals,
       bGoals: m.aGoals,
-      aShotsOnTarget: m.bShotsOnTarget,
-      bShotsOnTarget: m.aShotsOnTarget,
+      aXg: m.bXg,
+      bXg: m.aXg,
       aPossession: m.bPossession,
       bPossession: m.aPossession,
     });
@@ -74,8 +74,8 @@ test("perf: missing stats reweights to goals-only, value in (0.5, 1) for a win",
   const full = performanceScore({
     aGoals: 2,
     bGoals: 0,
-    aShotsOnTarget: null,
-    bShotsOnTarget: null,
+    aXg: null,
+    bXg: null,
     aPossession: null,
     bPossession: null,
   });
@@ -84,12 +84,12 @@ test("perf: missing stats reweights to goals-only, value in (0.5, 1) for a win",
   assert.ok(full > 0.5 && full < 1, `value ${full} should be in (0.5, 1)`);
 });
 
-test("perf: dominant draw (SOT + possession dominance) gives perf > 0.5", () => {
+test("perf: dominant draw (xG + possession dominance) gives perf > 0.5", () => {
   const p = performanceScore({
     aGoals: 1,
     bGoals: 1,
-    aShotsOnTarget: 9,
-    bShotsOnTarget: 1,
+    aXg: 3.6,
+    bXg: 0.4,
     aPossession: 70,
     bPossession: 30,
   });
@@ -100,8 +100,8 @@ test("perf: narrow loss with shot+possession dominance gives perf close to 0.5",
   const p = performanceScore({
     aGoals: 0,
     bGoals: 1,
-    aShotsOnTarget: 10,
-    bShotsOnTarget: 1,
+    aXg: 4.1,
+    bXg: 0.4,
     aPossession: 75,
     bPossession: 25,
   });
@@ -114,12 +114,12 @@ test("perf: narrow loss with shot+possession dominance gives perf close to 0.5",
 });
 
 test("perf: all-zero shots-on-target provides no signal (returns null share)", () => {
-  // When both sides have 0 SoT, share() returns null — falls back to goals+possession
+  // When both sides have 0 xG, share() returns null — falls back to goals+possession
   const withZeroSot = performanceScore({
     aGoals: 2,
     bGoals: 0,
-    aShotsOnTarget: 0,
-    bShotsOnTarget: 0,
+    aXg: 0,
+    bXg: 0,
     aPossession: 55,
     bPossession: 45,
   });
@@ -127,7 +127,7 @@ test("perf: all-zero shots-on-target provides no signal (returns null share)", (
   assert.equal(
     withZeroSot,
     withoutSot,
-    "zero SoT on both sides should produce same result as missing SoT",
+    "zero SoT on both sides should produce same result as missing xG",
   );
 });
 
@@ -154,8 +154,8 @@ test("calculateSeason: full stats match produces different ELO than goals-only f
       bId: "p2",
       aGoals: 2,
       bGoals: 1,
-      aShotsOnTarget: 8,
-      bShotsOnTarget: 2,
+      aXg: 2.9,
+      bXg: 0.7,
       aPossession: 65,
       bPossession: 35,
       dateMillis: 1000,
@@ -178,8 +178,8 @@ test("calculateSeason: winner still gets positive delta, loser negative", () => 
       bId: "p2",
       aGoals: 3,
       bGoals: 1,
-      aShotsOnTarget: 6,
-      bShotsOnTarget: 3,
+      aXg: 2.1,
+      bXg: 0.9,
       aPossession: 55,
       bPossession: 45,
       dateMillis: 1000,
@@ -199,8 +199,8 @@ test("calculateSeason: ELO deltas are symmetric (aDelta + bDelta ≈ 0)", () => 
       bId: "p2",
       aGoals: 2,
       bGoals: 2,
-      aShotsOnTarget: 5,
-      bShotsOnTarget: 5,
+      aXg: 1.4,
+      bXg: 1.4,
       aPossession: 50,
       bPossession: 50,
       dateMillis: 1000,

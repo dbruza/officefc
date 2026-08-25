@@ -17,6 +17,7 @@ export interface ExtractionSuggestion {
     possession: number | null;
     shots: number | null;
     shots_on_target: number | null;
+    xg: number | null;
     team_name: string | null;
   };
   away: {
@@ -24,6 +25,7 @@ export interface ExtractionSuggestion {
     possession: number | null;
     shots: number | null;
     shots_on_target: number | null;
+    xg: number | null;
     team_name: string | null;
   };
   homeResult: "W" | "D" | "L" | null;

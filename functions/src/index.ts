@@ -33,6 +33,12 @@ export { createFixture, consumeFixture } from "./fixtures";
 // Finals series (bracket lock, walkovers)
 export { startFinals, awardWalkover } from "./finals";
 
+// Per-match MVP peer voting
+export { castVote } from "./matchVotes";
+
+// Mid-season knockout cup
+export { startCup, forceAdvanceCup } from "./cup";
+
 // Read-model rebuild (ELO + stats materialization)
 export { rebuildLeagueReadModels } from "./readModels";
 

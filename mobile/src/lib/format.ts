@@ -9,3 +9,9 @@ export function firstName(name: string): string {
 export function plural(count: number, noun: string, pluralNoun = `${noun}s`): string {
   return `${count} ${count === 1 ? noun : pluralNoun}`;
 }
+
+/** Format an xG value for display: two decimals max, trailing zeros trimmed ("1.85", "1"). */
+export function fmtXg(xg: number | null | undefined): string {
+  if (xg == null) return "-";
+  return String(parseFloat(xg.toFixed(2)));
+}

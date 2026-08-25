@@ -23,7 +23,8 @@ import {
 import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
-import { firstName } from "@/lib/format";
+import { firstName, plural } from "@/lib/format";
+import { computeRivalryStats } from "@/lib/stats/rivalry";
 import type { MatchResult } from "@/types";
 
 export default function HeadToHeadRoute() {
@@ -65,6 +66,12 @@ export default function HeadToHeadRoute() {
   const b = players.find((player) => player.id === bId);
   const oriented = orient(headToHead, aId);
   const total = oriented.wins + oriented.draws + oriented.losses;
+  const rivalry = useMemo(
+    () => (headToHead ? computeRivalryStats(headToHead) : null),
+    [headToHead],
+  );
+  // Hoisted so the onPress closure below narrows cleanly instead of re-testing `rivalry`.
+  const biggestWin = rivalry?.biggestWin ?? null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -133,6 +140,58 @@ export default function HeadToHeadRoute() {
                   sub="in this rivalry"
                 />
               </View>
+            </View>
+
+            <View style={{ marginTop: spacing.x2 }}>
+              <SectionLabel>Rivalry stats</SectionLabel>
+              <Card>
+                {biggestWin ? (
+                  <BiggestWinRow
+                    win={biggestWin}
+                    nameOf={(id) => players.find((player) => player.id === id)?.name ?? "someone"}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(app)/match/[id]",
+                        params: { id: biggestWin.matchId },
+                      } as Href)
+                    }
+                  />
+                ) : (
+                  <Txt size={11.5} color={colors.textFaint}>
+                    No winner between them yet — every meeting level.
+                  </Txt>
+                )}
+                <View style={styles.rivalryGrid}>
+                  <RivalryStat
+                    label="Goals / game"
+                    value={
+                      rivalry?.avgGoalsPerGame != null ? rivalry.avgGoalsPerGame.toFixed(1) : "—"
+                    }
+                  />
+                  <RivalryStat
+                    label={`${firstName(a.name)} clean sheets`}
+                    value={rivalry ? plural(rivalry.aCleanSheets, "sheet") : "—"}
+                  />
+                  <RivalryStat
+                    label={`${firstName(b.name)} clean sheets`}
+                    value={rivalry ? plural(rivalry.bCleanSheets, "sheet") : "—"}
+                  />
+                  <RivalryStat
+                    label={`${firstName(a.name)} ELO swing`}
+                    value={formatSwing(rivalry?.aEloSwing ?? 0)}
+                    tone={(rivalry?.aEloSwing ?? 0) > 0 ? colors.win : undefined}
+                  />
+                  <RivalryStat
+                    label={`${firstName(b.name)} ELO swing`}
+                    value={formatSwing(rivalry?.bEloSwing ?? 0)}
+                    tone={(rivalry?.bEloSwing ?? 0) > 0 ? colors.win : undefined}
+                  />
+                  <RivalryStat label="Meetings" value={String(total)} />
+                </View>
+                <Txt size={10.5} color={colors.textFaint} style={{ marginTop: spacing.sm }}>
+                  ELO swing covers the last 20 meetings only — older games predate swing tracking.
+                </Txt>
+              </Card>
             </View>
 
             <View style={{ marginTop: spacing.x2 }}>
@@ -256,6 +315,60 @@ function ResultDot({ result }: { result: MatchResult }) {
   );
 }
 
+/** Signed ELO swing: "+12" / "−8"; zero stays neutral rather than claiming a winner. */
+function formatSwing(swing: number): string {
+  if (swing > 0) return `+${swing}`;
+  return String(swing);
+}
+
+/** The heaviest result in the pairing, with the two names and the date it landed. */
+function BiggestWinRow({
+  win,
+  nameOf,
+  onPress,
+}: {
+  win: NonNullable<ReturnType<typeof computeRivalryStats>["biggestWin"]>;
+  nameOf: (uid: string) => string;
+  onPress: () => void;
+}) {
+  const dateLabel = win.date
+    ? win.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+    : null;
+  return (
+    <Pressable onPress={onPress} style={styles.biggestWin}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt variant="monoBold" size={22}>
+          {win.winnerGoals}:{win.loserGoals}
+        </Txt>
+        <Txt size={11.5} color={colors.textDim} numberOfLines={1}>
+          Heaviest result · {nameOf(win.winnerId)} over {nameOf(win.loserId)}
+          {dateLabel ? ` · ${dateLabel}` : ""}
+        </Txt>
+      </View>
+      <Icon name="chevron" size={14} color={colors.textFaint} />
+    </Pressable>
+  );
+}
+
+function RivalryStat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  return (
+    <View style={styles.rivalryStat}>
+      <Txt
+        variant="monoBold"
+        size={17}
+        style={{ color: tone ?? colors.text }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {value}
+      </Txt>
+      <Txt size={10.5} color={colors.textDim} numberOfLines={1}>
+        {label}
+      </Txt>
+    </View>
+  );
+}
+
 function orient(headToHead: HeadToHead | null, aId: string) {
   if (!headToHead) {
     return { wins: 0, losses: 0, draws: 0, goalsFor: 0, goalsAgainst: 0, meetings: [] };
@@ -326,6 +439,21 @@ const styles = StyleSheet.create({
     backgroundColor: withAlpha(colors.accent, 0.08),
   },
   statRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
+  biggestWin: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  rivalryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  },
+  rivalryStat: { width: "30.5%", gap: 2, minWidth: 0 },
   meetingScore: {
     flex: 1,
     flexDirection: "row",

@@ -16,7 +16,7 @@ import {
   assertSucceeds,
   assertFails,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rules = readFileSync(join(here, "../../firestore.rules"), "utf8");
@@ -513,4 +513,167 @@ test("non-members cannot upload match photos", async () => {
     .storage()
     .ref("match-photos/nora/draft-3/source.jpg");
   await assertFails(photo.put(new Uint8Array([1, 2, 3]), { contentType: "image/jpeg" }));
+});
+
+// --- Finals prediction picks (prediction game) ---------------------------------------
+//
+// The security core: a pick may only be written while its bracket slot is OPEN, and
+// predictorId is pinned to the caller. That freeze is what makes every scored pick
+// provably pre-decision — these tests pin it so a rules edit can't silently reopen it.
+
+test("a member can create their own picks doc for an open slot", async () => {
+  await assertSucceeds(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "alice",
+      picks: { e1: { predictedWinnerId: "dave" } },
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("picks writes must carry a server timestamp (updatedAt == request.time)", async () => {
+  // A forgeable client stamp was the old design's hole; the rules pin the field to
+  // request.time so no client-supplied Date can stand in for one.
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "alice",
+      picks: { e1: { predictedWinnerId: "dave" } },
+      updatedAt: new Date("2026-01-01"),
+    }),
+  );
+});
+
+test("predictorId is pinned to the doc id (no forging another member's entry)", async () => {
+  // alice writing bob's id into her own doc would merge points onto his scoreboard row.
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "bob",
+      picks: { e1: { predictedWinnerId: "alice" } },
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("a member cannot write someone else's picks doc at all", async () => {
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/bob"), {
+      predictorId: "bob",
+      picks: { e1: { predictedWinnerId: "alice" } },
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("a pick must name one of the open slot's two participants", async () => {
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "alice",
+      picks: { e1: { predictedWinnerId: "bob" } }, // bob isn't in tie e1
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("a pick for a decided or pending slot is rejected (the freeze)", async () => {
+  // Seed a bracket whose e1 has already been DECIDED.
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, "seasons/s1/finals/bracket"), {
+      structure: "top6",
+      premierId: "alice",
+      slots: {
+        e1: {
+          status: "decided",
+          homeId: "alice",
+          awayId: "dave",
+          winnerId: "alice",
+          matchId: "m1",
+        },
+        gf: { status: "pending", homeId: null, awayId: null },
+      },
+    });
+  });
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "alice",
+      picks: { e1: { predictedWinnerId: "alice" } }, // slot closed after the result
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("an update may not flip predictorId or sneak a closed-slot pick in", async () => {
+  await setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+    predictorId: "alice",
+    picks: { e1: { predictedWinnerId: "dave" } },
+    updatedAt: serverTimestamp(),
+  });
+  // Whole-doc rewrite claiming someone else's identity.
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "bob",
+      picks: { e1: { predictedWinnerId: "alice" } },
+      updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("members read any picks doc; outsiders and anon cannot", async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, "finalsPredictions/s1/picks/bob"), {
+      predictorId: "bob",
+      picks: {},
+    });
+  });
+  await assertSucceeds(getDoc(doc(member(), "finalsPredictions/s1/picks/bob")));
+  await assertFails(getDoc(doc(outsider(), "finalsPredictions/s1/picks/bob")));
+  await assertFails(getDoc(doc(anon(), "finalsPredictions/s1/picks/bob")));
+  // Scoreboard is function-written: readable by members, unwritable by anyone.
+  await assertSucceeds(getDoc(doc(member(), "finalsPredictions/s1/scoreboard/leader")));
+  await assertFails(
+    setDoc(doc(admin(), "finalsPredictions/s1/scoreboard/leader"), { entries: [] }),
+  );
+});
+
+// --- Match votes (function-only) ------------------------------------------------------
+//
+// castVote enforces window/participant/finals checks the rules can't express; the rules
+// therefore deny ALL direct client writes so tallies stay unforgable.
+
+test("vote docs are function-only: no client can create, change, or delete one", async () => {
+  const ref = doc(member(), "matchVotes/m1/votes/alice");
+  await assertFails(setDoc(ref, { voterId: "alice", candidateId: "dave" }));
+  await assertFails(updateDoc(ref, { candidateId: "dave" }));
+  await assertFails(updateDoc(doc(member(), "matchVotes/m1/votes/_summary"), { tally: {} }));
+});
+
+test("any member can read individual votes and the summary", async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    await setDoc(doc(db, "matchVotes/m1/votes/dave"), {
+      voterId: "dave",
+      candidateId: "alice",
+    });
+    await setDoc(doc(db, "matchVotes/m1/votes/_summary"), {
+      tally: { alice: 1 },
+      leaderId: "alice",
+      totalVotes: 1,
+    });
+  });
+  await assertSucceeds(getDoc(doc(member(), "matchVotes/m1/votes/dave")));
+  await assertSucceeds(getDoc(doc(member(), "matchVotes/m1/votes/_summary")));
+  await assertFails(getDoc(doc(outsider(), "matchVotes/m1/votes/dave")));
+});
+
+// --- Push preferences -----------------------------------------------------------------
+
+test("a user manages only their own pushPrefs with exactly muted+updatedAt", async () => {
+  const own = doc(member(), "pushPrefs/alice");
+  await assertSucceeds(setDoc(own, { muted: ["results"], updatedAt: serverTimestamp() }));
+  // Junk categories are filtered client- and server-side; the rules only fix the shape.
+  await assertFails(setDoc(own, { muted: ["results"], extra: true }));
+  await assertFails(updateDoc(doc(member(), "pushPrefs/bob"), { muted: ["finals"] }));
+  await assertSucceeds(getDoc(own));
+  await assertFails(getDoc(doc(member(), "pushPrefs/bob"))); // even members can't peek others'
 });

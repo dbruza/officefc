@@ -32,8 +32,8 @@ export interface SeasonMatchInput {
   aGoals: number;
   bGoals: number;
   dateMillis: number;
-  aShotsOnTarget?: number | null;
-  bShotsOnTarget?: number | null;
+  aXg?: number | null;
+  bXg?: number | null;
   aPossession?: number | null;
   bPossession?: number | null;
   aTeamOverall?: number | null;
@@ -109,7 +109,7 @@ export interface SeasonCalculation {
 }
 
 export const W_GOALS = 0.6;
-export const W_SOT = 0.25;
+export const W_XG = 0.25;
 export const W_POSS = 0.15;
 const GOAL_MARGIN_SCALE = 2;
 
@@ -127,14 +127,14 @@ function share(a: number | null | undefined, b: number | null | undefined): numb
 export function performanceScore(m: {
   aGoals: number;
   bGoals: number;
-  aShotsOnTarget?: number | null;
-  bShotsOnTarget?: number | null;
+  aXg?: number | null;
+  bXg?: number | null;
   aPossession?: number | null;
   bPossession?: number | null;
 }): number {
   const parts: Array<[number, number]> = [[W_GOALS, goalScore(m.aGoals, m.bGoals)]];
-  const sot = share(m.aShotsOnTarget, m.bShotsOnTarget);
-  if (sot != null) parts.push([W_SOT, sot]);
+  const xg = share(m.aXg, m.bXg);
+  if (xg != null) parts.push([W_XG, xg]);
   const poss = share(m.aPossession, m.bPossession);
   if (poss != null) parts.push([W_POSS, poss]);
   const wsum = parts.reduce((s, [w]) => s + w, 0);

@@ -3,6 +3,67 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.9.0.0] - 2026-08-25
+
+### Added
+
+- Season stats boards on the Leaderboard's new Stats view, built from the stats already
+  captured by AI screenshot extraction: clinical finishers (goals vs xG overperformance),
+  shot volume with on-target accuracy, possession averages, and a live streaks board
+  (current win streaks and winless runs). Finals matches are excluded everywhere, and
+  players without extracted data are called out rather than silently missing.
+- Team meta-analytics screen (Games → chart icon): most-picked teams with win rates,
+  win rate by team-strength band, and a fixture-engine fairness card comparing
+  auto-dealt matchups against manual logs — the league can now see whether the ELO-
+  balanced dealing actually flattens team strength.
+- Head-to-head rivalry stats: biggest result between the pair, goals per game, clean
+  sheets each way, and net ELO swing, plus nemesis/victim cards on player profiles
+  (best and worst matchup by win rate, minimum three games) that tap through to a
+  prefilled head-to-head.
+- Finals prediction game: pick the winner of every finals tie while it's open — backing
+  the underdog seed scores double — with a season prediction leaderboard under the
+  bracket. Picks are locked per slot once that tie is decided; provably late edits don't
+  score.
+- Per-match MVP peer voting: after a confirmed match, both participants can vote for the
+  man of the match (not yourself) within 48 hours; everyone sees the running tally.
+- Mid-season knockout cup: an admin draws a random single-elimination bracket over the
+  roster; ties are played as normal logged matches and the bracket advances itself when
+  the result confirms. Admin force-advance repairs stuck slots. A cup banner appears on
+  home while it runs.
+- End-of-season recap: finalization now records golden boot, best defence, most improved,
+  longest win streak, biggest rivalry, game of the season and biggest upset onto the
+  season's results, rendered on a shareable recap card reachable from past seasons.
+- Notification preferences in Settings: mute push by category (results, confirmations,
+  disputes, fixtures, finals) with everything delivered by default.
+
+### Changed
+
+- The multi-league groundwork assessment documents what a second league would actually
+  take (rules rewrite + membership model), replacing speculative abstraction.
+
+## [1.8.0.0] - 2026-08-24
+
+### Added
+
+- Expected goals (xG) now feeds the ELO calculation. The performance blend is goals 60% /
+  xG 25% / possession 15% — xG replaces shots on target, which is still recorded and shown
+  but no longer moves ratings. Matches logged before xG existed simply drop that term and
+  reweight to goals + possession, so a season recalc won't distort old results.
+- The AI stats-photo scan reads xG off the full-time screen like the other key stats,
+  pre-fills it in the snap flow (editable), shows it in the review summary, the match
+  detail stats table, and the plain-English "why the rating moved" explainer ("0.7–2.1 xG").
+
+### Fixed
+
+- Submitted match stats were only bounds-checked for goals; possession, shots, shots on
+  target could be any number at all (e.g. possession 5000) and fed straight into ratings.
+  All submitted stats are now range-checked server-side.
+
+### Changed
+
+- The match-detail ELO explainer is one paragraph about the match instead of mirrored
+  per-player blocks saying the same thing twice.
+
 ## [1.7.0.0] - 2026-08-24
 
 ### Added

@@ -1,7 +1,7 @@
 import * as logger from "firebase-functions/logger";
 import { HttpsError } from "firebase-functions/v2/https";
 import { loggedOnCall } from "./logging";
-import { instrumentBackground } from "./sentry";
+import { instrumentBackground, captureServerFault } from "./sentry";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
@@ -10,6 +10,7 @@ import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
 import { emitMatchActivity, topRankedLeaderId } from "./activityFeed";
 import { applyFinalsResult } from "./finals";
 import type { FinalsDecidedBy, FinalsSlotKey } from "./finalsRules";
+import { maybeConsumeCupResult } from "./cup";
 import { sendPush } from "./notify";
 import { canAutoConfirm, responderRejection } from "./matchRules";
 
@@ -102,6 +103,27 @@ async function finalizeConfirmation(
   pushTitle: string,
   pushBody: string,
 ): Promise<void> {
+  // Cup advancement runs for BOTH paths below: cup games count toward ELO/stats like any
+  // other match (unlike finals, which are excluded from the recalc pipeline), and the tie
+  // consumption is a pure read-model over confirmed results. Failure must never fail the
+  // confirmation itself — an admin can force-advance a missed tie.
+  try {
+    await maybeConsumeCupResult({
+      seasonId: result.seasonId,
+      aId: result.aId,
+      bId: result.bId,
+      aGoals: result.aGoals,
+      bGoals: result.bGoals,
+    });
+  } catch (error) {
+    logger.warn("cup_consume_failed", {
+      matchId,
+      seasonId: result.seasonId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    await captureServerFault(error, { fn: "maybeConsumeCupResult" });
+  }
+
   if (result.finals && result.finalsSlot) {
     const applied = await applyFinalsConfirmation(result, matchId);
     if (!applied) {
@@ -242,6 +264,7 @@ export interface FinalizeOutcome {
   recalcFailed: number;
   activityFailed: number;
   pushFailed: number;
+  cupFailed: number;
 }
 
 /**
@@ -268,6 +291,7 @@ export async function finalizeAutoConfirmedBatch(
     recalcFailed: 0,
     activityFailed: 0,
     pushFailed: 0,
+    cupFailed: 0,
   };
   const marked = [...new Set([...batch.map((entry) => entry.result.seasonId), ...healSeasonIds])];
   if (batch.length === 0 && marked.length === 0) return outcome;
@@ -358,6 +382,29 @@ export async function finalizeAutoConfirmedBatch(
         seasonId: result.seasonId,
         error: error instanceof Error ? error.message : String(error),
       });
+    }
+    // Cup ties advance on auto-confirmation too — a pair whose result aged into confirmed
+    // status has still played their tie. Same never-fails-the-batch isolation as above.
+    // VOID LIMITATION (v1): voiding a match that already advanced a tie does not rewind the
+    // cup, and forceAdvanceCup only decides OPEN ties — a consumed-then-voided tie needs
+    // direct bracket surgery in the Firebase console (edit winnerId + downstream slots).
+    if (winnerId !== null && !result.finals) {
+      try {
+        await maybeConsumeCupResult({
+          seasonId: result.seasonId,
+          aId: result.aId,
+          bId: result.bId,
+          aGoals: result.aGoals,
+          bGoals: result.bGoals,
+        });
+      } catch (error) {
+        outcome.cupFailed++;
+        logger.error("auto_confirm_cup_failed", {
+          matchId,
+          seasonId: result.seasonId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
   }
 

@@ -58,6 +58,17 @@ export interface FinalsBracket {
   slots: Partial<Record<FinalsSlotKey, FinalsSlot>>;
 }
 
+/** One knockout-cup tie. Null sides fill in as earlier rounds are decided; byes pre-seed
+ *  later rounds, so an unresolved tie can briefly show a null side it is waiting on. */
+export interface CupTie {
+  aId: string | null;
+  bId: string | null;
+  winnerId: string | null;
+}
+
+/** rounds[0] holds the opening ties; later rounds consume the previous round's winners. */
+export type CupBracket = CupTie[][];
+
 export interface PotmResult {
   month: string;
   playerId: string;
@@ -144,6 +155,7 @@ export interface MatchSideStats {
   possession?: number | null;
   shots?: number | null;
   shotsOnTarget?: number | null;
+  xg?: number | null;
 }
 
 /** How each side's ELO delta was produced — mirrors functions/src/elo.ts EloExplain. */
@@ -301,6 +313,8 @@ export interface AiAssistedSubmitInput {
     opponentShots?: number | null;
     myShotsOnTarget?: number | null;
     opponentShotsOnTarget?: number | null;
+    myXg?: number | null;
+    opponentXg?: number | null;
   };
 }
 

@@ -65,6 +65,8 @@ export function useSnapFlow(props: SnapFlowProps) {
   const [opponentShots, setOpponentShots] = useState<number | null>(null);
   const [myShotsOnTarget, setMyShotsOnTarget] = useState<number | null>(null);
   const [opponentShotsOnTarget, setOpponentShotsOnTarget] = useState<number | null>(null);
+  const [myXg, setMyXg] = useState<number | null>(null);
+  const [opponentXg, setOpponentXg] = useState<number | null>(null);
   const activeDraftId = useRef<string | null>(null);
   const cancelRequested = useRef(false);
 
@@ -90,8 +92,8 @@ export function useSnapFlow(props: SnapFlowProps) {
         uid,
         opponent.id,
         {
-          myShotsOnTarget: myShotsOnTarget,
-          opponentShotsOnTarget: opponentShotsOnTarget,
+          myXg: myXg,
+          opponentXg: opponentXg,
           myPossession: myPossession,
           opponentPossession: opponentPossession,
         },
@@ -110,8 +112,8 @@ export function useSnapFlow(props: SnapFlowProps) {
         opponent.id,
         uid,
         {
-          myShotsOnTarget: opponentShotsOnTarget,
-          opponentShotsOnTarget: myShotsOnTarget,
+          myXg: opponentXg,
+          opponentXg: myXg,
           myPossession: opponentPossession,
           opponentPossession: myPossession,
         },
@@ -135,6 +137,8 @@ export function useSnapFlow(props: SnapFlowProps) {
     setOpponentShots(oppExtract.shots);
     setMyShotsOnTarget(myExtract.shots_on_target);
     setOpponentShotsOnTarget(oppExtract.shots_on_target);
+    setMyXg(myExtract.xg);
+    setOpponentXg(oppExtract.xg);
   }, [mySide, extraction, usesExtraction]);
 
   // Catalogue teams matched from the team names the AI read, mapped to my/opponent side.
@@ -285,6 +289,8 @@ export function useSnapFlow(props: SnapFlowProps) {
           opponentShots,
           myShotsOnTarget,
           opponentShotsOnTarget,
+          myXg,
+          opponentXg,
         },
       });
       activeDraftId.current = null;
@@ -340,6 +346,10 @@ export function useSnapFlow(props: SnapFlowProps) {
     setMyShotsOnTarget,
     opponentShotsOnTarget,
     setOpponentShotsOnTarget,
+    myXg,
+    setMyXg,
+    opponentXg,
+    setOpponentXg,
     isSubmitting,
     myElo,
     myDelta,

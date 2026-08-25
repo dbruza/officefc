@@ -15,7 +15,7 @@ import {
 } from "@/components";
 import {
   deleteMatchPhoto,
-  explainMatchElo,
+  explainMatchEloParagraph,
   getLeaguePlayers,
   getMatch,
   getMatchPhotoUrl,
@@ -24,11 +24,14 @@ import {
   type LeaguePlayer,
   type Season,
 } from "@/lib/league";
+// Direct module import: the league barrel isn't extended for every leaf module.
+import { castVote, getMatchVotes, type MatchVotes } from "@/lib/league/matchVotes";
+import { useAuth } from "@/lib/auth";
 import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
 import { showAlert } from "@/lib/dialogs";
-import { firstName } from "@/lib/format";
+import { firstName, fmtXg } from "@/lib/format";
 
 interface MatchData {
   match: LeagueMatch | null;
@@ -36,10 +39,14 @@ interface MatchData {
   players: Map<string, LeaguePlayer>;
   photoUrl: string | null;
   photoExpires: number;
+  /** Null for finals/unconfirmed matches, or when the votes read failed — hide the card. */
+  votes: MatchVotes | null;
 }
 
 export default function MatchDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const viewerId = user?.uid ?? null;
   const [deleting, setDeleting] = useState(false);
   const [photoHidden, setPhotoHidden] = useState(false);
 
@@ -64,18 +71,26 @@ export default function MatchDetailRoute() {
           photoUrl = null;
         }
       }
+      // Votes are a nice-to-have beside the result itself: a failed read must not take
+      // down the whole screen, so degrade to "no MVP card" instead of surfacing an error.
+      const votes: MatchVotes | null =
+        result && result.status === "confirmed"
+          ? await getMatchVotes(id, viewerId).catch(() => null)
+          : null;
       return {
         match: result,
         season,
         players: new Map(roster.map((player) => [player.id, player])),
         photoUrl,
         photoExpires,
+        votes,
       };
-    }, [id]),
+    }, [id, viewerId]),
   );
   const match = data?.match ?? null;
   const season = data?.season ?? null;
   const players = data?.players ?? new Map<string, LeaguePlayer>();
+  const votes = data?.votes ?? null;
   const photoUrl = photoHidden ? null : (data?.photoUrl ?? null);
   const photoExpires = data?.photoExpires ?? 0;
   const error = loadFailed ? "Couldn't load this match." : null;
@@ -210,6 +225,17 @@ export default function MatchDetailRoute() {
               <SectionLabel>Stats screen</SectionLabel>
               <StatsPanel match={match} />
             </View>
+
+            {votes !== null && !votes.isFinals ? (
+              <MvpVoteCard
+                matchId={id}
+                votes={votes}
+                playerA={a}
+                playerB={b}
+                viewerId={viewerId}
+                onVoted={() => void reload()}
+              />
+            ) : null}
           </>
         ) : null}
       </ScrollView>
@@ -258,7 +284,9 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
     a?.shots != null ||
     b?.shots != null ||
     a?.shotsOnTarget != null ||
-    b?.shotsOnTarget != null;
+    b?.shotsOnTarget != null ||
+    a?.xg != null ||
+    b?.xg != null;
 
   if (!hasStats) {
     return (
@@ -309,6 +337,9 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
       <View style={{ gap: spacing.sm }}>
         <StatsRow label="Shots" a={a?.shots ?? "—"} b={b?.shots ?? "—"} />
         <StatsRow label="On target" a={a?.shotsOnTarget ?? "—"} b={b?.shotsOnTarget ?? "—"} />
+        {(a?.xg != null || b?.xg != null) && (
+          <StatsRow label="Expected goals" a={fmtXg(a?.xg)} b={fmtXg(b?.xg)} />
+        )}
         <StatsRow label="Goals" a={match.aGoals} b={match.bGoals} />
       </View>
     </Card>
@@ -325,19 +356,6 @@ function kCell(k: number): string {
 
 /** One player's prose block: name kicker + the sentences the copy generator
  *  built from this match's own eloExplain numbers. */
-function PlayerExplanation({ kicker, sentences }: { kicker: string; sentences: string[] }) {
-  return (
-    <View style={{ gap: 4 }}>
-      <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
-        {kicker}
-      </Txt>
-      <Txt size={11.5} color={colors.textDim} style={{ lineHeight: 16.5 }}>
-        {sentences.join(" ")}
-      </Txt>
-    </View>
-  );
-}
-
 function EloExplainPanel({
   match,
   playerA,
@@ -352,24 +370,24 @@ function EloExplainPanel({
   const pct = (v: number) => `${Math.round(v * 100)}%`;
   // Null for matches confirmed before eloExplain/persisted ratings existed —
   // those fall back to the numbers table alone.
-  const explanation = explainMatchElo(match, firstName(playerA.name), firstName(playerB.name));
+  const paragraph = explainMatchEloParagraph(
+    match,
+    firstName(playerA.name),
+    firstName(playerB.name),
+  );
   const provisional = ex.aK > 32 || ex.bK > 32;
   return (
     <View style={{ marginTop: spacing.x2 }}>
       <SectionLabel>Why the rating moved</SectionLabel>
       <Card style={styles.statsPanel}>
-        {explanation ? (
-          <View style={{ gap: spacing.md, marginBottom: spacing.md }}>
-            <PlayerExplanation
-              kicker={`${firstName(playerA.name).toUpperCase()} · ${signed(match.aDelta ?? 0)}`}
-              sentences={explanation.a.sentences}
-            />
-            <View style={styles.explainDivider} />
-            <PlayerExplanation
-              kicker={`${firstName(playerB.name).toUpperCase()} · ${signed(match.bDelta ?? 0)}`}
-              sentences={explanation.b.sentences}
-            />
-          </View>
+        {paragraph ? (
+          <Txt
+            size={11.5}
+            color={colors.textDim}
+            style={{ lineHeight: 16.5, marginBottom: spacing.md }}
+          >
+            {paragraph}
+          </Txt>
         ) : null}
         <View style={{ gap: spacing.sm }}>
           <StatsRow label="Win chance" a={pct(ex.aExpected)} b={pct(ex.bExpected)} />
@@ -412,6 +430,134 @@ function formatDate(date: Date | null): string {
   return date
     ? date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
     : "Date pending";
+}
+
+/** Per-match MVP card. Participants vote within 48h of confirmation (either player is a
+ *  valid candidate, never yourself); everyone sees the tally. Finals matches and unconfirmed
+ *  matches never reach here — the route hides the card before rendering it. */
+function MvpVoteCard({
+  matchId,
+  votes,
+  playerA,
+  playerB,
+  viewerId,
+  onVoted,
+}: {
+  matchId: string;
+  votes: MatchVotes;
+  playerA: LeaguePlayer;
+  playerB: LeaguePlayer;
+  /** The signed-in viewer's uid, or null (read-only tally). */
+  viewerId: string | null;
+  onVoted: () => void;
+}) {
+  const [submitting, setSubmitting] = useState<"a" | "b" | null>(null);
+  const isParticipant = viewerId !== null && (viewerId === playerA.id || viewerId === playerB.id);
+  const windowOpen = votes.closesAt !== null && Date.now() < votes.closesAt;
+
+  const handleVote = async (candidateId: string) => {
+    if (!viewerId || submitting) return;
+    setSubmitting(candidateId === playerA.id ? "a" : "b");
+    try {
+      await castVote(matchId, candidateId);
+      onVoted();
+    } catch {
+      showAlert("Vote not counted", "Voting may have closed — try again in a moment.");
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const rows: Array<{ id: string; name: string; count: number }> = [
+    { id: playerA.id, name: firstName(playerA.name), count: votes.summary.tally[playerA.id] ?? 0 },
+    { id: playerB.id, name: firstName(playerB.name), count: votes.summary.tally[playerB.id] ?? 0 },
+  ];
+  const total = Math.max(votes.summary.totalVotes, 1);
+  // Voting UI stays up for the whole window so a participant can CHANGE their pick;
+  // the server accepts the overwrite until the 48h gate shuts.
+  const mayVote = isParticipant && windowOpen;
+
+  return (
+    <View style={{ marginTop: spacing.x2 }}>
+      <SectionLabel
+        action={
+          <Txt size={10} color={colors.textDim}>
+            {windowOpen && votes.closesAt !== null
+              ? `Closes ${new Date(votes.closesAt).toLocaleString()}`
+              : "Voting closed"}
+          </Txt>
+        }
+      >
+        Man of the match
+      </SectionLabel>
+      <Card style={styles.statsPanel}>
+        {mayVote ? (
+          <>
+            <Txt size={11.5} color={colors.textDim} style={{ marginBottom: spacing.md }}>
+              Who was the man of the match?
+            </Txt>
+            <View style={styles.voteButtons}>
+              <Button
+                variant="dark"
+                size="sm"
+                onPress={() => handleVote(playerA.id)}
+                disabled={viewerId === playerA.id || submitting !== null}
+              >
+                {submitting === "a" ? "Voting…" : firstName(playerA.name)}
+              </Button>
+              <Button
+                variant="dark"
+                size="sm"
+                onPress={() => handleVote(playerB.id)}
+                disabled={viewerId === playerB.id || submitting !== null}
+              >
+                {submitting === "b" ? "Voting…" : firstName(playerB.name)}
+              </Button>
+            </View>
+            <Txt size={10} color={colors.textDim} style={{ marginTop: spacing.sm }}>
+              Can&apos;t vote for yourself
+              {votes.myCandidateId !== null ? " · tap again to change your vote" : ""}
+            </Txt>
+          </>
+        ) : null}
+        {isParticipant && votes.myCandidateId !== null ? (
+          <Txt size={11} color={colors.textDim} style={{ marginTop: mayVote ? spacing.sm : 0 }}>
+            You voted for{" "}
+            {rows.find((row) => row.id === votes.myCandidateId)?.name ??
+              "a player no longer listed"}
+            .
+          </Txt>
+        ) : null}
+        <View style={{ marginTop: mayVote ? spacing.md : 0, gap: 5 }}>
+          {rows.map((row) => (
+            <TallyRow key={row.id} label={row.name} count={row.count} total={total} />
+          ))}
+        </View>
+        <Txt size={11} color={colors.textDim} style={{ marginTop: spacing.sm }}>
+          {votes.summary.totalVotes === 0
+            ? "No votes yet."
+            : votes.summary.leaderId === null
+              ? "Tie"
+              : `${rows.find((row) => row.id === votes.summary.leaderId)?.name ?? "Leader"} leads`}
+          {" · "}
+          {votes.summary.totalVotes} {votes.summary.totalVotes === 1 ? "vote" : "votes"}
+        </Txt>
+      </Card>
+    </View>
+  );
+}
+
+/** One candidate's share-of-votes bar with their count at the end. */
+function TallyRow({ label, count, total }: { label: string; count: number; total: number }) {
+  const pct = Math.round((count / total) * 100);
+  return (
+    <View style={{ marginTop: 5 }}>
+      <StatsRow label="" a={label} b={`${count}`} />
+      <View style={[styles.possessionTrack, styles.tallyTrack]}>
+        <View style={[styles.possessionFill, { width: `${Math.max(0, Math.min(100, pct))}%` }]} />
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -457,7 +603,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  explainDivider: { height: 1, backgroundColor: colors.line },
   possessionTrack: {
     height: 6,
     marginTop: 5,
@@ -473,4 +618,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     marginTop: spacing.sm,
   },
+  voteButtons: { flexDirection: "row", gap: spacing.sm },
+  tallyTrack: { height: 4, marginTop: 3, opacity: 0.7 },
 });

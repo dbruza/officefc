@@ -5,6 +5,7 @@ import { withAlpha } from "@/lib/color";
 import { TeamPicker } from "../TeamPicker";
 import { FlowFooter, ProgressBar, ScoreBox, StatEditRow } from "./parts";
 import { flagLabel, statColor } from "./helpers";
+import { fmtXg } from "@/lib/format";
 import { styles } from "./styles";
 import type { SnapFlowState } from "./useSnapFlow";
 
@@ -368,6 +369,13 @@ export function PrefillStep({ flow }: { flow: SnapFlowState }) {
               onChangeMy={flow.setMyShotsOnTarget}
               onChangeOpp={flow.setOpponentShotsOnTarget}
             />
+            <StatEditRow
+              label="Expected Goals (xG)"
+              myValue={flow.myXg}
+              oppValue={flow.opponentXg}
+              onChangeMy={flow.setMyXg}
+              onChangeOpp={flow.setOpponentXg}
+            />
           </View>
         </View>
       </ScrollView>
@@ -453,6 +461,16 @@ export function ReviewStep({ flow }: { flow: SnapFlowState }) {
                     </Txt>
                     <Txt variant="mono" size={13}>
                       {flow.myShotsOnTarget ?? "-"} / {flow.opponentShotsOnTarget ?? "-"}
+                    </Txt>
+                  </View>
+                ) : null}
+                {(flow.myXg ?? flow.opponentXg) != null ? (
+                  <View style={styles.statPair}>
+                    <Txt size={11} color={colors.textDim}>
+                      XG
+                    </Txt>
+                    <Txt variant="mono" size={13}>
+                      {fmtXg(flow.myXg)} / {fmtXg(flow.opponentXg)}
                     </Txt>
                   </View>
                 ) : null}

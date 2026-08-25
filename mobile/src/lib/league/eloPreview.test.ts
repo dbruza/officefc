@@ -31,8 +31,8 @@ interface Fixture {
   bGoals: number;
   aTeamOverall?: number | null;
   bTeamOverall?: number | null;
-  aShotsOnTarget?: number | null;
-  bShotsOnTarget?: number | null;
+  aXg?: number | null;
+  bXg?: number | null;
   aPossession?: number | null;
   bPossession?: number | null;
   premierId?: string | null;
@@ -61,11 +61,11 @@ const FIXTURES: Fixture[] = [
     bTeamOverall: 70,
   },
   {
-    name: "full stats (SOT + possession)",
+    name: "full stats (xG + possession)",
     aGoals: 2,
     bGoals: 1,
-    aShotsOnTarget: 8,
-    bShotsOnTarget: 2,
+    aXg: 2.8,
+    bXg: 0.6,
     aPossession: 65,
     bPossession: 35,
   },
@@ -92,8 +92,8 @@ const FIXTURES: Fixture[] = [
     bGoals: 2,
     aTeamOverall: 88,
     bTeamOverall: 74,
-    aShotsOnTarget: 9,
-    bShotsOnTarget: 5,
+    aXg: 3.4,
+    bXg: 1.9,
     aPossession: 58,
     bPossession: 42,
     premierId: "p2",
@@ -102,19 +102,19 @@ const FIXTURES: Fixture[] = [
   },
   // --- Partial inputs: each term's "both sides known" gate. ---
   {
-    name: "SOT known, possession absent",
+    name: "xG known, possession absent",
     aGoals: 2,
     bGoals: 1,
-    aShotsOnTarget: 7,
-    bShotsOnTarget: 3,
+    aXg: 2.3,
+    bXg: 0.8,
   },
-  { name: "possession known, SOT absent", aGoals: 2, bGoals: 1, aPossession: 70, bPossession: 30 },
+  { name: "possession known, xG absent", aGoals: 2, bGoals: 1, aPossession: 70, bPossession: 30 },
   {
-    name: "one-sided SOT is ignored by both",
+    name: "one-sided xG is ignored by both",
     aGoals: 1,
     bGoals: 0,
-    aShotsOnTarget: 6,
-    bShotsOnTarget: null,
+    aXg: 2.6,
+    bXg: null,
   },
   { name: "overall 0 is a real rating, not absent", aGoals: 1, bGoals: 1, aTeamOverall: 0 },
   {
@@ -169,8 +169,8 @@ function serverMatch(f: Fixture): ServerMatch {
     aGoals: f.aGoals,
     bGoals: f.bGoals,
     dateMillis: ++clock,
-    aShotsOnTarget: f.aShotsOnTarget,
-    bShotsOnTarget: f.bShotsOnTarget,
+    aXg: f.aXg,
+    bXg: f.bXg,
     aPossession: f.aPossession,
     bPossession: f.bPossession,
     aTeamOverall: f.aTeamOverall,
@@ -199,8 +199,8 @@ test("previewElo matches the server's committed delta, from both players' perspe
       "p1",
       "p2",
       {
-        myShotsOnTarget: f.aShotsOnTarget,
-        opponentShotsOnTarget: f.bShotsOnTarget,
+        myXg: f.aXg,
+        opponentXg: f.bXg,
         myPossession: f.aPossession,
         opponentPossession: f.bPossession,
       },
@@ -221,8 +221,8 @@ test("previewElo matches the server's committed delta, from both players' perspe
       "p2",
       "p1",
       {
-        myShotsOnTarget: f.bShotsOnTarget,
-        opponentShotsOnTarget: f.aShotsOnTarget,
+        myXg: f.bXg,
+        opponentXg: f.aXg,
         myPossession: f.bPossession,
         opponentPossession: f.aPossession,
       },

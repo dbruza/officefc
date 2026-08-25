@@ -17,6 +17,9 @@ import { sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
 import { applyFinalsResult } from "./finals";
 import { assertSeasonAcceptsConfirmationsTx } from "./matchLifecycle";
+import { maybeConsumeCupResult } from "./cup";
+import { captureServerFault } from "./sentry";
+import { deriveRecap } from "./seasonRecap";
 import {
   bracketComplete,
   bracketRunnerUpId,
@@ -99,6 +102,26 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     premierId: typeof reigningPremierId === "string" ? reigningPremierId : null,
   });
 
+  // The recap is a decoration on the published result, never a gate on finalization itself:
+  // if derivation throws we still publish the champion/POTM the league is waiting for and
+  // report the gap to Sentry instead of leaving the season stuck unfinalized.
+  let recap: ReturnType<typeof deriveRecap> = {};
+  try {
+    recap = deriveRecap({
+      standings: finalStandings,
+      matches: matchInputs,
+      coreIds: { championId, runnerUpId, premierId },
+      potm: potmResults,
+    });
+  } catch (error) {
+    logger.warn("season_recap_derive_failed", { seasonId, error: String(error) });
+    try {
+      await captureServerFault(error, { fn: "finalizeSeason", uid });
+    } catch {
+      // Reporting must never mask the original failure.
+    }
+  }
+
   const writer = db.bulkWriter();
   writer.set(
     ref,
@@ -117,6 +140,7 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     premierId,
     format,
     finalizedAt: FieldValue.serverTimestamp(),
+    recap,
   });
   for (const potm of potmResults) {
     writer.set(db.doc(`seasonResults/${seasonId}/potm/${potm.month}`), {
@@ -439,6 +463,25 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
       await recalcSeasonElo(previous.seasonId);
       await recalcLeagueStats();
       await emitMatchActivity({ db, matchId, seasonId: previous.seasonId, previousLeaderId });
+    }
+
+    // Cup ties consume any confirmed result between the paired members — including one an
+    // admin just resolved. Same contract as the confirm path: never fails the resolve.
+    try {
+      await maybeConsumeCupResult({
+        seasonId: previous.seasonId,
+        aId: previous.aId,
+        bId: previous.bId,
+        aGoals: previous.aGoals,
+        bGoals: previous.bGoals,
+      });
+    } catch (error) {
+      logger.warn("cup_consume_failed", {
+        matchId,
+        seasonId: previous.seasonId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      await captureServerFault(error, { fn: "maybeConsumeCupResult" });
     }
   }
 

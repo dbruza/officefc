@@ -21,6 +21,31 @@ function nullableNum(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Bounds for the optional stats the client submits alongside goals. The AI extraction
+ *  normalizes its own suggestions, but the human can overwrite any value in the review
+ *  step and nothing else re-checks it — so the callable is the trust boundary. */
+const STAT_BOUNDS: Record<string, { min: number; max: number; integer?: boolean }> = {
+  possession: { min: 0, max: 100 },
+  shots: { min: 0, max: 99, integer: true },
+  shotsOnTarget: { min: 0, max: 99, integer: true },
+  xg: { min: 0, max: 15 },
+};
+
+/** Reject out-of-range submitted stats with an invalid-argument naming the field. */
+function assertStatsInRange(submitted: Record<string, unknown>): void {
+  for (const [name, bounds] of Object.entries(STAT_BOUNDS)) {
+    for (const prefix of ["my", "opponent"] as const) {
+      const key = `${prefix}${name[0].toUpperCase()}${name.slice(1)}`;
+      const value = nullableNum(submitted[key]);
+      if (value === null) continue; // absent stats are legitimate
+      if (bounds.integer && !Number.isInteger(value))
+        throw new HttpsError("invalid-argument", `Invalid ${key}.`);
+      if (value < bounds.min || value > bounds.max)
+        throw new HttpsError("invalid-argument", `Invalid ${key}.`);
+    }
+  }
+}
+
 export const submitAiAssistedMatch = loggedOnCall(
   "submitAiAssistedMatch",
   { cors: true },
@@ -75,6 +100,7 @@ export const submitAiAssistedMatch = loggedOnCall(
       throw new HttpsError("invalid-argument", "Invalid goal count.");
     if (!Number.isInteger(oppGoals) || oppGoals < 0 || oppGoals > 99)
       throw new HttpsError("invalid-argument", "Invalid goal count.");
+    assertStatsInRange(submittedGoalsAndStats);
 
     const draftRef = db.doc(`matchDrafts/${draftId}`);
     const matchRef = db.doc(`matches/${draftId}`);
@@ -184,6 +210,12 @@ export const submitAiAssistedMatch = loggedOnCall(
         bShotsOnTarget: isHomeSide
           ? nullableNum(submittedGoalsAndStats.opponentShotsOnTarget)
           : nullableNum(submittedGoalsAndStats.myShotsOnTarget),
+        aXg: isHomeSide
+          ? nullableNum(submittedGoalsAndStats.myXg)
+          : nullableNum(submittedGoalsAndStats.opponentXg),
+        bXg: isHomeSide
+          ? nullableNum(submittedGoalsAndStats.opponentXg)
+          : nullableNum(submittedGoalsAndStats.myXg),
         rawExtraction: extraction ?? null,
       };
 

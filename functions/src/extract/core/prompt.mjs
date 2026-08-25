@@ -13,6 +13,7 @@ export const SYSTEM_PROMPT = [
   "- The score/goals are the most important values: if you cannot read a side's score with",
   "  certainty, return null for it rather than guessing.",
   "- `possession` is a percentage from 0 to 100.",
+  "- `xg` is expected goals — a decimal like 1.4; transcribe it exactly as printed.",
   "- Set `detected_screen` to true ONLY if this is clearly such a stats screen; otherwise false.",
   "- Report your honest `confidence` (0–1) that the values are correct.",
   "- Always answer by calling the report_match_stats tool — never with free text.",

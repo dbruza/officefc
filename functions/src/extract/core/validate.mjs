@@ -26,12 +26,26 @@ function toPct(v) {
   return Math.max(0, Math.min(100, n));
 }
 
+/** Plausible ceiling for a single side's xG on a video-game scoreline. */
+const XG_MAX = 15;
+
+/** Coerce xG: keeps decimals (unlike toCount), non-negative, clamped when implausible. */
+function toXg(v) {
+  if (v === null || v === undefined || v === "") return { value: null };
+  const n = typeof v === "string" ? Number(String(v).trim()) : v;
+  if (!isFiniteNum(n) || n < 0) return { value: null };
+  if (n > XG_MAX) return { value: XG_MAX, clamped: true };
+  return { value: n };
+}
+
 function normalizeSide(side, label, flags) {
   const s = side || {};
   const goals = toCount(s.goals);
   let shots = toCount(s.shots);
   let sot = toCount(s.shots_on_target);
   const possession = toPct(s.possession);
+  const xgRead = toXg(s.xg);
+  let xg = xgRead.value;
   const team_name =
     typeof s.team_name === "string" && s.team_name.trim() ? s.team_name.trim() : null;
 
@@ -41,7 +55,12 @@ function normalizeSide(side, label, flags) {
     flags.push(`${label}_sot_gt_shots`);
     sot = shots;
   }
-  return { team_name, goals, possession, shots, shots_on_target: sot };
+  // An absurd xG read is clamped and flagged so the human review sees it.
+  if (xgRead.clamped) {
+    flags.push(`${label}_xg_implausible`);
+    xg = xgRead.value;
+  }
+  return { team_name, goals, possession, shots, shots_on_target: sot, xg };
 }
 
 /**
@@ -101,4 +120,4 @@ export function normalizeExtraction(raw) {
   };
 }
 
-export const _internals = { toCount, toPct, CONFIDENCE_FLOOR };
+export const _internals = { toCount, toPct, toXg, XG_MAX, CONFIDENCE_FLOOR };

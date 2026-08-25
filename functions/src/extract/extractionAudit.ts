@@ -41,5 +41,6 @@ export function fieldsEdited(
   check("Possession", home.possession, away.possession);
   check("Shots", home.shots, away.shots);
   check("ShotsOnTarget", home.shots_on_target, away.shots_on_target);
+  check("Xg", home.xg, away.xg);
   return edited;
 }

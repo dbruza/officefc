@@ -343,6 +343,24 @@ export default function SeasonsRoute() {
                   Final result pending.
                 </Txt>
               )}
+              {result ? (
+                <Pressable
+                  accessibilityLabel={`Season recap for ${season.name}`}
+                  // stopPropagation: nested inside the card's own Pressable, and RN-web
+                  // bubbles onClick — without it the tap lands on recap THEN archive.
+                  onPress={(event) => {
+                    event.stopPropagation();
+                    router.push(`/(app)/recap/${season.id}` as Href);
+                  }}
+                  style={styles.recapLink}
+                >
+                  <Icon name="award" size={14} color={colors.accent} />
+                  <Txt variant="bodyMedium" size={12} color={colors.accent}>
+                    Season recap
+                  </Txt>
+                  <Icon name="chevron" size={13} color={colors.textFaint} />
+                </Pressable>
+              ) : null}
               {seasonAwards.length ? (
                 <View style={styles.awardPills}>
                   {seasonAwards.slice(0, 3).map((award) => {
@@ -516,6 +534,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 7,
     marginTop: spacing.md,
+  },
+  recapLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 5,
+    marginTop: spacing.sm,
+    paddingVertical: 4,
+    paddingLeft: 8,
+    paddingRight: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface2,
   },
   awardPill: {
     flexDirection: "row",

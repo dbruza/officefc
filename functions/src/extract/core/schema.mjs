@@ -26,8 +26,12 @@ const SIDE_SCHEMA = {
       type: ["integer", "null"],
       description: "Shots on target for this side, or null.",
     },
+    xg: {
+      type: ["number", "null"],
+      description: "Expected goals (xG) for this side as printed (a decimal like 1.4), or null.",
+    },
   },
-  required: ["team_name", "goals", "possession", "shots", "shots_on_target"],
+  required: ["team_name", "goals", "possession", "shots", "shots_on_target", "xg"],
   additionalProperties: false,
 };
 

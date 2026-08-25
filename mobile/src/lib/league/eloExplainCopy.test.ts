@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { explainMatchElo } from "./eloExplainCopy";
+import { explainMatchEloParagraph } from "./eloExplainCopy";
 import type { EloExplain, LeagueMatch } from "./types";
 
 // Every fixture mirrors the shape recalcSeasonElo actually writes: deltas,
@@ -61,10 +61,10 @@ function explain(overrides: Partial<EloExplain> = {}): EloExplain {
 }
 
 // The complaint case: equal players, 10-overall-point team gap, 1–0 win.
-// Expectation ≈ performance, so the delta rounds to 0 — and the prose must say
-// exactly that, in that order: why he was favoured, why the win scored low, why
-// that lands on 0.
-test("expected narrow win explains a 0 gain", () => {
+// Expectation ≈ performance, so the delta rounds to 0 — the paragraph must say
+// exactly that, in order: why he was favoured, why the win scored low, why
+// that lands on 0. One paragraph, no per-player mirror of the same wording.
+test("expected narrow win explains a 0 gain in one paragraph", () => {
   const match = matchFixture({
     aDelta: 0,
     bDelta: 0,
@@ -78,25 +78,20 @@ test("expected narrow win explains a 0 gain", () => {
     }),
   });
 
-  const result = explainMatchElo(match, "Alex", "Sam");
+  const result = explainMatchEloParagraph(match, "Alex", "Sam");
   assert.ok(result);
-  assert.deepEqual(result.a.sentences, [
-    "Going in, Alex was the favourite at 67% — with a team 10 overall points stronger (about 120 ELO).",
-    "A narrow 1–0 win only scores 67% on performance — a one-goal margin counts for less than the scoreline suggests.",
-    "That landed almost exactly on the 67% expectation, so it rounded to 0 — nothing to gain from a win the ratings already saw coming.",
-    "Moves are bigger while a rating settles — the provisional K-factor (40) applies for a player's first 10 games of a season.",
-  ]);
-  assert.deepEqual(result.b.sentences, [
-    "Going in, Sam was the underdog at 33% — with a team 10 overall points weaker (about 120 ELO).",
-    "The 0–1 loss still scores 33% on performance — losing well softens the fall.",
-    "The result landed almost exactly on the 33% expectation, so it rounded to 0.",
-    "Moves are bigger while a rating settles — the provisional K-factor (40) applies for a player's first 10 games of a season.",
-  ]);
+  assert.equal(
+    result,
+    "Going in, Alex was the favourite at 67% — with a team 10 overall points stronger (about 120 ELO). " +
+      "Alex's narrow 1–0 win only scores 67% on performance — a one-goal margin counts for less than the scoreline suggests. " +
+      "Both results landed almost exactly on expectation (67%), so the moves rounded to 0. " +
+      "Moves are bigger while a rating settles — the provisional K-factor applies for a player's first 10 games of a season.",
+  );
 });
 
 // The counter-intuitive case: the winner was heavily expected AND second-best on
-// the chances, so he loses points while the beaten underdog gains them.
-test("winner outshot explains a negative-on-win and points for the loser", () => {
+// the chances, so they lose points while the beaten underdog gains them.
+test("winner outshot explains negative-on-win in one paragraph", () => {
   const match = matchFixture({
     aEloBefore: 1600,
     aEloAfter: 1595,
@@ -104,8 +99,8 @@ test("winner outshot explains a negative-on-win and points for the loser", () =>
     bEloBefore: 1450,
     bEloAfter: 1455,
     bDelta: 5,
-    aStats: { shotsOnTarget: 3, possession: 42 },
-    bStats: { shotsOnTarget: 6, possession: 58 },
+    aStats: { xg: 0.7, possession: 42 },
+    bStats: { xg: 2.1, possession: 58 },
     eloExplain: explain({
       aExpected: 0.703,
       bExpected: 0.297,
@@ -114,23 +109,21 @@ test("winner outshot explains a negative-on-win and points for the loser", () =>
     }),
   });
 
-  const result = explainMatchElo(match, "Alex", "Sam");
+  const result = explainMatchEloParagraph(match, "Alex", "Sam");
   assert.ok(result);
-  assert.deepEqual(result.a.sentences, [
-    "Going in, Alex was the strong favourite at 70% — rated 1600 to Sam's 1450.",
-    "A narrow 1–0 win only scores 55% on performance — a one-goal margin counts for less than the scoreline suggests.",
-    "They were second-best on the chances, though (3–6 shots on target, 42% possession).",
-    "The ratings expected this so strongly (70%) that even the win scored below expectation — ELO -5.",
-  ]);
-  assert.deepEqual(result.b.sentences, [
-    "Going in, Sam was a big underdog at 30% — rated 1450 to Alex's 1600.",
-    "The 0–1 loss still scores 45% on performance — losing well softens the fall.",
-    "They created the better chances despite the score (6–3 shots on target, 58% possession).",
-    "Even the loss came in above the 30% expectation — ELO +5.",
-  ]);
+  assert.equal(
+    result,
+    "Going in, Alex was the strong favourite at 70% — rated 1600 to Sam's 1450. " +
+      "Alex's narrow 1–0 win only scores 55% on performance — a one-goal margin counts for less than the scoreline suggests. " +
+      "The chances told a different story (0.7–2.1 xG, 42% possession). " +
+      "The ratings expected this so strongly (70%) that even the win scored below expectation — Alex -5, Sam +5.",
+  );
 });
 
-test("underdog win reads as an upset for the winner and against the favourite", () => {
+// The B-side upset: winner is B, so every sentence must flip to B's perspective
+// without quoting mirrored numbers from A's side of the ledger. A two-goal
+// margin is not "narrow" prose; the upset line carries the story.
+test("underdog two-goal win reads as a plain upset from B's side", () => {
   const match = matchFixture({
     aEloBefore: 1600,
     aEloAfter: 1585,
@@ -143,21 +136,19 @@ test("underdog win reads as an upset for the winner and against the favourite", 
     eloExplain: explain({ aExpected: 0.703, bExpected: 0.297, perfA: 0.25, perfB: 0.75 }),
   });
 
-  const result = explainMatchElo(match, "Alex", "Bob");
+  const result = explainMatchEloParagraph(match, "Alex", "Bob");
   assert.ok(result);
-  assert.deepEqual(result.b.sentences, [
-    "Going in, Bob was a big underdog at 30% — rated 1450 to Alex's 1600.",
-    "The 3–1 win scores 75% on performance.",
-    "Beating a 30% expectation is a proper upset — worth +15.",
-  ]);
-  assert.deepEqual(result.a.sentences, [
-    "Going in, Alex was the strong favourite at 70% — rated 1600 to Bob's 1450.",
-    "The 1–3 loss still scores 25% on performance — losing well softens the fall.",
-    "An upset in Bob's favour — ELO -15.",
-  ]);
+  assert.ok(!result.includes("narrow"), `should not call a 2-goal win narrow: ${result}`);
+  assert.equal(
+    result,
+    "Going in, Alex was the strong favourite at 70% — rated 1600 to Bob's 1450. " +
+      "The win gives Bob 75% of the performance. " +
+      "Beating a 30% expectation is a proper upset — Bob +15, Alex -15.",
+  );
 });
 
-test("reigning premier's narrow win costs a point and the opponent gains one", () => {
+// Reigning-premier handicap shows up once, attached to the favourite.
+test("premier handicap appears once in the expectation sentence", () => {
   const match = matchFixture({
     aEloBefore: 1550,
     aEloAfter: 1549,
@@ -170,66 +161,70 @@ test("reigning premier's narrow win costs a point and the opponent gains one", (
       bExpected: 0.297,
       aPremierAdj: 100,
       bPremierAdj: -100,
+      perfA: 0.6667,
+      perfB: 0.3333,
     }),
   });
 
-  const result = explainMatchElo(match, "Alex", "Sam");
+  const result = explainMatchEloParagraph(match, "Alex", "Sam");
   assert.ok(result);
-  assert.deepEqual(result.a.sentences, [
-    "Going in, Alex was the strong favourite at 70% — rated 1550 to Sam's 1500, plus 100 ELO as the reigning premier.",
-    "A narrow 1–0 win only scores 67% on performance — a one-goal margin counts for less than the scoreline suggests.",
-    "The ratings expected this so strongly (70%) that even the win scored below expectation — ELO -1.",
-  ]);
-  assert.deepEqual(result.b.sentences, [
-    "Going in, Sam was a big underdog at 30% — rated 1500 to Alex's 1550, with Alex rated 100 ELO higher as the reigning premier.",
-    "The 0–1 loss still scores 33% on performance — losing well softens the fall.",
-    "Even the loss came in above the 30% expectation — ELO +1.",
-  ]);
+  assert.match(result, /plus 100 ELO as the reigning premier/);
+  assert.equal((result.match(/reigning premier/g) ?? []).length, 1);
+  assert.ok(
+    result.endsWith(
+      "The ratings expected this so strongly (70%) that even the win scored below expectation — Alex -1, Sam +1.",
+    ),
+  );
 });
 
-test("even draw with no drivers explains itself as a coin flip", () => {
+// Even draw, no drivers: the coin-flip framing plus a split performance share.
+test("even draw reads as a coin flip", () => {
   const match = matchFixture({
     aGoals: 2,
     bGoals: 2,
     eloExplain: explain({ aExpected: 0.5, bExpected: 0.5, perfA: 0.5, perfB: 0.5 }),
   });
 
-  const result = explainMatchElo(match, "Alex", "Sam");
+  const result = explainMatchEloParagraph(match, "Alex", "Sam");
   assert.ok(result);
-  assert.deepEqual(result.a.sentences, [
-    "Going in, the ratings had this about 50–50 — nothing separated the two.",
-    "The 2–2 draw scores 50% on performance.",
-    "Dead level with expectations — ELO unchanged.",
-  ]);
+  assert.equal(
+    result,
+    "Going in, the ratings had this about 50–50 — nothing separated the two. " +
+      "The draw splits the performance 50%/50%. Dead level with expectations — ELO unchanged.",
+  );
 });
 
-test("provisional K is noted only for the still-settling player", () => {
-  const match = matchFixture({
-    eloExplain: explain({ aK: 40, bK: 32 }),
-  });
-
-  const result = explainMatchElo(match, "Alex", "Sam");
-  assert.ok(result);
-  assert.equal(result.a.sentences.length, 4);
-  assert.equal(result.b.sentences.length, 3);
-});
-
-// Shots on target and possession pointing opposite ways means there is no single
-// chances story to tell — the sentence is skipped rather than hedged.
+// xG and possession pointing opposite ways means there is no single chances
+// story to tell — the sentence is skipped rather than hedged.
 test("conflicting chance signals produce no stats sentence", () => {
   const match = matchFixture({
-    aStats: { shotsOnTarget: 3, possession: 58 },
-    bStats: { shotsOnTarget: 6, possession: 42 },
+    aStats: { xg: 0.8, possession: 58 },
+    bStats: { xg: 2.2, possession: 42 },
   });
 
-  const result = explainMatchElo(match, "Alex", "Sam");
+  const result = explainMatchEloParagraph(match, "Alex", "Sam");
   assert.ok(result);
-  assert.equal(result.a.sentences.length, 3);
-  assert.ok(!result.a.sentences.some((s) => s.includes("chances")));
+  assert.ok(!result.includes("chances"));
+});
+
+// Provisional K is noted only when at least one player is still settling.
+test("provisional K note appears when either K is elevated", () => {
+  const standard = matchFixture();
+  const plain = explainMatchEloParagraph(standard, "Alex", "Sam");
+  assert.ok(plain);
+  assert.ok(!plain.includes("provisional"));
+
+  const provisional = matchFixture({ eloExplain: explain({ aK: 40 }) });
+  const withProvisional = explainMatchEloParagraph(provisional, "Alex", "Sam");
+  assert.ok(withProvisional);
+  assert.ok(withProvisional.includes("provisional K-factor"));
 });
 
 test("returns null without explain data, deltas, or pre-match ratings", () => {
-  assert.equal(explainMatchElo(matchFixture({ eloExplain: undefined }), "Alex", "Sam"), null);
-  assert.equal(explainMatchElo(matchFixture({ aDelta: null }), "Alex", "Sam"), null);
-  assert.equal(explainMatchElo(matchFixture({ bEloBefore: null }), "Alex", "Sam"), null);
+  assert.equal(
+    explainMatchEloParagraph(matchFixture({ eloExplain: undefined }), "Alex", "Sam"),
+    null,
+  );
+  assert.equal(explainMatchEloParagraph(matchFixture({ aDelta: null }), "Alex", "Sam"), null);
+  assert.equal(explainMatchEloParagraph(matchFixture({ bEloBefore: null }), "Alex", "Sam"), null);
 });

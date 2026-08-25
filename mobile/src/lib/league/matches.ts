@@ -32,13 +32,15 @@ function sideStats(data: Record<string, unknown>, side: "a" | "b"): MatchSideSta
       possession: nullableNumber(stats.possession),
       shots: nullableNumber(stats.shots),
       shotsOnTarget: nullableNumber(stats.shotsOnTarget ?? stats.shots_on_target),
+      xg: nullableNumber(stats.xg),
     };
   }
   const possession = nullableNumber(data[`${side}Possession`]);
   const shots = nullableNumber(data[`${side}Shots`]);
   const shotsOnTarget = nullableNumber(data[`${side}ShotsOnTarget`]);
-  return possession !== null || shots !== null || shotsOnTarget !== null
-    ? { possession, shots, shotsOnTarget }
+  const xg = nullableNumber(data[`${side}Xg`]);
+  return possession !== null || shots !== null || shotsOnTarget !== null || xg !== null
+    ? { possession, shots, shotsOnTarget, xg }
     : undefined;
 }
 

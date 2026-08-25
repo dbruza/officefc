@@ -25,6 +25,7 @@ import {
 } from "./finalsRules";
 import { loadDealingContext, recentTeamIds } from "./fixtures";
 import { emitFinalsResultActivity, emitFinalsSetActivity } from "./activityFeed";
+import { scoreFinalsSlotOnApply } from "./predictions";
 import { sendPush } from "./notify";
 
 const db = getFirestore();
@@ -234,6 +235,9 @@ export async function applyFinalsResult(args: {
   const { preAdvanceSlot: slot, advanced } = decided;
 
   const loserId = args.winnerId === slot.homeId ? slot.awayId! : slot.homeId!;
+  // Prediction-game settlement for every resolved tie. Runs after the bracket commit and
+  // swallows its own failures — a scoring problem must never fail match confirmation.
+  await scoreFinalsSlotOnApply({ seasonId: args.seasonId, slotKey: args.slotKey });
   await emitFinalsResultActivity({
     seasonId: args.seasonId,
     slotKey: args.slotKey,

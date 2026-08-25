@@ -17,7 +17,7 @@ export const PROVISIONAL_K = 40;
 export const PROVISIONAL_GAMES = 10;
 
 export const W_GOALS = 0.6;
-export const W_SOT = 0.25;
+export const W_XG = 0.25;
 export const W_POSS = 0.15;
 const GOAL_MARGIN_SCALE = 2;
 
@@ -37,19 +37,19 @@ function share(a: number | null | undefined, b: number | null | undefined): numb
   return t > 0 ? a / t : null;
 }
 
-/** Mirror of the server's performanceScore: goal margin blended with shots-on-target
- *  and possession shares when both sides are known. */
+/** Mirror of the server's performanceScore: goal margin blended with expected-goals
+ *  (xG) and possession shares when both sides are known. */
 export function performanceScore(m: {
   aGoals: number;
   bGoals: number;
-  aShotsOnTarget?: number | null;
-  bShotsOnTarget?: number | null;
+  aXg?: number | null;
+  bXg?: number | null;
   aPossession?: number | null;
   bPossession?: number | null;
 }): number {
   const parts: Array<[number, number]> = [[W_GOALS, goalScore(m.aGoals, m.bGoals)]];
-  const sot = share(m.aShotsOnTarget, m.bShotsOnTarget);
-  if (sot != null) parts.push([W_SOT, sot]);
+  const xg = share(m.aXg, m.bXg);
+  if (xg != null) parts.push([W_XG, xg]);
   const poss = share(m.aPossession, m.bPossession);
   if (poss != null) parts.push([W_POSS, poss]);
   const wsum = parts.reduce((s, [w]) => s + w, 0);
@@ -74,8 +74,8 @@ export function expectedScore(a: number, b: number): number {
 
 /** Optional stats that feed the performance blend, mirroring SeasonMatchInput. */
 export interface PreviewStats {
-  myShotsOnTarget?: number | null;
-  opponentShotsOnTarget?: number | null;
+  myXg?: number | null;
+  opponentXg?: number | null;
   myPossession?: number | null;
   opponentPossession?: number | null;
 }
@@ -89,9 +89,8 @@ export interface PreviewStats {
  *
  * `premierId` is the season's reigning Premier; pass both uids so the handicap lands on
  * whichever side holds the title (it shifts expectation against the Premier on both sides'
- * previews). `stats` carries shots-on-target and possession when known (the Snap flow
- * extracts them — manual/auto flows have neither, matching the goals-only commit those
- * flows produce).
+ * previews). `stats` carries xG and possession when known (the Snap flow extracts them —
+ * manual/auto flows have neither, matching the goals-only commit those flows produce).
  */
 export function previewElo(
   myElo: number,
@@ -119,8 +118,8 @@ export function previewElo(
   const perf = performanceScore({
     aGoals: myGoals,
     bGoals: opponentGoals,
-    aShotsOnTarget: stats?.myShotsOnTarget,
-    bShotsOnTarget: stats?.opponentShotsOnTarget,
+    aXg: stats?.myXg,
+    bXg: stats?.opponentXg,
     aPossession: stats?.myPossession,
     bPossession: stats?.opponentPossession,
   });

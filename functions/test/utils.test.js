@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { seasonMatchInputsWithTeams } = require("../lib/utils.js");
+const { seasonMatchInputsWithTeams, seasonMatchInputFromDoc } = require("../lib/utils.js");
 
 // A minimal Firestore stand-in: doc() returns a ref carrying its id, getAll() returns
 // snapshots whose get("overall") reads from the provided overalls map (missing id → undefined).
@@ -78,4 +78,20 @@ test("a match with no team ids resolves to null overalls without reading teams",
   assert.equal(input.aTeamOverall, null);
   assert.equal(input.bTeamOverall, null);
   assert.equal(getAllCalled, false);
+});
+
+// xG feeds the performance blend, so the doc→input mapper must carry it through —
+// including the "never recorded" case mapping to null rather than undefined.
+test("maps xG from the doc; absent xG becomes null", () => {
+  const withXg = seasonMatchInputFromDoc(
+    matchDoc("m1", { aId: "a", bId: "b", aGoals: 2, bGoals: 1, aXg: 2.4, bXg: 0.9 }),
+  );
+  assert.equal(withXg.aXg, 2.4);
+  assert.equal(withXg.bXg, 0.9);
+
+  const withoutXg = seasonMatchInputFromDoc(
+    matchDoc("m2", { aId: "a", bId: "b", aGoals: 1, bGoals: 0 }),
+  );
+  assert.equal(withoutXg.aXg, null);
+  assert.equal(withoutXg.bXg, null);
 });

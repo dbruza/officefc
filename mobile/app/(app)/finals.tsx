@@ -9,10 +9,17 @@ import {
   bracketSlots,
   getActiveSeason,
   getBracket,
+  getFinalsScoreboard,
   getLeaguePlayers,
+  getMyFinalsPicks,
+  pickOutcome,
+  saveFinalsPick,
   type FinalsBracket,
+  type FinalsPicks,
   type FinalsSlot,
   type LeaguePlayer,
+  type PredictionPick,
+  type ScoreboardEntry,
   type Season,
 } from "@/lib/league";
 import { useFocusData } from "@/lib/useFocusData";
@@ -24,6 +31,8 @@ interface FinalsData {
   season: Season | null;
   bracket: FinalsBracket | null;
   players: LeaguePlayer[];
+  picks: FinalsPicks;
+  scoreboard: ScoreboardEntry[];
 }
 
 const ROUND_LABELS: Record<FinalsSlot["round"], string> = {
@@ -51,13 +60,24 @@ export default function FinalsScreen() {
         season ? getBracket(season.id) : Promise.resolve(null),
         getLeaguePlayers(),
       ]);
-      return { season, bracket, players };
-    }, []),
+      // Prediction-game data rides along with the bracket load; empty defaults keep the
+      // section renderable (and quietly hidden) when finals haven't started.
+      const [picks, scoreboard] =
+        bracket && user
+          ? await Promise.all([
+              getMyFinalsPicks(season!.id, user.uid),
+              getFinalsScoreboard(season!.id),
+            ])
+          : [{ picks: {} }, [] as ScoreboardEntry[]];
+      return { season, bracket, players, picks, scoreboard };
+    }, [user]),
   );
 
   const season = data?.season ?? null;
   const bracket = data?.bracket ?? null;
   const players = data?.players ?? [];
+  const picks = data?.picks ?? { picks: {} };
+  const scoreboard = data?.scoreboard ?? [];
   const playerById = new Map(players.map((player) => [player.id, player]));
 
   const myOpenSlot =
@@ -92,6 +112,13 @@ export default function FinalsScreen() {
         },
       ],
     );
+  }
+
+  function choosePick(slot: FinalsSlot, predictedWinnerId: string) {
+    if (!season || !user || slot.status !== "open") return;
+    saveFinalsPick(season.id, user.uid, slot, predictedWinnerId)
+      .then(() => reload())
+      .catch(() => Alert.alert("Prediction not saved", "Check the connection and try again."));
   }
 
   const rounds: Array<{ round: FinalsSlot["round"]; slots: FinalsSlot[] }> = [];
@@ -201,6 +228,17 @@ export default function FinalsScreen() {
                 ))}
               </View>
             ))}
+
+            {user ? (
+              <PredictionsSection
+                slots={bracketSlots(bracket)}
+                picks={picks}
+                scoreboard={scoreboard}
+                playerById={playerById}
+                myUid={user.uid}
+                onPick={choosePick}
+              />
+            ) : null}
           </>
         ) : null}
       </ScrollView>
@@ -324,6 +362,191 @@ function SlotSide({
   );
 }
 
+/** Slots with anything to predict (open ties) or already settled picks, in bracket order. */
+function predictableSlots(slots: FinalsSlot[]): FinalsSlot[] {
+  return slots.filter((slot) => slot.status === "open" || slot.status === "decided");
+}
+
+function PredictionsSection({
+  slots,
+  picks,
+  scoreboard,
+  playerById,
+  myUid,
+  onPick,
+}: {
+  slots: FinalsSlot[];
+  picks: FinalsPicks;
+  scoreboard: ScoreboardEntry[];
+  playerById: Map<string, LeaguePlayer>;
+  myUid: string;
+  onPick: (slot: FinalsSlot, predictedWinnerId: string) => void;
+}) {
+  const rows = predictableSlots(slots);
+  const top5 = scoreboard.slice(0, 5);
+  if (rows.length === 0 && top5.length === 0) return null;
+
+  return (
+    <View style={{ marginTop: spacing.xl }}>
+      <SectionLabel>Predictions</SectionLabel>
+
+      {rows.map((slot) => (
+        <PickRow
+          key={slot.key}
+          slot={slot}
+          myUid={myUid}
+          pick={picks.picks[slot.key]}
+          playerById={playerById}
+          onPick={onPick}
+        />
+      ))}
+
+      {top5.length > 0 ? (
+        <>
+          <SectionLabel style={{ marginTop: spacing.xl }}>Prediction league</SectionLabel>
+          <Card>
+            {top5.map((entry, index) => (
+              <View
+                key={entry.predictorId}
+                style={[styles.boardRow, index > 0 && styles.boardRowDivider]}
+              >
+                <Txt variant="monoBold" size={12} color={colors.textDim}>
+                  {index + 1}
+                </Txt>
+                <Txt
+                  variant="bodyMedium"
+                  size={13}
+                  style={{ flex: 1 }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {entry.predictorId === myUid
+                    ? "You"
+                    : (playerById.get(entry.predictorId)?.name ?? entry.predictorId)}
+                </Txt>
+                <Txt size={11} color={colors.textDim}>
+                  {entry.correct} right
+                </Txt>
+                <Txt variant="monoBold" size={14} color={colors.accent}>
+                  {entry.points} pts
+                </Txt>
+              </View>
+            ))}
+          </Card>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function PickRow({
+  slot,
+  myUid,
+  pick,
+  playerById,
+  onPick,
+}: {
+  slot: FinalsSlot;
+  myUid: string;
+  pick: PredictionPick | undefined;
+  playerById: Map<string, LeaguePlayer>;
+  onPick: (slot: FinalsSlot, predictedWinnerId: string) => void;
+}) {
+  const outcome = pickOutcome(slot, pick);
+  const open = slot.status === "open";
+  const sides: Array<"home" | "away"> = ["home", "away"];
+  return (
+    <Card style={styles.pickCard}>
+      <View style={styles.pickHeader}>
+        <Txt variant="head" size={10.5} color={colors.textDim}>
+          {slot.label.toUpperCase()}
+        </Txt>
+        {outcome.decided && outcome.points > 0 ? (
+          <View style={[styles.statusChip, styles.statusChipOpen]}>
+            <Txt size={10} color={colors.accent}>
+              {`✓ +${outcome.points}`}
+            </Txt>
+          </View>
+        ) : outcome.decided ? (
+          <View style={styles.statusChip}>
+            <Txt size={10} color={colors.textDim}>
+              missed
+            </Txt>
+          </View>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: "row", gap: spacing.sm }}>
+        {sides.map((side) => (
+          <PickSide
+            key={side}
+            slot={slot}
+            side={side}
+            myUid={myUid}
+            pick={pick}
+            selectable={open}
+            playerById={playerById}
+            onPick={onPick}
+          />
+        ))}
+      </View>
+    </Card>
+  );
+}
+
+function PickSide({
+  slot,
+  side,
+  myUid,
+  pick,
+  selectable,
+  playerById,
+  onPick,
+}: {
+  slot: FinalsSlot;
+  side: "home" | "away";
+  myUid: string;
+  pick: PredictionPick | undefined;
+  selectable: boolean;
+  playerById: Map<string, LeaguePlayer>;
+  onPick: (slot: FinalsSlot, predictedWinnerId: string) => void;
+}) {
+  const id = side === "home" ? slot.homeId : slot.awayId;
+  const seed = side === "home" ? slot.homeSeed : slot.awaySeed;
+  if (!id) return null;
+  const player = playerById.get(id);
+  const selected = pick?.predictedWinnerId === id;
+  const isWinner = slot.status === "decided" && slot.winnerId === id;
+  // Once decided the whole row is inert; while open only the unselected side needs a press.
+  const pressable = selectable && !selected;
+  return (
+    <Pressable
+      onPress={() => (pressable ? onPick(slot, id) : undefined)}
+      disabled={!pressable}
+      accessibilityRole={pressable ? "button" : undefined}
+      accessibilityLabel={`Predict ${player?.name ?? id} to win the ${slot.label}`}
+      accessibilityState={selected ? { selected: true } : undefined}
+      style={[
+        styles.pickSide,
+        selected && styles.pickSideSelected,
+        isWinner && !selected && styles.pickSideWinnerMissed,
+      ]}
+    >
+      <Avatar player={player ?? null} size={26} jersey />
+      <View style={{ flex: 1 }}>
+        <Txt variant="bodyMedium" size={12.5} numberOfLines={1} ellipsizeMode="tail">
+          {id === myUid ? "You" : firstName(player?.name ?? id)}
+        </Txt>
+        {seed != null ? (
+          <Txt size={10} color={colors.textDim}>
+            seed {seed}
+          </Txt>
+        ) : null}
+      </View>
+      {isWinner ? <Icon name="check" size={13} color={colors.win} /> : null}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: spacing.x3 },
@@ -392,5 +615,38 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: radius.sm,
     backgroundColor: colors.surface2,
+  },
+  pickCard: { marginTop: spacing.md, padding: spacing.md },
+  pickHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  pickSide: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.bg,
+  },
+  pickSideSelected: {
+    borderColor: withAlpha(colors.accent, 0.6),
+    backgroundColor: withAlpha(colors.accent, 0.08),
+  },
+  pickSideWinnerMissed: { opacity: 0.55 },
+  boardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.sm + 2,
+  },
+  boardRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
   },
 });

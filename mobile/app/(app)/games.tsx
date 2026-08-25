@@ -1,5 +1,12 @@
 import { useCallback } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Card, Icon, ScreenHeader, SeasonMatchRow, SectionLabel, Txt } from "@/components";
@@ -63,6 +70,15 @@ export default function GamesRoute() {
         title={title}
         subtitle={matches.length ? `${matches.length} confirmed · newest first` : undefined}
         back
+        right={
+          <Pressable
+            accessibilityLabel="League analytics"
+            onPress={() => router.push("/(app)/analytics" as Href)}
+            style={styles.headerAction}
+          >
+            <Icon name="trend" size={19} color={colors.accent} />
+          </Pressable>
+        }
       />
       <ScrollView
         contentContainerStyle={styles.content}
@@ -138,4 +154,5 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.x3 },
   empty: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  headerAction: { padding: spacing.sm, marginRight: -spacing.sm },
 });

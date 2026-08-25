@@ -64,6 +64,35 @@ test("shots-on-target above total shots is clamped + flagged", () => {
   assert.equal(r.suggestion.home.shots_on_target, 5);
 });
 
+test("xG decimals pass through; absent xG reads as null without flagging", () => {
+  const r = normalizeExtraction(
+    cleanRaw({
+      home: { ...cleanRaw().home, xg: 2.87 },
+      away: { ...cleanRaw().away, xg: null },
+    }),
+  );
+  assert.equal(r.suggestion.home.xg, 2.87);
+  assert.equal(r.suggestion.away.xg, null);
+  assert.deepEqual(r.flags, []);
+});
+
+test("implausible xG is clamped + flagged for review", () => {
+  const r = normalizeExtraction(cleanRaw({ home: { ...cleanRaw().home, xg: 42 } }));
+  assert.ok(r.flags.includes("home_xg_implausible"));
+  assert.equal(r.suggestion.home.xg, 15);
+});
+
+test("negative or garbage xG reads as null", () => {
+  const r = normalizeExtraction(
+    cleanRaw({
+      home: { ...cleanRaw().home, xg: -1.2 },
+      away: { ...cleanRaw().away, xg: "n/a" },
+    }),
+  );
+  assert.equal(r.suggestion.home.xg, null);
+  assert.equal(r.suggestion.away.xg, null);
+});
+
 test("numeric strings are coerced; possession clamps to 0–100", () => {
   const r = normalizeExtraction(
     cleanRaw({

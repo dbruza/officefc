@@ -56,6 +56,35 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/seasons/$(data.seasonId)/finals/bracket)
         .data.slots[data.finalsSlot];
     }
+
+    // Prediction game: a picks doc may only contain picks for bracket slots that are
+    // still open (participants known, tie undecided), and each pick must name one of
+    // that slot's two participants. Once a tie is decided its slot closes — the stored
+    // pick is frozen forever after, so every scored pick was provably written before
+    // the result existed. This replaces any timestamp-based late-edit check.
+    // KNOWN WINDOW (accepted v1): a match sits readable in pending_confirmation between
+    // being played/submitted and confirmation, so someone who can see the scoreline could
+    // pre-pick the winner before the bracket closes the slot. Office stakes; accepted.
+    function finalsBracketSlot(seasonId, key) {
+      return get(/databases/$(database)/documents/seasons/$(seasonId)/finals/bracket)
+        .data.slots[key];
+    }
+    function pickIsForOpenSlot(pick, seasonId, key) {
+      let slot = finalsBracketSlot(seasonId, key);
+      return slot.status == 'open'
+        && pick.keys().hasOnly(['predictedWinnerId'])
+        && pick.predictedWinnerId is string
+        && (slot.homeId == pick.predictedWinnerId || slot.awayId == pick.predictedWinnerId);
+    }
+    function picksAreForOpenSlots(data, seasonId) {
+      return data.picks.keys().hasOnly(['e1', 'e2', 's1', 's2', 'gf'])
+        && data.picks.keys().size() > 0
+        && (!('e1' in data.picks) || pickIsForOpenSlot(data.picks.e1, seasonId, 'e1'))
+        && (!('e2' in data.picks) || pickIsForOpenSlot(data.picks.e2, seasonId, 'e2'))
+        && (!('s1' in data.picks) || pickIsForOpenSlot(data.picks.s1, seasonId, 's1'))
+        && (!('s2' in data.picks) || pickIsForOpenSlot(data.picks.s2, seasonId, 's2'))
+        && (!('gf' in data.picks) || pickIsForOpenSlot(data.picks.gf, seasonId, 'gf'));
+    }
     // A finals submission must mirror the open bracket tie exactly: the two players on
     // their bracket sides with the equal teams the engine dealt. 'open' blocks double
     // recording, and a level score is rejected outright — extra time and penalties
@@ -212,9 +241,49 @@ service cloud.firestore {
       }
     }
 
+    // Finals predictions (prediction game): members read all; each member writes only
+    // their own prediction doc. Every pick must name an OPEN bracket slot at write time —
+    // once a tie is decided its slot closes and the stored pick is frozen, which is what
+    // makes every scored pick provably pre-decision (no timestamp comparison needed).
+    // predictorId is pinned to the caller so a member cannot forge another member's entry,
+    // and updatedAt must equal request.time so the stamp is server-written.
+    match /finalsPredictions/{seasonId}/picks/{predictorId} {
+      allow read: if isMember();
+      allow create: if signedIn() && predictorId == uid()
+        && request.resource.data.predictorId == uid()
+        && request.resource.data.updatedAt == request.time
+        && picksAreForOpenSlots(request.resource.data, seasonId);
+      allow update: if signedIn() && predictorId == uid()
+        && request.resource.data.predictorId == resource.data.predictorId
+        && request.resource.data.updatedAt == request.time
+        && picksAreForOpenSlots(request.resource.data, seasonId);
+      allow delete: if false;
+    }
+    // Prediction-game scoreboard is function-written.
+    match /finalsPredictions/{seasonId}/scoreboard/{docId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
+    // Per-match MVP peer votes: members read; the castVote Cloud Function is the ONLY
+    // writer (it enforces window/participant/finals/candidate checks that rules cannot
+    // express). Client-side writes are denied outright — tallies stay unforgable.
+    match /matchVotes/{matchId}/votes/{docId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+
     // Push tokens: a user manages only their own.
     match /deviceTokens/{userId}/tokens/{tokenId} {
       allow read, write: if signedIn() && userId == uid();
+    }
+
+    // Notification preferences: a user manages only their own prefs doc
+    // (muted categories map). Functions read it when delivering pushes.
+    match /pushPrefs/{userId} {
+      allow read: if signedIn() && userId == uid();
+      allow write: if signedIn() && userId == uid()
+        && request.resource.data.keys().hasOnly(['muted', 'updatedAt']);
     }
 
     // Default deny.

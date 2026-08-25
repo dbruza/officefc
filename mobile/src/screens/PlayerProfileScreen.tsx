@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { type ReactNode, useCallback, useRef } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -83,7 +83,15 @@ async function loadTeamCatalogue(): Promise<Map<string, Team>> {
   }
 }
 
-export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?: boolean }) {
+/** Optional slot letting a route inject a section (e.g. the Rivals card) without the shared
+ *  screen knowing about it. Rendered with the loaded head-to-head docs and roster map. */
+export interface PlayerProfileScreenProps {
+  uid: string;
+  root?: boolean;
+  rivalsSlot?: (pairs: HeadToHead[], players: Map<string, LeaguePlayer>) => ReactNode;
+}
+
+export function PlayerProfileScreen({ uid, root = false, rivalsSlot }: PlayerProfileScreenProps) {
   const router = useRouter();
   const { user, signOutUser } = useAuth();
   const scrollRef = useRef<ScrollView>(null);
@@ -480,6 +488,8 @@ export function PlayerProfileScreen({ uid, root = false }: { uid: string; root?:
                 ))}
               </View>
             </View>
+
+            {rivalsSlot?.(headToHeads, players)}
 
             <View style={{ marginTop: spacing.x2 }}>
               <SectionLabel>Head-to-head record</SectionLabel>

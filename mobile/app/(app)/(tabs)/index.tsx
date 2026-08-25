@@ -24,12 +24,14 @@ import { useAuth } from "@/lib/auth";
 import {
   ensureLeagueSetup,
   getActiveSeason,
+  getCup,
   getLeaguePlayers,
   getPlayerStats,
   getRecentActivity,
   getStandings,
   rebuildLeagueReadModels,
   type ActivityEvent,
+  type CupState,
   type LeaguePlayer,
   type PlayerStats,
   type Season,
@@ -48,6 +50,7 @@ interface HomeData {
   players: Map<string, LeaguePlayer>;
   playerStats: PlayerStats | null;
   activity: ActivityEvent[];
+  cup: CupState | null;
 }
 
 export default function Home() {
@@ -77,17 +80,19 @@ export default function Home() {
           players: new Map<string, LeaguePlayer>(),
           playerStats: null,
           activity: [],
+          cup: null,
         };
       }
       if (isAdmin) {
         await ensureLeagueSetup();
       }
       const activeSeason = await getActiveSeason();
-      const [roster, table, allTime, feed] = await Promise.all([
+      const [roster, table, allTime, feed, cup] = await Promise.all([
         getLeaguePlayers(),
         activeSeason ? getStandings(activeSeason.id) : Promise.resolve([]),
         getPlayerStats(uid),
         getRecentActivity(20),
+        activeSeason ? getCup(activeSeason.id) : Promise.resolve(null),
       ]);
       let resolvedStats = allTime;
       if (!resolvedStats && isAdmin && table.length) {
@@ -100,6 +105,7 @@ export default function Home() {
         players: new Map(roster.map((player) => [player.id, player])),
         playerStats: resolvedStats,
         activity: feed,
+        cup,
       };
     }, [isAdmin, uid]),
   );
@@ -244,6 +250,25 @@ export default function Home() {
               </Txt>
               <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
                 The table is locked — the bracket decides the champion.
+              </Txt>
+            </View>
+            <Icon name="chevron" size={16} color={colors.textDim} />
+          </Pressable>
+        ) : null}
+
+        {data?.cup?.status === "live" ? (
+          <Pressable
+            onPress={() => router.push("/(app)/cup")}
+            style={styles.finalsBanner}
+            accessibilityRole="button"
+          >
+            <Icon name="swords" size={20} color={colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Txt variant="head" size={14}>
+                Cup is running
+              </Txt>
+              <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
+                The knockout bracket runs alongside the league — your tie could be next.
               </Txt>
             </View>
             <Icon name="chevron" size={16} color={colors.textDim} />
