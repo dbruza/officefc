@@ -2,7 +2,7 @@
   "expo": {
     "name": "OfficeFC",
     "slug": "officefc",
-    "version": "1.9.0",
+    "version": "1.10.0",
     "scheme": "officefc",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",

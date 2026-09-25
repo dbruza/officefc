@@ -1,12 +1,12 @@
 {
   "name": "officefc",
-  "version": "1.9.0.0",
+  "version": "1.10.0.0",
   "description": "OfficeFC — an Expo and Firebase app for office EA Sports FC leagues, ELO ratings, and confirmed match tracking.",
   "private": true,
   "type": "commonjs",
   "scripts": {
     "build": "node build/build.js",
-    "import:fifa23": "node scripts/import-fifa-teams.mjs data/fifa23-team-list.txt functions/src/data/teamCatalogue.ts",
+    "import:teams": "node scripts/import-fifa-teams.mjs data/fc27-team-list.txt functions/src/data/teamCatalogue.ts",
     "preview": "node build/serve.js",
     "test": "npm --prefix functions run build && node --test test/*.test.mjs",
     "test:functions": "npm --prefix functions test",

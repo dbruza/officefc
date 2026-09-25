@@ -337,6 +337,47 @@ test("manual submissions cannot smuggle finals fields", async () => {
   await assertFails(setDoc(doc(member(), "matches/fnm6"), finalsMatch({ source: "manual" })));
 });
 
+// A catalogue sync (e.g. FIFA 23 → FC 27) retires teams by flipping `active` off, including
+// teams already dealt into a live fixture or an open finals tie.
+async function retireDealtTeams() {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    const db = ctx.firestore();
+    for (const id of ["team-a", "team-b"]) {
+      await setDoc(
+        doc(db, `teams/${id}`),
+        { active: false, catalogueActive: false },
+        { merge: true },
+      );
+    }
+  });
+}
+
+test("a fixture dealt before a catalogue sync stays playable with its retired teams", async () => {
+  await retireDealtTeams();
+  await assertSucceeds(setDoc(doc(member(), "matches/retired-fx"), fixtureMatch()));
+});
+
+test("an open finals tie dealt before a catalogue sync stays playable with its retired teams", async () => {
+  await retireDealtTeams();
+  await assertSucceeds(setDoc(doc(member(), "matches/retired-fn"), finalsMatch()));
+});
+
+test("a retired team still needs its real name on a fixture submission", async () => {
+  await retireDealtTeams();
+  await assertFails(
+    setDoc(doc(member(), "matches/retired-fx-name"), fixtureMatch({ aTeam: "Not Crimson Albion" })),
+  );
+});
+
+test("manual submissions cannot pick a retired catalogue team", async () => {
+  const manual = fixtureMatch({ source: "manual" });
+  delete manual.fixtureId;
+  // Same payload passes while the teams are active, so the rejection below is the retirement.
+  await assertSucceeds(setDoc(doc(member(), "matches/active-manual"), manual));
+  await retireDealtTeams();
+  await assertFails(setDoc(doc(member(), "matches/retired-manual"), manual));
+});
+
 test("fixtures are member-readable but never client-writable", async () => {
   await assertSucceeds(getDoc(doc(member(), "fixtures/fx1")));
   await assertFails(getDoc(doc(outsider(), "fixtures/fx1")));

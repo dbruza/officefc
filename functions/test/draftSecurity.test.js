@@ -5,6 +5,7 @@ const {
   assertValidDraftId,
   evaluateDraftClaim,
   evaluateDraftSubmission,
+  isSubmittableTeam,
 } = require("../lib/extract/draftSecurity.js");
 
 function expectCode(fn, code) {
@@ -143,4 +144,19 @@ test("a successful submission retry is idempotent", () => {
     }),
     "existing",
   );
+});
+
+function teamDoc(exists, active) {
+  return { exists, get: (field) => (field === "active" ? active : undefined) };
+}
+
+test("free-choice submissions need a team still in the picker", () => {
+  assert.equal(isSubmittableTeam(teamDoc(true, true), false), true);
+  assert.equal(isSubmittableTeam(teamDoc(true, false), false), false);
+  assert.equal(isSubmittableTeam(teamDoc(false, undefined), false), false);
+});
+
+test("a dealt fixture keeps its teams submittable after a catalogue sync retires them", () => {
+  assert.equal(isSubmittableTeam(teamDoc(true, false), true), true);
+  assert.equal(isSubmittableTeam(teamDoc(false, undefined), true), false);
 });

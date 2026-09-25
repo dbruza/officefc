@@ -849,7 +849,7 @@ function ScoreStepper({
   onChange: (value: number) => void;
 }) {
   return (
-    <View style={{ flex: 1, alignItems: "center" }}>
+    <View style={{ flex: 1, alignItems: "center", minWidth: 0 }}>
       <Avatar player={player} size={44} jersey />
       <Txt
         size={11}
@@ -1009,9 +1009,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scoreRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  stepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    maxWidth: "100%",
+  },
   scoreInput: {
-    minWidth: 56,
+    flex: 1,
+    minWidth: 0,
+    maxWidth: 72,
     textAlign: "center",
     color: colors.text,
     fontFamily: "JetBrainsMono_700Bold",
@@ -1027,6 +1035,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   eloPreview: {
     flexDirection: "row",

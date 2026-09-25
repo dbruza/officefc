@@ -117,3 +117,15 @@ export function evaluateDraftSubmission(input: {
   }
   return "create";
 }
+
+/**
+ * Whether a referenced team may be submitted. Free-choice submissions need a team still in the
+ * picker (`active`). A dealt fixture pins the exact teams, so for it the team only has to exist:
+ * a catalogue sync that retires those teams mid-fixture must not strand the matchup.
+ */
+export function isSubmittableTeam(
+  team: { exists: boolean; get(field: string): unknown },
+  pinnedByFixture: boolean,
+): boolean {
+  return team.exists && (pinnedByFixture || Boolean(team.get("active")));
+}

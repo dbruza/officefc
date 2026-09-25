@@ -75,7 +75,7 @@ export function ScoreBox({
   onChange: (v: number) => void;
 }) {
   return (
-    <View style={{ flex: 1, alignItems: "center" }}>
+    <View style={{ flex: 1, alignItems: "center", minWidth: 0 }}>
       <Txt size={11} color={colors.textDim} numberOfLines={1}>
         {label}
       </Txt>

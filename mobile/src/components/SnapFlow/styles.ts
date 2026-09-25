@@ -112,8 +112,20 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: withAlpha(colors.draw, 0.2),
   },
-  scoreRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
-  stepper: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.sm },
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    maxWidth: "100%",
+  },
   stepBtn: {
     width: 38,
     height: 38,
@@ -123,6 +135,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   prefillHint: {
     flexDirection: "row",
@@ -136,7 +149,9 @@ export const styles = StyleSheet.create({
   statEditRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   statEditFields: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   scoreInput: {
-    minWidth: 56,
+    flex: 1,
+    minWidth: 0,
+    maxWidth: 72,
     textAlign: "center",
     fontFamily: "JetBrainsMono_700Bold",
     fontSize: 34,

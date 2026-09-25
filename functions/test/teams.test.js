@@ -9,6 +9,7 @@ const {
   seedTeamCatalogue,
   teamSummary,
 } = require("../lib/teams.js");
+const { TEAM_CATALOGUE_VERSION } = require("../lib/data/teamCatalogue.js");
 
 const catalogueTeam = {
   id: "fifa23-chelsea-abc",
@@ -54,6 +55,10 @@ test("custom teams survive while missing catalogue teams are superseded", () => 
   assert.equal(isSupersededCatalogueTeam("team-123", {}, ids), false);
   assert.equal(isSupersededCatalogueTeam("old-arsenal", {}, ids), true);
   assert.equal(isSupersededCatalogueTeam(catalogueTeam.id, {}, ids), false);
+  // Previous-game catalogue docs, including the legacy national-team ids, are retired rather
+  // than re-rated, so matches already played keep the ratings they were played with.
+  assert.equal(isSupersededCatalogueTeam("nt-england", { category: "international" }, ids), true);
+  assert.equal(isSupersededCatalogueTeam("fifa23-liverpool-4b1c", {}, ids), true);
 });
 
 test("women's catalogue documents are identified for deletion", () => {
@@ -87,7 +92,7 @@ test("current catalogue version skips collection rewrites", async () => {
           return {
             exists: true,
             get(field) {
-              return field === "version" ? "fifa23-men-v4" : 745;
+              return field === "version" ? TEAM_CATALOGUE_VERSION : 735;
             },
           };
         },
@@ -96,11 +101,11 @@ test("current catalogue version skips collection rewrites", async () => {
   };
   const result = await seedTeamCatalogue({ db });
   assert.deepEqual(result, {
-    version: "fifa23-men-v4",
+    version: TEAM_CATALOGUE_VERSION,
     updated: 0,
     deactivated: 0,
     deleted: 0,
-    active: 745,
+    active: 735,
     skipped: true,
   });
 });

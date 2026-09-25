@@ -1,0 +1,2206 @@
+Team	League	OVR	ATK	MID	DEF
+
+France
+National Teams	86	87	85	85
+
+Spain
+National Teams	86	86	86	84
+
+Arsenal FC
+England Premier League	85	83	85	83
+
+Paris Saint-Germain
+France Ligue 1 McDonald's	85	87	85	86
+
+FC Barcelona
+Spain LaLiga EA Sports	85	86	85	83
+
+Real Madrid
+Spain LaLiga EA Sports	85	86	86	83
+
+Manchester City
+England Premier League	84	87	84	84
+
+Bayern München
+Germany Bundesliga	84	90	84	84
+
+England
+National Teams	84	85	86	84
+
+Germany
+National Teams	84	83	84	85
+
+Portugal
+National Teams	84	83	86	84
+
+Brazil
+National Teams	84	86	82	83
+
+Liverpool FC
+England Premier League	83	85	83	81
+
+Italy
+National Teams	83	79	84	82
+
+Atlético Madrid
+Spain LaLiga EA Sports	83	84	83	81
+
+Manchester United
+England Premier League	82	83	83	80
+
+Inter Milan
+Italy Serie A Enilive	82	83	83	81
+
+Netherlands
+National Teams	82	80	83	82
+
+Argentina
+National Teams	82	86	83	80
+
+Chelsea FC
+England Premier League	81	81	82	79
+
+Tottenham Hotspur
+England Premier League	81	80	80	81
+
+Borussia Dortmund
+Germany Bundesliga	81	85	80	80
+
+Belgium
+National Teams	81	82	82	78
+
+SSC Napoli
+Italy Serie A Enilive	81	79	83	79
+
+Juventus FC
+Italy Serie A Enilive	80	78	78	80
+
+AC Milan
+Italy Serie A Enilive	80	80	79	79
+
+Croatia
+National Teams	80	81	79	79
+
+AS Roma
+Italy Serie A Enilive	80	83	78	81
+
+Aston Villa
+England Premier League	79	79	78	79
+
+Crystal Palace
+England Premier League	79	79	79	78
+
+Morocco
+National Teams	79	79	79	77
+
+Newcastle United
+England Premier League	79	79	78	81
+
+Nottingham Forest
+England Premier League	79	79	78	79
+
+Bayer 04 Leverkusen
+Germany Bundesliga	79	80	79	79
+
+Atalanta BC
+Italy Serie A Enilive	79	79	78	77
+
+RB Leipzig
+Germany Bundesliga	79	78	78	80
+
+Denmark
+National Teams	79	78	80	77
+
+Galatasaray SK
+Türkiye Trendyol Süper Lig	79	85	79	78
+
+Fenerbahçe SK
+Türkiye Trendyol Süper Lig	79	81	79	77
+
+Norway
+National Teams	79	80	81	76
+
+Switzerland
+National Teams	79	77	78	78
+
+Türkiye
+National Teams	79	79	81	79
+
+Uruguay
+National Teams	79	76	80	77
+
+Sunderland AFC
+England Premier League	79	78	78	79
+
+Athletic Club
+Spain LaLiga EA Sports	79	79	78	80
+
+Real Betis Balompié
+Spain LaLiga EA Sports	79	79	80	78
+
+Villarreal CF
+Spain LaLiga EA Sports	79	80	79	78
+
+FC Porto
+Liga Portugal Betclic	79	77	79	78
+
+Colombia
+National Teams	78	80	79	78
+
+Everton FC
+England Premier League	78	76	79	77
+
+Brighton & Hove Albion
+England Premier League	78	74	77	79
+
+VfB Stuttgart
+Germany Bundesliga	78	77	79	78
+
+Austria
+National Teams	78	76	78	79
+
+Poland
+National Teams	78	80	76	77
+
+Sweden
+National Teams	78	83	75	77
+
+United States
+National Teams	78	78	78	78
+
+Brentford
+England Premier League	78	79	79	78
+
+AFC Bournemouth
+England Premier League	78	79	78	77
+
+Real Sociedad
+Spain LaLiga EA Sports	78	81	78	77
+
+Como
+Italy Serie A Enilive	78	80	78	77
+
+SL Benfica
+Liga Portugal Betclic	78	80	79	77
+
+Leeds United
+England Premier League	77	77	78	76
+
+Olympiacos FC
+Greece Stoiximan Super League	77	80	77	74
+
+TSG 1899 Hoffenheim
+Germany Bundesliga	77	77	77	76
+
+SS Lazio
+Italy Serie A Enilive	77	76	78	74
+
+Greece
+National Teams	77	79	76	76
+
+Olympique Lyonnais
+France Ligue 1 McDonald's	77	75	77	76
+
+AS Monaco
+France Ligue 1 McDonald's	77	75	77	75
+
+Stade Rennais
+France Ligue 1 McDonald's	77	79	77	76
+
+Ukraine
+National Teams	77	76	76	76
+
+Al Hilal
+Saudi Abdul L. Jameel League	77	78	78	74
+
+Mexico
+National Teams	77	79	76	75
+
+Japan
+National Teams	77	78	78	77
+
+Fulham FC
+England Premier League	77	75	76	77
+
+RC Celta
+Spain LaLiga EA Sports	77	80	76	77
+
+CA Osasuna
+Spain LaLiga EA Sports	77	78	75	77
+
+Rayo Vallecano
+Spain LaLiga EA Sports	77	75	78	76
+
+Sporting CP
+Liga Portugal Betclic	77	79	75	78
+
+Ajax
+Netherlands VriendenLoterij Eredivisie	77	76	79	75
+
+PSV
+Netherlands VriendenLoterij Eredivisie	77	77	77	77
+
+Al Nassr
+Saudi Abdul L. Jameel League	76	84	78	73
+
+Flamengo
+Brazil Brasileirão Betano Série A	76	77	76	75
+
+SC Freiburg
+Germany Bundesliga	76	77	75	76
+
+Fiorentina
+Italy Serie A Enilive	76	74	75	74
+
+Czechia
+National Teams	76	75	75	76
+
+RC Lens
+France Ligue 1 McDonald's	76	78	75	77
+
+Lille OSC
+France Ligue 1 McDonald's	76	77	76	77
+
+Beşiktaş JK
+Türkiye Trendyol Süper Lig	76	78	76	74
+
+Scotland
+National Teams	76	77	77	75
+
+River Plate
+Argentina Liga Profesional de Fútbol	76	75	76	76
+
+Ipswich Town
+England Premier League	76	75	77	74
+
+Paraguay
+National Teams	76	76	75	75
+
+1. FSV Mainz 05
+Germany Bundesliga	76	74	78	74
+
+Bologna FC
+Italy Serie A Enilive	76	77	76	75
+
+Valencia CF
+Spain LaLiga EA Sports	76	75	77	76
+
+Olympique de Marseille
+France Ligue 1 McDonald's	76	77	76	76
+
+Al Ahli SFC
+Saudi Abdul L. Jameel League	75	78	76	73
+
+Al Qadsiah FC
+Saudi Abdul L. Jameel League	75	74	78	71
+
+Atlético Mineiro
+Brazil Brasileirão Betano Série A	75	77	75	76
+
+West Ham United
+England Sky Bet Championship	75	76	73	74
+
+AEK Athens
+Greece Stoiximan Super League	75	77	75	75
+
+Borussia Mönchengladbach
+Germany Bundesliga	75	76	74	74
+
+Eintracht Frankfurt
+Germany Bundesliga	75	82	75	73
+
+Torino FC
+Italy Serie A Enilive	75	77	73	75
+
+Getafe CF
+Spain LaLiga EA Sports	75	76	74	75
+
+OGC Nice
+France Ligue 1 McDonald's	75	76	73	71
+
+Boca Juniors
+Argentina Liga Profesional de Fútbol	75	73	76	73
+
+Wales
+National Teams	75	73	76	74
+
+Panathinaikos FC
+Greece Stoiximan Super League	75	75	73	77
+
+Ghana
+National Teams	75	68	76	73
+
+Sassuolo
+Italy Serie A Enilive	75	76	72	72
+
+Wolverhampton Wanderers
+England Sky Bet Championship	75	75	75	74
+
+Palmeiras
+Brazil Brasileirão Betano Série A	75	78	76	74
+
+Trabzonspor
+Türkiye Trendyol Süper Lig	75	78	76	72
+
+Congo DR
+National Teams	75	77	73	74
+
+RCD Espanyol
+Spain LaLiga EA Sports	75	75	75	74
+
+Paris FC
+France Ligue 1 McDonald's	75	77	75	74
+
+Sevilla FC
+Spain LaLiga EA Sports	75	75	76	75
+
+RC Deportivo A Coruña
+Spain LaLiga EA Sports	75	79	74	75
+
+Feyenoord
+Netherlands VriendenLoterij Eredivisie	75	74	75	75
+
+Burnley
+England Sky Bet Championship	74	75	72	73
+
+Coventry City
+England Premier League	74	74	74	74
+
+Egypt
+National Teams	74	76	75	72
+
+Hamburger SV
+Germany Bundesliga	74	70	75	74
+
+Santos
+Brazil Brasileirão Betano Série A	74	74	72	75
+
+1. FC Köln
+Germany Bundesliga	74	75	74	73
+
+Werder Bremen
+Germany Bundesliga	74	74	73	74
+
+1. FC Union Berlin
+Germany Bundesliga	74	72	74	74
+
+FC Augsburg
+Germany Bundesliga	74	76	75	73
+
+Levante UD
+Spain LaLiga EA Sports	74	75	73	75
+
+Republic of Ireland
+National Teams	74	76	73	74
+
+RC Strasbourg Alsace
+France Ligue 1 McDonald's	74	70	73	72
+
+Celtic FC
+Scotland William Hill Premiership	74	73	73	75
+
+Club América
+Mexico Liga BBVA MX	74	72	74	73
+
+Red Bull Bragantino
+Brazil Brasileirão Betano Série A	74	71	75	75
+
+Toluca
+Mexico Liga BBVA MX	74	75	73	74
+
+Hungary
+National Teams	74	77	74	74
+
+Al Ittihad
+Saudi Abdul L. Jameel League	74	74	75	68
+
+Sporting Clube de Braga
+Liga Portugal Betclic	74	74	76	74
+
+PAOK
+Greece Stoiximan Super League	74	72	75	73
+
+Hull City
+England Premier League	74	75	74	72
+
+VfL Wolfsburg
+Germany 2. Bundesliga	74	69	74	71
+
+Venezia FC
+Italy Serie A Enilive	74	73	73	71
+
+Korea Republic
+National Teams	74	76	74	74
+
+Deportivo Alavés
+Spain LaLiga EA Sports	74	77	74	74
+
+Estudiantes de La Plata
+Argentina Liga Profesional de Fútbol	74	75	73	73
+
+Club Brugge KV
+Belgium Jupiler Pro League	74	74	71	72
+
+Girona FC
+Spain LaLiga Hypermotion	74	74	72	72
+
+Monterrey
+Mexico Liga BBVA MX	73	75	74	71
+
+SK Slavia Praha
+Czechia Chance Liga	73	75	71	73
+
+Southampton FC
+England Sky Bet Championship	73	75	73	73
+
+Corinthians
+Brazil Brasileirão Betano Série A	73	75	72	74
+
+Schalke 04
+Germany Bundesliga	73	73	73	72
+
+Parma Calcio
+Italy Serie A Enilive	73	72	74	72
+
+Cagliari
+Italy Serie A Enilive	73	70	71	74
+
+Palermo FC
+Italy Serie BKT	73	76	73	72
+
+Udinese Calcio
+Italy Serie A Enilive	73	76	73	72
+
+Bahia
+Brazil Brasileirão Betano Série A	73	73	74	72
+
+Romania
+National Teams	73	72	72	73
+
+Rangers FC
+Scotland William Hill Premiership	73	67	73	71
+
+São Paulo
+Brazil Brasileirão Betano Série A	73	73	72	73
+
+Cruz Azul
+Mexico Liga BBVA MX	73	72	74	73
+
+AZ Alkmaar
+Netherlands VriendenLoterij Eredivisie	73	72	74	71
+
+Tigres UANL
+Mexico Liga BBVA MX	73	72	73	71
+
+Monza
+Italy Serie A Enilive	73	72	70	67
+
+RCD Mallorca
+Spain LaLiga Hypermotion	73	71	73	71
+
+Racing Santander
+Spain LaLiga EA Sports	73	71	75	71
+
+Elche CF
+Spain LaLiga EA Sports	73	71	73	74
+
+Genoa
+Italy Serie A Enilive	73	74	73	73
+
+Rosario Central
+Argentina Liga Profesional de Fútbol	73	72	74	72
+
+Inter Miami
+United States Major League Soccer	73	77	76	69
+
+Botafogo
+Brazil Brasileirão Betano Série A	72	72	72	72
+
+Saudi Arabia
+National Teams	72	73	73	72
+
+Middlesbrough FC
+England Sky Bet Championship	72	70	72	72
+
+Toulouse FC
+France Ligue 1 McDonald's	72	71	72	71
+
+Sampdoria
+Italy Serie BKT	72	72	72	70
+
+Fluminense
+Brazil Brasileirão Betano Série A	72	74	72	72
+
+Cruzeiro
+Brazil Brasileirão Betano Série A	72	75	71	73
+
+AJ Auxerre
+France Ligue 1 McDonald's	72	73	71	72
+
+Lanús
+Argentina Liga Profesional de Fútbol	72	63	72	71
+
+Málaga CF
+Spain LaLiga EA Sports	72	76	72	70
+
+UD Almería
+Spain LaLiga Hypermotion	72	71	73	72
+
+Birmingham City
+England Sky Bet Championship	72	72	72	71
+
+Guadalajara
+Mexico Liga BBVA MX	72	66	72	73
+
+Pumas UNAM
+Mexico Liga BBVA MX	72	73	71	70
+
+Lecce
+Italy Serie A Enilive	72	71	69	71
+
+Grêmio
+Brazil Brasileirão Betano Série A	72	72	71	72
+
+Chile
+National Teams	72	69	72	71
+
+NEC Nijmegen
+Netherlands VriendenLoterij Eredivisie	72	74	72	71
+
+Stade Brestois 29
+France Ligue 1 McDonald's	72	75	72	74
+
+Venezuela
+National Teams	72	72	71	71
+
+Viktoria Plzeň
+Czechia Chance Liga	72	71	74	71
+
+Australia
+National Teams	72	71	69	72
+
+Wrexham
+England Sky Bet Championship	72	72	71	71
+
+KRC Genk
+Belgium Jupiler Pro League	72	74	72	70
+
+Belgrano de Córdoba
+Argentina Liga Profesional de Fútbol	72	75	72	72
+
+Dynamo Kyiv
+Ukrainian Premier League VBET	72	70	71	71
+
+Shakhtar Donetsk
+Ukrainian Premier League VBET	72	71	70	73
+
+GNK Dinamo Zagreb
+Croatia Supersport HNL	72	74	72	70
+
+FC Lorient
+France Ligue 1 McDonald's	72	71	73	70
+
+Racing Club
+Argentina Liga Profesional de Fútbol	72	75	69	72
+
+Union Saint-Gilloise
+Belgium Jupiler Pro League	72	70	73	65
+
+Vélez Sarsfield
+Argentina Liga Profesional de Fútbol	72	69	71	73
+
+RSC Anderlecht
+Belgium Jupiler Pro League	72	72	70	71
+
+Ludogorets
+Bulgaria Parva Liga	72	69	72	71
+
+Angers SCO
+France Ligue 1 McDonald's	72	72	72	72
+
+Atlas FC
+Mexico Liga BBVA MX	72	72	71	71
+
+Norwich City
+England Sky Bet Championship	71	71	71	70
+
+Northern Ireland
+National Teams	71	66	71	72
+
+Sheffield United
+England Sky Bet Championship	71	70	70	71
+
+Watford
+England Sky Bet Championship	71	72	69	70
+
+Çorum FK
+Türkiye Trendyol Süper Lig	71	71	72	71
+
+Sparta Praha
+Czechia Chance Liga	71	75	70	71
+
+Independiente
+Argentina Liga Profesional de Fútbol	71	73	69	70
+
+CD Leganés
+Spain LaLiga Hypermotion	71	72	71	69
+
+Seattle Sounders FC
+United States Major League Soccer	71	69	71	71
+
+Frosinone
+Italy Serie A Enilive	71	71	72	69
+
+Platense
+Argentina Liga Profesional de Fútbol	71	72	69	68
+
+FC København
+Denmark 3F Superliga	71	70	70	70
+
+Finland
+National Teams	71	76	70	68
+
+Iceland
+National Teams	71	72	72	67
+
+FC Nantes
+France Ligue 2 BKT	71	70	70	70
+
+Al Diriyah
+Saudi Abdul L. Jameel League	71	73	70	67
+
+Cremonese
+Italy Serie BKT	71	72	69	72
+
+Al Ain
+UAE Arabian Gulf League	71	71	75	70
+
+Derby County
+England Sky Bet Championship	71	74	70	70
+
+Los Angeles FC
+United States Major League Soccer	71	74	71	69
+
+Lech Poznań
+Poland PKO Bank Ekstraklasa	71	75	71	70
+
+Cameroon
+National Teams	71	75	67	69
+
+FC Twente
+Netherlands VriendenLoterij Eredivisie	71	73	69	71
+
+BSC Young Boys
+Switzerland Brack Super League	71	72	72	70
+
+FK Bodø/Glimt
+Norway Eliteserien	71	69	72	71
+
+Medipol Başakşehir FK
+Türkiye Trendyol Süper Lig	71	74	71	71
+
+KAA Gent
+Belgium Jupiler Pro League	71	56	69	71
+
+Swansea City
+England Sky Bet Championship	71	72	71	70
+
+Independiente Rivadavia
+Argentina Liga Profesional de Fútbol	71	74	71	71
+
+New York City FC
+United States Major League Soccer	71	77	72	67
+
+Le Havre AC
+France Ligue 1 McDonald's	71	71	69	72
+
+Hellas Verona FC
+Italy Serie BKT	71	70	69	70
+
+UD Las Palmas
+Spain LaLiga Hypermotion	71	71	72	69
+
+Real Oviedo
+Spain LaLiga Hypermotion	71	71	69	71
+
+FC Midtjylland
+Denmark 3F Superliga	71	66	72	73
+
+Atlético Nacional
+Colombian Liga Postobón	71	73	71	72
+
+Peñarol
+Uruguayan Primera División	71	73	69	70
+
+Vancouver Whitecaps FC
+United States Major League Soccer	71	73	71	70
+
+Peru
+National Teams	70	69	72	70
+
+Omonoia FC
+Cyprus League Stoiximan	70	70	69	70
+
+Preston North End
+England Sky Bet Championship	70	69	70	70
+
+Independiente del Valle
+Ecuadorian Serie A	70	70	69	70
+
+Stoke City
+England Sky Bet Championship	70	72	70	70
+
+Queens Park Rangers
+England Sky Bet Championship	70	70	71	71
+
+Aarhus Gymnastikforening
+Denmark 3F Superliga	70	68	71	69
+
+AS Saint-Étienne
+France Ligue 2 BKT	70	73	72	69
+
+Talleres
+Argentina Liga Profesional de Fútbol	70	71	69	69
+
+Toronto FC
+United States Major League Soccer	70	74	70	67
+
+GD Estoril Praia
+Liga Portugal Betclic	70	72	71	68
+
+ESTAC Troyes
+France Ligue 1 McDonald's	70	70	70	69
+
+APOEL FC
+Cyprus League Stoiximan	70	66	69	69
+
+Viking FK
+Norway Eliteserien	70	71	72	69
+
+Widzew Łódź
+Poland PKO Bank Ekstraklasa	70	70	70	69
+
+SC Paderborn 07
+Germany Bundesliga	70	70	70	70
+
+Vasco da Gama
+Brazil Brasileirão Betano Série A	70	70	69	70
+
+Al Shabab
+Saudi Abdul L. Jameel League	70	72	74	65
+
+Tijuana
+Mexico Liga BBVA MX	70	66	71	69
+
+Pachuca
+Mexico Liga BBVA MX	70	70	70	71
+
+Servette FC
+Switzerland Brack Super League	70	71	70	67
+
+SV Elversberg
+Germany Bundesliga	70	71	70	70
+
+Cerro Porteño
+Paraguayan Primera División	70	72	66	70
+
+Heart of Midlothian FC
+Scotland William Hill Premiership	70	66	70	70
+
+Ferencvárosi Torna Club
+Hungary Fizz Liga	70	72	70	67
+
+Defensa y Justicia
+Argentina Liga Profesional de Fútbol	70	66	69	69
+
+Vitória SC
+Liga Portugal Betclic	70	66	71	67
+
+Huracán
+Argentina Liga Profesional de Fútbol	70	69	71	67
+
+Millwall FC
+England Sky Bet Championship	70	68	69	71
+
+Mirassol
+Brazil Brasileirão Betano Série A	70	71	69	71
+
+West Bromwich Albion
+England Sky Bet Championship	70	68	69	70
+
+FC Utrecht
+Netherlands VriendenLoterij Eredivisie	70	68	71	69
+
+New Zealand
+National Teams	70	74	71	69
+
+Bristol City
+England Sky Bet Championship	70	68	70	69
+
+FC Arouca
+Liga Portugal Betclic	70	69	70	70
+
+1. FC Heidenheim 1846
+Germany 2. Bundesliga	70	69	71	71
+
+KV Mechelen
+Belgium Jupiler Pro League	70	70	68	68
+
+LDU Quito
+Ecuadorian Serie A	70	70	68	70
+
+Pisa
+Italy Serie BKT	70	70	68	71
+
+VfL Bochum 1848
+Germany 2. Bundesliga	70	70	70	69
+
+Sint-Truidense VV
+Belgium Jupiler Pro League	70	67	69	68
+
+Konyaspor
+Türkiye Trendyol Süper Lig	70	71	69	70
+
+Famalicão
+Liga Portugal Betclic	70	67	71	70
+
+Argentinos Juniors
+Argentina Liga Profesional de Fútbol	70	70	70	69
+
+New England Revolution
+United States Major League Soccer	70	69	72	67
+
+Chicago Fire
+United States Major League Soccer	70	84	71	68
+
+LA Galaxy
+United States Major League Soccer	70	70	71	66
+
+FC Red Bull Salzburg
+Austria Admiral Bundesliga	70	74	68	70
+
+Real Sporting de Gijón
+Spain LaLiga Hypermotion	70	69	69	68
+
+Le Mans FC
+France Ligue 1 McDonald's	70	71	65	70
+
+Modena
+Italy Serie BKT	70	69	69	70
+
+Charlotte FC
+United States Major League Soccer	70	72	70	68
+
+NEOM SC
+Saudi Abdul L. Jameel League	70	68	70	70
+
+Club Nacional de Football
+Uruguayan Primera División	70	68	71	70
+
+Orlando City SC
+United States Major League Soccer	70	73	70	68
+
+Hannover 96
+Germany 2. Bundesliga	70	71	69	69
+
+Samsunspor
+Türkiye Trendyol Süper Lig	70	72	67	70
+
+Junior FC
+Colombian Liga Postobón	70	71	70	70
+
+FC Juárez
+Mexico Liga BBVA MX	70	72	70	69
+
+Independiente Santa Fe
+Colombian Liga Postobón	70	74	69	69
+
+Nashville SC
+United States Major League Soccer	70	73	68	72
+
+Club Olimpia
+Paraguayan Primera División	70	71	69	69
+
+San Lorenzo de Almagro
+Argentina Liga Profesional de Fútbol	70	70	70	67
+
+FC St. Pauli
+Germany 2. Bundesliga	70	70	71	70
+
+LASK Linz
+Austria Admiral Bundesliga	70	71	69	70
+
+Blackburn Rovers
+England Sky Bet Championship	69	69	69	68
+
+Hajduk Split
+Croatia Supersport HNL	69	71	68	68
+
+1. FC Kaiserslautern
+Germany 2. Bundesliga	69	69	70	69
+
+Minnesota United FC
+United States Major League Soccer	69	74	68	68
+
+Portland Timbers
+United States Major League Soccer	69	76	69	69
+
+Atlético de San Luis
+Mexico Liga BBVA MX	69	64	67	69
+
+FC Lugano
+Switzerland Brack Super League	69	72	69	69
+
+Universitatea Craiova
+Romania SuperLiga României	69	68	70	70
+
+San Jose Earthquakes
+United States Major League Soccer	69	71	69	67
+
+Catanzaro
+Italy Serie BKT	69	66	69	68
+
+Albacete Balompié
+Spain LaLiga Hypermotion	69	69	69	69
+
+Calcio Padova
+Italy Serie BKT	69	70	68	68
+
+Casa Pia
+Liga Portugal Betclic	69	69	68	67
+
+Charlton Athletic
+England Sky Bet Championship	69	67	69	69
+
+CA Aldosivi
+Argentina Liga Profesional de Fútbol	69	69	65	65
+
+Atlético Tucumán
+Argentina Liga Profesional de Fútbol	69	71	65	67
+
+Burgos CF
+Spain LaLiga Hypermotion	69	69	69	68
+
+Leicester City
+England Sky Bet League One	69	71	68	67
+
+Tigre
+Argentina Liga Profesional de Fútbol	69	69	68	66
+
+Club Atlético Unión
+Argentina Liga Profesional de Fútbol	69	64	70	67
+
+Instituto Atlético Central Córdoba
+Argentina Liga Profesional de Fútbol	69	70	68	69
+
+Deportes Tolima
+Colombian Liga Postobón	69	70	68	69
+
+Universidad Católica
+Chilean Campeonato Nacional	69	69	68	69
+
+FC Basel 1893
+Switzerland Brack Super League	69	68	69	67
+
+Barracas Central
+Argentina Liga Profesional de Fútbol	69	69	69	69
+
+Indonesia
+National Teams	69	64	67	70
+
+Raków Częstochowa
+Poland PKO Bank Ekstraklasa	69	68	69	70
+
+Gençlerbirliği SK
+Türkiye Trendyol Süper Lig	69	71	68	68
+
+Górnik Zabrze
+Poland PKO Bank Ekstraklasa	69	68	70	69
+
+Hertha BSC
+Germany 2. Bundesliga	69	69	67	69
+
+SV Darmstadt 98
+Germany 2. Bundesliga	69	69	69	68
+
+Universitario de Deportes
+Peruvian Primera División	69	69	68	69
+
+Qatar
+National Teams	69	74	67	66
+
+Columbus Crew
+United States Major League Soccer	69	70	69	69
+
+Cádiz CF
+Spain LaLiga Hypermotion	69	67	66	65
+
+Houston Dynamo
+United States Major League Soccer	69	72	70	68
+
+Club León
+Mexico Liga BBVA MX	69	72	69	69
+
+Jeonbuk Hyundai Motors
+Korea Republic Hana Bank K League 1	69	69	68	68
+
+SD Eibar
+Spain LaLiga Hypermotion	69	69	68	69
+
+Real Salt Lake
+United States Major League Soccer	69	68	70	67
+
+Gimnasia y Esgrima La Plata
+Argentina Liga Profesional de Fútbol	69	67	67	69
+
+Qarabağ FK
+Azerbaijan Misli Premyer Liqası	69	66	69	69
+
+Standard de Liège
+Belgium Jupiler Pro League	69	68	68	69
+
+Rio Ave FC
+Liga Portugal Betclic	69	65	68	68
+
+América de Cali
+Colombian Liga Postobón	69	69	70	69
+
+Kasımpaşa SK
+Türkiye Trendyol Süper Lig	69	70	68	67
+
+Independiente Medellín
+Colombian Liga Postobón	69	68	69	69
+
+Granada CF
+Spain LaLiga Hypermotion	69	68	71	68
+
+Millonarios FC
+Colombian Liga Postobón	69	73	69	69
+
+Al Khaleej
+Saudi Abdul L. Jameel League	69	74	70	66
+
+CD Castellón
+Spain LaLiga Hypermotion	69	68	68	70
+
+Avellino
+Italy Serie BKT	69	68	68	69
+
+FC Nordsjælland
+Denmark 3F Superliga	69	68	69	69
+
+FC Cincinnati
+United States Major League Soccer	69	69	70	68
+
+Portsmouth
+England Sky Bet Championship	69	69	69	69
+
+Bolton Wanderers
+England Sky Bet Championship	68	68	68	68
+
+Philadelphia Union
+United States Major League Soccer	68	68	68	70
+
+Al Taawoun FC
+Saudi Abdul L. Jameel League	68	70	70	64
+
+Brøndby IF
+Denmark 3F Superliga	68	68	67	68
+
+Sheffield Wednesday
+England Sky Bet League One	68	68	68	67
+
+Go Ahead Eagles
+Netherlands VriendenLoterij Eredivisie	68	67	69	68
+
+Amed SK
+Türkiye Trendyol Süper Lig	68	73	67	67
+
+Karlsruher SC
+Germany 2. Bundesliga	68	68	67	68
+
+Rapid Bucuresti
+Romania SuperLiga României	68	68	67	67
+
+Newell's Old Boys
+Argentina Liga Profesional de Fútbol	68	69	62	67
+
+Malmö FF
+Sweden Allsvenskan	68	67	65	67
+
+Holstein Kiel
+Germany 2. Bundesliga	68	70	69	66
+
+Santos Laguna
+Mexico Liga BBVA MX	68	69	68	67
+
+FC Metz
+France Ligue 2 BKT	68	68	68	68
+
+CA Banfield
+Argentina Liga Profesional de Fútbol	68	65	66	67
+
+Central Cordoba SdE
+Argentina Liga Profesional de Fútbol	68	69	67	67
+
+Montpellier HSC
+France Ligue 2 BKT	68	67	66	69
+
+Club Atlético Sarmiento
+Argentina Liga Profesional de Fútbol	68	69	68	68
+
+Córdoba CF
+Spain LaLiga Hypermotion	68	68	68	67
+
+Legia Warszawa
+Poland PKO Bank Ekstraklasa	68	68	68	67
+
+Hibernian
+Scotland William Hill Premiership	68	66	68	67
+
+Gil Vicente FC
+Liga Portugal Betclic	68	72	69	67
+
+CD Nacional
+Liga Portugal Betclic	68	65	66	68
+
+Moreirense FC
+Liga Portugal Betclic	68	65	66	70
+
+Südtirol
+Italy Serie BKT	68	65	67	68
+
+San Diego FC
+United States Major League Soccer	68	74	69	64
+
+Bolívar
+Liga de Fútbol Profesional Boliviano	68	69	68	67
+
+SC Heerenveen
+Netherlands VriendenLoterij Eredivisie	68	68	69	68
+
+St. Louis CITY SC
+United States Major League Soccer	68	68	68	66
+
+Stade de Reims
+France Ligue 2 BKT	68	72	68	68
+
+GKS Katowice
+Poland PKO Bank Ekstraklasa	68	67	69	68
+
+FC St. Gallen 1879
+Switzerland Brack Super League	68	66	69	68
+
+Barcelona de Guayaquil
+Ecuadorian Serie A	68	71	66	69
+
+Lincoln City
+England Sky Bet Championship	68	66	68	68
+
+SK Brann
+Norway Eliteserien	68	67	69	67
+
+FCSB
+Romania SuperLiga României	68	67	69	66
+
+Jagiellonia Białystok
+Poland PKO Bank Ekstraklasa	68	68	69	68
+
+Gimnasia y Esgrima de Mendoza
+Argentina Liga Profesional de Fútbol	68	66	68	62
+
+Cracovia
+Poland PKO Bank Ekstraklasa	68	68	67	68
+
+DSC Arminia Bielefeld
+Germany 2. Bundesliga	68	69	68	68
+
+Oxford United
+England Sky Bet League One	68	68	68	67
+
+Universitatea Cluj
+Romania SuperLiga României	68	69	67	67
+
+Libertad
+Paraguayan Primera División	68	66	69	65
+
+Molde FK
+Norway Eliteserien	68	66	66	67
+
+Göztepe SK
+Türkiye Trendyol Süper Lig	68	70	68	64
+
+Sporting Cristal
+Peruvian Primera División	68	68	69	68
+
+Kocaelispor
+Türkiye Trendyol Süper Lig	68	69	66	69
+
+Cardiff City
+England Sky Bet Championship	68	68	68	68
+
+1. FC Nürnberg
+Germany 2. Bundesliga	68	69	69	66
+
+Çaykur Rizespor
+Türkiye Trendyol Süper Lig	68	69	68	68
+
+DC United
+United States Major League Soccer	68	70	68	67
+
+FC Sion
+Switzerland Brack Super League	68	67	68	66
+
+FC Dallas
+United States Major League Soccer	68	69	68	69
+
+Gaziantep FK
+Türkiye Trendyol Süper Lig	68	67	69	68
+
+Ulsan HD FC
+Korea Republic Hana Bank K League 1	68	71	68	67
+
+Hammarby Fotboll
+Sweden Allsvenskan	68	71	69	68
+
+Alverca
+Liga Portugal Betclic	68	69	65	67
+
+Real Valladolid CF
+Spain LaLiga Hypermotion	68	68	68	68
+
+Estrela da Amadora
+Liga Portugal Betclic	68	67	67	69
+
+SK Sturm Graz
+Austria Admiral Bundesliga	68	71	68	67
+
+FC Seoul
+Korea Republic Hana Bank K League 1	68	68	68	70
+
+Al Ettifaq
+Saudi Abdul L. Jameel League	68	68	69	66
+
+Royal Antwerp FC
+Belgium Jupiler Pro League	68	68	66	65
+
+Korona Kielce
+Poland PKO Bank Ekstraklasa	68	68	69	67
+
+Erzurumspor FK
+Türkiye Trendyol Süper Lig	68	70	69	65
+
+KV Kortrijk
+Belgium Jupiler Pro League	68	71	68	65
+
+Austin FC
+United States Major League Soccer	68	69	69	67
+
+Atlanta United
+United States Major League Soccer	68	71	65	69
+
+Alanyaspor
+Türkiye Trendyol Süper Lig	68	69	68	67
+
+Dynamo Dresden
+Germany 2. Bundesliga	68	69	68	67
+
+Oud-Heverlee Leuven
+Belgium Jupiler Pro League	68	67	67	68
+
+Randers FC
+Denmark 3F Superliga	68	72	67	68
+
+1. FC Magdeburg
+Germany 2. Bundesliga	68	68	67	68
+
+SK Rapid
+Austria Admiral Bundesliga	68	69	67	68
+
+Buriram United
+Thai League 1	68	69	70	67
+
+FK Austria Wien
+Austria Admiral Bundesliga	67	68	67	68
+
+Necaxa
+Mexico Liga BBVA MX	67	68	66	68
+
+CD Tenerife
+Spain LaLiga Hypermotion	67	68	67	66
+
+Estudiantes de Río Cuarto
+Argentina Liga Profesional de Fútbol	67	65	67	67
+
+Odense Boldklub
+Denmark 3F Superliga	67	67	68	65
+
+Deportivo Riestra
+Argentina Liga Profesional de Fútbol	67	67	66	66
+
+Cusco FC
+Peruvian Primera División	67	69	68	66
+
+Wisła Płock
+Poland PKO Bank Ekstraklasa	67	65	67	67
+
+CF Montréal
+United States Major League Soccer	67	69	66	65
+
+CD Eldense
+Spain LaLiga Hypermotion	67	67	66	65
+
+Sparta Rotterdam
+Netherlands VriendenLoterij Eredivisie	67	66	67	68
+
+Rosenborg BK
+Norway Eliteserien	67	68	66	68
+
+Fortuna Düsseldorf
+Germany 3. Liga	67	68	66	68
+
+Ascoli
+Italy Serie BKT	67	68	67	67
+
+Vicenza
+Italy Serie BKT	67	68	67	68
+
+Arezzo
+Italy Serie BKT	67	67	65	66
+
+IFK Göteborg
+Sweden Allsvenskan	67	67	65	65
+
+Waasland-Beveren
+Belgium Jupiler Pro League	67	69	66	66
+
+Coquimbo Unido
+Chilean Campeonato Nacional	67	66	65	69
+
+Cesena FC
+Italy Serie BKT	67	67	66	67
+
+FC Lausanne-Sport
+Switzerland Brack Super League	67	66	65	67
+
+Querétaro
+Mexico Liga BBVA MX	67	66	68	67
+
+Puebla FC
+Mexico Liga BBVA MX	67	65	66	68
+
+Mantova
+Italy Serie BKT	67	68	67	65
+
+Aberdeen FC
+Scotland William Hill Premiership	67	70	66	66
+
+Marítimo
+Liga Portugal Betclic	67	66	67	66
+
+AD Ceuta FC
+Spain LaLiga Hypermotion	67	65	67	66
+
+Carrarese
+Italy Serie BKT	67	67	67	66
+
+Fortuna Sittard
+Netherlands VriendenLoterij Eredivisie	67	68	67	66
+
+PEC Zwolle
+Netherlands VriendenLoterij Eredivisie	67	67	67	67
+
+FC Andorra
+Spain LaLiga Hypermotion	67	64	65	66
+
+FC Groningen
+Netherlands VriendenLoterij Eredivisie	67	66	68	67
+
+Luton Town
+England Sky Bet League One	67	66	66	68
+
+RAAL La Louvière
+Belgium Jupiler Pro League	67	63	66	68
+
+Wieczysta Kraków
+Poland PKO Bank Ekstraklasa	67	67	67	66
+
+Huddersfield Town
+England Sky Bet League One	67	66	66	67
+
+Dinamo Bucureşti
+Romania SuperLiga României	67	67	67	66
+
+Pogoń Szczecin
+Poland PKO Bank Ekstraklasa	67	67	67	67
+
+Benevento
+Italy Serie BKT	67	68	66	68
+
+SV Zulte Waregem
+Belgium Jupiler Pro League	67	64	68	66
+
+Zagłębie Lubin
+Poland PKO Bank Ekstraklasa	67	67	66	67
+
+Royal Charleroi Sporting Club
+Belgium Jupiler Pro League	67	67	65	67
+
+Santa Clara
+Liga Portugal Betclic	67	68	65	66
+
+Cienciano
+Peruvian Primera División	67	68	67	67
+
+Eintracht Braunschweig
+Germany 2. Bundesliga	67	66	67	67
+
+SpVgg Greuther Fürth
+Germany 2. Bundesliga	67	69	66	66
+
+KVC Westerlo
+Belgium Jupiler Pro League	67	67	66	64
+
+Red Star FC
+France Ligue 2 BKT	67	66	66	67
+
+CE Sabadell FC
+Spain LaLiga Hypermotion	67	68	67	66
+
+New York Red Bulls
+United States Major League Soccer	67	70	68	65
+
+Colorado Rapids
+United States Major League Soccer	67	65	67	67
+
+IF Elfsborg
+Sweden Allsvenskan	67	65	68	68
+
+Djurgårdens IF
+Sweden Allsvenskan	67	67	67	66
+
+BK Häcken
+Sweden Allsvenskan	67	64	66	66
+
+Mjällby AIF
+Sweden Allsvenskan	67	67	66	68
+
+Academico Viseu
+Liga Portugal Betclic	67	65	66	64
+
+Empoli
+Italy Serie BKT	67	67	66	66
+
+Daejeon Citizen
+Korea Republic Hana Bank K League 1	67	67	67	67
+
+Cercle Brugge KSV
+Belgium Jupiler Pro League	67	67	66	63
+
+VfL Osnabrück
+Germany 2. Bundesliga	67	69	66	67
+
+GAIS
+Sweden Allsvenskan	67	66	66	68
+
+Radomiak Radom
+Poland PKO Bank Ekstraklasa	67	66	67	67
+
+Club Atlético Juventud
+Uruguayan Primera División	67	67	66	67
+
+Gangwon FC
+Korea Republic Hana Bank K League 1	67	64	68	67
+
+Motor Lublin
+Poland PKO Bank Ekstraklasa	67	69	67	66
+
+Virtus Entella
+Italy Serie BKT	67	67	68	67
+
+SS Juve Stabia
+Italy Serie BKT	67	66	67	66
+
+Reading FC
+England Sky Bet League One	66	67	66	65
+
+Al Faisaly
+Saudi Abdul L. Jameel League	66	67	65	66
+
+Milton Keynes Dons
+England Sky Bet League One	66	66	67	66
+
+Al Fateh
+Saudi Abdul L. Jameel League	66	63	68	65
+
+Bradford City
+England Sky Bet League One	66	66	66	66
+
+Grenoble Foot 38
+France Ligue 2 BKT	66	66	65	66
+
+Hansa Rostock
+Germany 3. Liga	66	65	66	65
+
+MSV Duisburg
+Germany 3. Liga	66	67	66	67
+
+Lommel SK
+Belgium Jupiler Pro League	66	64	66	65
+
+Lillestrøm SK
+Norway Eliteserien	66	68	65	65
+
+IK Sirius
+Sweden Allsvenskan	66	65	67	66
+
+En Avant Guingamp
+France Ligue 2 BKT	66	65	65	66
+
+Sarpsborg 08 FF
+Norway Eliteserien	66	66	66	66
+
+Wisła Kraków
+Poland PKO Bank Ekstraklasa	66	67	66	64
+
+Motherwell FC
+Scotland William Hill Premiership	66	67	67	65
+
+Shanghai Shenhua
+Chinese Super League	66	64	67	66
+
+Willem II
+Netherlands VriendenLoterij Eredivisie	66	67	65	65
+
+FC Luzern
+Switzerland Brack Super League	66	66	67	66
+
+Blackpool FC
+England Sky Bet League One	66	66	66	65
+
+Deportivo Cuenca
+Ecuadorian Serie A	66	66	66	66
+
+Plymouth Argyle
+England Sky Bet League One	66	65	66	66
+
+ADO Den Haag
+Netherlands VriendenLoterij Eredivisie	66	66	65	64
+
+Wycombe Wanderers
+England Sky Bet League One	66	67	65	67
+
+Carabobo FC
+Venezuelan Primera División	66	66	67	66
+
+Macará
+Ecuadorian Serie A	66	66	66	66
+
+FC Argeș
+Romania SuperLiga României	66	66	64	66
+
+Vålerenga Fotball
+Norway Eliteserien	66	65	64	65
+
+Beijing Guoan
+Chinese Super League	66	70	66	63
+
+UTA Arad
+Romania SuperLiga României	66	67	66	65
+
+Al Fayha
+Saudi Abdul L. Jameel League	66	67	65	66
+
+FC Energie Cottbus
+Germany 2. Bundesliga	66	62	67	64
+
+Abha
+Saudi Abdul L. Jameel League	66	73	66	63
+
+Viborg FF
+Denmark 3F Superliga	66	66	67	66
+
+Leyton Orient
+England Sky Bet League One	66	65	65	64
+
+Sønderjyske Fodbold
+Denmark 3F Superliga	66	65	63	63
+
+FC Anyang
+Korea Republic Hana Bank K League 1	66	67	63	66
+
+Incheon United FC
+Korea Republic Hana Bank K League 1	66	68	66	66
+
+AIK
+Sweden Allsvenskan	66	67	65	65
+
+FC Thun
+Switzerland Brack Super League	66	65	63	66
+
+Excelsior
+Netherlands VriendenLoterij Eredivisie	66	65	66	66
+
+Academia Puerto Cabello
+Venezuelan Primera División	66	65	66	67
+
+Dundee United FC
+Scotland William Hill Premiership	66	66	66	64
+
+Sporting Kansas City
+United States Major League Soccer	66	63	68	65
+
+Wolfsberger AC
+Austria Admiral Bundesliga	66	67	66	66
+
+CD Palestino
+Chilean Campeonato Nacional	66	65	66	66
+
+Audax Italiano
+Chilean Campeonato Nacional	66	67	66	64
+
+Universidad Central de Venezuela
+Venezuelan Primera División	66	68	67	66
+
+Piast Gliwice
+Poland PKO Bank Ekstraklasa	66	66	65	66
+
+Pau FC
+France Ligue 2 BKT	66	65	66	66
+
+Deportivo Recoleta
+Paraguayan Primera División	66	65	67	66
+
+CD O'Higgins
+Chilean Campeonato Nacional	66	66	66	65
+
+Montevideo City Torque
+Uruguayan Primera División	66	66	68	65
+
+Atlante
+Mexico Liga BBVA MX	66	65	67	65
+
+Gimcheon Sangmu FC
+Korea Republic Hana Bank K League 1	65	66	65	65
+
+SV Ried
+Austria Admiral Bundesliga	65	63	65	64
+
+Silkeborg IF
+Denmark 3F Superliga	65	63	63	64
+
+Rot-Weiss Essen
+Germany 3. Liga	65	66	65	65
+
+SC Preußen Münster
+Germany 3. Liga	65	65	62	64
+
+Stade Lavallois Mayenne FC
+France Ligue 2 BKT	65	63	64	64
+
+Clermont Foot 63
+France Ligue 2 BKT	65	63	64	65
+
+Telstar
+Netherlands VriendenLoterij Eredivisie	65	65	64	66
+
+AS Nancy Lorraine
+France Ligue 2 BKT	65	65	65	65
+
+Alemannia Aachen
+Germany 3. Liga	65	62	65	64
+
+FC Annecy
+France Ligue 2 BKT	65	65	66	64
+
+Rodez Aveyron Football
+France Ligue 2 BKT	65	64	65	65
+
+Grasshopper Club Zürich
+Switzerland Brack Super League	65	63	66	61
+
+Al Hazem FC
+Saudi Abdul L. Jameel League	65	75	66	61
+
+Eyüpspor
+Türkiye Trendyol Süper Lig	65	58	65	64
+
+Shandong Taishan
+Chinese Super League	65	71	68	62
+
+Real Sociedad de Fútbol B
+Spain LaLiga Hypermotion	65	65	64	64
+
+Blooming
+Liga de Fútbol Profesional Boliviano	65	65	65	64
+
+RC Celta Fortuna
+Spain LaLiga Hypermotion	65	65	64	65
+
+SC Cambuur
+Netherlands VriendenLoterij Eredivisie	65	63	65	65
+
+Chengdu Rongcheng
+Chinese Super League	65	65	69	62
+
+Stockport County
+England Sky Bet League One	65	65	66	65
+
+Caracas FC
+Venezuelan Primera División	65	64	65	65
+
+Al Riyadh
+Saudi Abdul L. Jameel League	65	68	64	60
+
+Always Ready
+Liga de Fútbol Profesional Boliviano	65	67	65	64
+
+Mansfield Town
+England Sky Bet League One	65	66	65	64
+
+Al Kholood
+Saudi Abdul L. Jameel League	65	66	67	63
+
+Shanghai Port
+Chinese Super League	65	68	64	63
+
+FC Botoşani
+Romania SuperLiga României	65	67	65	64
+
+SC Rheindorf Altach
+Austria Admiral Bundesliga	65	63	66	63
+
+Tromsø IL
+Norway Eliteserien	65	63	66	64
+
+KFUM-Kameratene Oslo
+Norway Eliteserien	65	64	66	63
+
+Bucheon 1995
+Korea Republic Hana Bank K League 1	65	66	65	66
+
+USL Dunkerque
+France Ligue 2 BKT	65	67	63	66
+
+Pohang Steelers
+Korea Republic Hana Bank K League 1	65	65	64	66
+
+Jeju United FC
+Korea Republic Hana Bank K League 1	65	66	65	66
+
+Deportivo La Guaira
+Venezuelan Primera División	65	66	66	64
+
+Hamarkameratene
+Norway Eliteserien	65	64	65	65
+
+Grazer AK 1902
+Austria Admiral Bundesliga	65	64	66	65
+
+CFR Cluj
+Romania SuperLiga României	65	69	64	65
+
+TSV Hartberg
+Austria Admiral Bundesliga	65	64	66	65
+
+Boston River
+Uruguayan Primera División	65	66	66	65
+
+HJK Helsinki
+Finland Veikkausliiga	65	64	65	64
+
+SV Wehen Wiesbaden
+Germany 3. Liga	65	65	65	65
+
+Śląsk Wrocław
+Poland PKO Bank Ekstraklasa	65	64	65	64
+
+Oțelul Galați
+Romania SuperLiga României	65	65	65	64
+
+Fredrikstad FK
+Norway Eliteserien	65	65	65	64
+
+Mohun Bagan Super Giant
+Indian Super League	65	65	64	66
+
+FCV Farul Constanța
+Romania SuperLiga României	65	65	64	65
+
+Salford City
+England Sky Bet League Two	64	68	63	64
+
+1. FC Saarbrücken
+Germany 3. Liga	64	64	64	65
+
+Austria Lustenau
+Austria Admiral Bundesliga	64	65	64	64
+
+US Boulogne Cote d'Opale
+France Ligue 2 BKT	64	64	65	64
+
+SSV Jahn Regensburg
+Germany 3. Liga	64	64	64	64
+
+Zhejiang FC
+Chinese Super League	64	64	65	62
+
+Corvinul Hunedoara
+Romania SuperLiga României	64	65	64	64
+
+Shamrock Rovers
+Republic of Ireland SSE Airtricity League Premier Division	64	64	64	64
+
+Kristiansund BK
+Norway Eliteserien	64	63	64	63
+
+Västerås SK
+Sweden Allsvenskan	64	62	64	64
+
+Viktoria Köln
+Germany 3. Liga	64	62	64	64
+
+Halmstads BK
+Sweden Allsvenskan	64	64	64	64
+
+Kilmarnock FC
+Scotland William Hill Premiership	64	63	64	63
+
+IF Brommapojkarna
+Sweden Allsvenskan	64	65	64	65
+
+Stevenage
+England Sky Bet League One	64	64	64	65
+
+Bromley
+England Sky Bet League One	64	64	64	64
+
+Wigan Athletic
+England Sky Bet League One	64	62	64	64
+
+FC Zürich
+Switzerland Brack Super League	64	66	63	63
+
+Vietnam
+National Teams	64	65	63	63
+
+AFC Wimbledon
+England Sky Bet League One	64	64	64	64
+
+FC Ingolstadt 04
+Germany 3. Liga	64	65	64	65
+
+Port Vale
+England Sky Bet League Two	64	57	64	64
+
+Wuhan Three Towns
+Chinese Super League	64	74	65	61
+
+Barnsley
+England Sky Bet League One	64	63	63	63
+
+Doncaster Rovers
+England Sky Bet League One	64	66	64	63
+
+Notts County
+England Sky Bet League One	64	62	63	64
+
+Cambridge United
+England Sky Bet League One	64	63	63	62
+
+Lyngby Boldklub
+Denmark 3F Superliga	64	64	64	64
+
+Auckland FC
+Australian Hyundai A-League	64	65	63	65
+
+Alianza Atlético
+Peruvian Primera División	64	65	65	64
+
+Dundee FC
+Scotland William Hill Premiership	64	61	63	64
+
+WSG Tirol
+Austria Admiral Bundesliga	64	63	65	62
+
+SV Waldhof Mannheim
+Germany 3. Liga	64	65	64	64
+
+Yunnan Yukun
+Chinese Super League	64	70	65	64
+
+Sandefjord Fotball
+Norway Eliteserien	64	64	64	64
+
+FC Sochaux-Montbéliard
+France Ligue 2 BKT	64	66	64	63
+
+Sepsi OSK
+Romania SuperLiga României	64	62	63	63
+
+Degerfors IF
+Sweden Allsvenskan	64	63	65	63
+
+Dijon FCO
+France Ligue 2 BKT	64	64	65	63
+
+IK Start
+Norway Eliteserien	64	65	64	62
+
+SV Meppen
+Germany 3. Liga	63	62	63	63
+
+FC Voluntari
+Romania SuperLiga României	63	63	64	63
+
+Adelaide United
+Australian Hyundai A-League	63	66	62	64
+
+Melbourne Victory
+Australian Hyundai A-League	63	59	63	62
+
+Sydney FC
+Australian Hyundai A-League	63	58	61	65
+
+Western Sydney Wanderers
+Australian Hyundai A-League	63	66	63	62
+
+Independiente Petrolero
+Liga de Fútbol Profesional Boliviano	63	69	64	60
+
+Falkirk FC
+Scotland William Hill Premiership	63	62	63	64
+
+TSV Havelse
+Germany 3. Liga	63	63	63	62
+
+SC Fortuna Köln
+Germany 3. Liga	63	63	63	62
+
+Melbourne City FC
+Australian Hyundai A-League	63	60	64	62
+
+Csíkszereda Miercurea Ciuc
+Romania SuperLiga României	63	65	62	62
+
+FC Würzburger Kickers
+Germany 3. Liga	63	63	61	63
+
+Gwangju FC
+Korea Republic Hana Bank K League 1	63	63	64	61
+
+Chesterfield
+England Sky Bet League Two	63	63	64	63
+
+Northampton Town
+England Sky Bet League Two	63	61	63	63
+
+Peterborough United
+England Sky Bet League One	63	66	62	63
+
+Shenzhen Peng City
+Chinese Super League	63	70	65	62
+
+Kalmar FF
+Sweden Allsvenskan	63	62	64	63
+
+Henan FC
+Chinese Super League	63	72	64	62
+
+SC Verl
+Germany 3. Liga	63	61	64	62
+
+AC Horsens
+Denmark 3F Superliga	63	65	62	62
+
+St Patrick's Athletic FC
+Republic of Ireland SSE Airtricity League Premier Division	63	62	62	63
+
+Burton Albion
+England Sky Bet League One	63	64	63	63
+
+Bristol Rovers
+England Sky Bet League Two	63	64	63	62
+
+Örgryte IS
+Sweden Allsvenskan	63	63	64	63
+
+St. Mirren
+Scotland William Hill Premiership	63	64	62	63
+
+Dalian Yingbo
+Chinese Super League	63	65	64	62
+
+Aalesunds FK
+Norway Eliteserien	63	61	65	62
+
+Asociația Clubul Sportiv Petrolul 52
+Romania SuperLiga României	63	61	63	64
+
+Rotherham United
+England Sky Bet League Two	62	63	62	62
+
+Gillingham
+England Sky Bet League Two	62	62	61	60
+
+Walsall
+England Sky Bet League Two	62	61	62	62
+
+SG Sonnenhof Großaspach
+Germany 3. Liga	62	63	63	62
+
+FC Vaduz
+Switzerland Brack Super League	62	63	61	62
+
+Newcastle Jets
+Australian Hyundai A-League	62	62	64	62
+
+Liaoning Tieren FC
+Chinese Super League	62	68	65	59
+
+Grimsby Town
+England Sky Bet League Two	62	62	62	62
+
+India
+National Teams	62	56	59	62
+
+Crewe Alexandra
+England Sky Bet League Two	62	63	62	63
+
+Oldham Athletic
+England Sky Bet League Two	62	61	61	62
+
+Fleetwood Town
+England Sky Bet League Two	62	62	60	62
+
+Barnet
+England Sky Bet League Two	62	63	61	62
+
+Swindon Town
+England Sky Bet League Two	62	62	61	63
+
+Colchester United
+England Sky Bet League Two	62	59	62	63
+
+Cheltenham Town
+England Sky Bet League Two	62	65	63	62
+
+Tianjin Jinmen Tiger
+Chinese Super League	62	72	62	61
+
+Qingdao West Coast FC
+Chinese Super League	62	71	65	60
+
+Macarthur FC
+Australian Hyundai A-League	62	59	64	63
+
+Derry City
+Republic of Ireland SSE Airtricity League Premier Division	62	60	62	59
+
+St Johnstone FC
+Scotland William Hill Premiership	62	63	62	62
+
+Tranmere Rovers
+England Sky Bet League Two	62	61	62	61
+
+Brisbane Roar
+Australian Hyundai A-League	61	61	61	61
+
+Perth Glory
+Australian Hyundai A-League	61	62	62	62
+
+Crawley Town
+England Sky Bet League Two	61	61	61	61
+
+Bohemian FC
+Republic of Ireland SSE Airtricity League Premier Division	61	61	62	60
+
+Shelbourne FC
+Republic of Ireland SSE Airtricity League Premier Division	61	60	61	61
+
+VfB Stuttgart II
+Germany 3. Liga	61	61	62	62
+
+Newport County
+England Sky Bet League Two	61	61	59	61
+
+Shrewsbury Town
+England Sky Bet League Two	61	60	60	63
+
+Exeter City
+England Sky Bet League Two	61	61	62	62
+
+York City
+England Sky Bet League Two	61	63	61	61
+
+Rochdale
+England Sky Bet League Two	61	61	62	61
+
+TSG 1899 Hoffenheim II
+Germany 3. Liga	60	60	61	59
+
+Qingdao Hainiu FC
+Chinese Super League	60	68	60	59
+
+Bengaluru FC
+Indian Super League	60	61	59	56
+
+Chongqing Tonglianglong FC
+Chinese Super League	60	63	60	60
+
+Accrington Stanley
+England Sky Bet League Two	60	59	60	60
+
+Jamshedpur FC
+Indian Super League	60	57	60	61
+
+Galway United
+Republic of Ireland SSE Airtricity League Premier Division	59	59	59	58
+
+Drogheda United
+Republic of Ireland SSE Airtricity League Premier Division	59	58	59	59
+
+Central Coast Mariners
+Australian Hyundai A-League	59	59	59	60
+
+Sligo Rovers
+Republic of Ireland SSE Airtricity League Premier Division	59	56	59	58
+
+United Tigers SC
+Indian Super League	59	58	58	58
+
+NorthEast United
+Indian Super League	59	67	58	55
+
+FC Goa
+Indian Super League	59	57	55	60
+
+Wellington Phoenix
+Australian Hyundai A-League	59	61	59	59
+
+Waterford FC
+Republic of Ireland SSE Airtricity League Premier Division	59	61	58	58
+
+Dundalk
+Republic of Ireland SSE Airtricity League Premier Division	58	53	58	58
+
+Chennaiyin FC
+Indian Super League	58	54	58	56
+
+Mumbai City FC
+Indian Super League	58	65	56	56
+
+Punjab FC
+Indian Super League	56	63	54	53
+
+Odisha FC
+Indian Super League	56	53	56	53
+
+SC Delhi
+Indian Super League	55	54	55	55
+
+Inter Kashi
+Indian Super League	54	59	52	53
+
+Kerala Blasters FC
+Indian Super League	54	55	55	54

@@ -4,6 +4,32 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.10.0.0",
+    date: "2026-09-25",
+    sections: [
+      {
+        kind: "Changed",
+        items: [
+          'The team picker now carries EA SPORTS FC 27 teams and ratings, replacing the FIFA 23 catalogue: 684 clubs across 54 leagues plus 51 national teams (OVR 54–86), taken from the FC 27 launch roster (17 Sep 2026). Promoted and relegated clubs sit in their 2026–27 divisions, and competitions keep the "Country League" naming so searching by country still works (e.g. "England Premier League", "Spain LaLiga EA Sports").',
+          "Matches already played keep the FIFA 23 ratings they were played with. FC 27 teams, national sides included, get new team ids, and the FIFA 23 entries are retired from the picker rather than re-rated, so a season recalc can't shift the team-strength handicap on old results. The national teams previously kept fixed ids across catalogue updates; they now version with the game like clubs do.",
+          "Auto-dealt fixtures and open finals ties that were dealt FIFA 23 teams before the switch can still be recorded with those teams. Only matches where players choose their own teams now require a team from the current picker; fixture and finals results already have to use exactly the teams the engine dealt, so retiring a catalogue no longer strands a matchup that's in progress.",
+        ],
+      },
+    ],
+  },
+  {
+    version: "1.9.0.1",
+    date: "2026-09-22",
+    sections: [
+      {
+        kind: "Fixed",
+        items: [
+          'The Final score step in "Log a match" (and the same stepper in SnapFlow\'s verify step) broke out of the screen on narrow viewports — Android phones and narrow web windows showed the − / + buttons half-clipped at the screen edges. The stepper buttons kept their fixed size, squeezing the growing "0" glyph out of the row, and on web the input\'s width contribution came from `min-width` alone, so React Native Web measured it as unconstrained text and let the row overflow its parent. The buttons are now `flex-shrink: 0`, the column carries `min-width: 0`, and the score input is `flex: 1` capped at 72px, so the input absorbs any shrinkage and the whole row stays inside the visible screen on native and web.',
+        ],
+      },
+    ],
+  },
+  {
     version: "1.9.0.0",
     date: "2026-08-25",
     sections: [

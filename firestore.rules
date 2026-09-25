@@ -33,10 +33,16 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/seasons/$(seasonId))
         && get(/databases/$(database)/documents/seasons/$(seasonId)).data.active == true;
     }
-    function isValidTeam(teamId, teamName) {
+    function isNamedTeam(teamId, teamName) {
       return exists(/databases/$(database)/documents/teams/$(teamId))
-        && get(/databases/$(database)/documents/teams/$(teamId)).data.active == true
         && get(/databases/$(database)/documents/teams/$(teamId)).data.name == teamName;
+    }
+    // Free-choice (manual) matches must use a team still in the picker. Fixture and finals
+    // submissions only need isNamedTeam: they must mirror the teams the engine dealt, so a
+    // catalogue sync that retires those teams mid-matchup doesn't strand the tie.
+    function isValidTeam(teamId, teamName) {
+      return isNamedTeam(teamId, teamName)
+        && get(/databases/$(database)/documents/teams/$(teamId)).data.active == true;
     }
     function fixtureData(fixtureId) {
       return get(/databases/$(database)/documents/fixtures/$(fixtureId)).data;
@@ -180,8 +186,8 @@ service cloud.firestore {
         && isLeagueMember(request.resource.data.aId)
         && isLeagueMember(request.resource.data.bId)
         && isActiveSeason(request.resource.data.seasonId)
-        && isValidTeam(request.resource.data.aTeamId, request.resource.data.aTeam)
-        && isValidTeam(request.resource.data.bTeamId, request.resource.data.bTeam)
+        && isNamedTeam(request.resource.data.aTeamId, request.resource.data.aTeam)
+        && isNamedTeam(request.resource.data.bTeamId, request.resource.data.bTeam)
         && request.resource.data.aGoals is int
         && request.resource.data.bGoals is int
         && request.resource.data.aGoals >= 0
@@ -194,7 +200,9 @@ service cloud.firestore {
             && !('fixtureId' in request.resource.data)
             && !('finals' in request.resource.data)
             && !('finalsSlot' in request.resource.data)
-            && !('decidedBy' in request.resource.data))
+            && !('decidedBy' in request.resource.data)
+            && isValidTeam(request.resource.data.aTeamId, request.resource.data.aTeam)
+            && isValidTeam(request.resource.data.bTeamId, request.resource.data.bTeam))
           || (request.resource.data.source == 'fixture'
             && 'fixtureId' in request.resource.data
             && request.resource.data.fixtureId is string

@@ -8,6 +8,7 @@ import {
   assertValidDraftId,
   DraftSecurityError,
   evaluateDraftSubmission,
+  isSubmittableTeam,
   type DraftState,
   type MatchState,
 } from "./draftSecurity";
@@ -134,9 +135,12 @@ export const submitAiAssistedMatch = loggedOnCall(
       if (!seasonSnap.exists || !seasonSnap.get("active"))
         throw new HttpsError("failed-precondition", "No active season.");
       if (!memberSnap.exists) throw new HttpsError("invalid-argument", "Opponent not a member.");
-      if (!myTeamSnap.exists || !myTeamSnap.get("active"))
+      // A dealt fixture pins both teams (checked below), so it stays playable after a
+      // catalogue sync retires them.
+      const pinnedByFixture = fixtureSnap !== null;
+      if (!isSubmittableTeam(myTeamSnap, pinnedByFixture))
         throw new HttpsError("invalid-argument", "Your team not active.");
-      if (!opponentTeamSnap.exists || !opponentTeamSnap.get("active"))
+      if (!isSubmittableTeam(opponentTeamSnap, pinnedByFixture))
         throw new HttpsError("invalid-argument", "Opponent team not active.");
 
       // Auto-matchup submissions must honor the dealt fixture: same season, same pair,
