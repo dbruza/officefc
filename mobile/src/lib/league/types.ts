@@ -294,6 +294,8 @@ export interface TeamCatalogueSyncResult {
   deactivated: number;
   deleted: number;
   active: number;
+  /** Absent from functions deployed before the carry-over shipped. */
+  overridesCarried?: number;
   skipped: boolean;
 }
 

@@ -64,7 +64,7 @@ function normalizeSide(side, label, flags) {
 }
 
 /**
- * Normalize a raw report_match_stats tool input.
+ * Normalize a raw report_match_stats object from the model.
  * @returns {{
  *   ok: boolean, reason?: string, detectedScreen: boolean, confidence: number,
  *   requiresReview: boolean, flags: string[],

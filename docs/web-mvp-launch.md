@@ -31,12 +31,12 @@ EXPO_PUBLIC_USE_EMULATORS=0
 The build fails before export if a required Firebase value is missing, the project ID is
 wrong, or emulators are enabled.
 
-## 2. Configure the Anthropic secret
+## 2. Configure the OpenRouter secret
 
 Set or rotate the secret without putting it in `.env` or Git:
 
 ```bash
-firebase functions:secrets:set ANTHROPIC_API_KEY --project office-fc
+firebase functions:secrets:set OPENROUTER_API_KEY --project office-fc
 ```
 
 After rotation, redeploy Functions so new instances receive the latest secret:
@@ -186,6 +186,6 @@ production data as a rollback mechanism.
   `officefc-functions` projects for new issues. Until then Sentry is dormant and a
   `sentry_disabled` warning appears in Cloud Logging.
 - Firebase Usage and billing: set budget alerts for the project.
-- Rotate `ANTHROPIC_API_KEY` immediately if exposed, then redeploy Functions.
+- Rotate `OPENROUTER_API_KEY` immediately if exposed, then redeploy Functions.
 - Keep native/EAS configuration buildable, but do not include App Store or Play Store work
   in the web MVP release.

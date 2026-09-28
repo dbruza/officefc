@@ -6,13 +6,13 @@ stat fields are secondary.
 
 ```bash
 npm run eval                                    # MOCK mode — no network, exercises the harness
-ANTHROPIC_API_KEY=sk-ant-… npm run eval -- --real  # REAL mode — scores Claude against labels
-node eval/run-eval.mjs --real --model claude-sonnet-4-5  # custom model
+OPENROUTER_API_KEY=sk-or-… npm run eval -- --real  # REAL mode — scores the model against labels
+node eval/run-eval.mjs --real --model meta/muse-spark-1.3  # score another OpenRouter model
 node eval/run-eval.mjs --real --output results.csv       # CSV output for tracking
 node eval/validate-labels.mjs                             # check labels before running
 ```
 
-In REAL mode you can also set `ANTHROPIC_BASE_URL`.
+In REAL mode you can also set `OPENROUTER_BASE_URL`, or `EXTRACTION_MODEL` instead of `--model`.
 
 ## Eval gate (M4 release requirement)
 

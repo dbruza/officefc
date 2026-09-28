@@ -9,5 +9,12 @@ export interface TeamFilters {
   overall: TeamOverallFilter;
 }
 
+export const TEAM_ALIASES: Readonly<Record<string, string | null>>;
 export function normalizeTeamSearch(value: unknown): string;
+export function normalizeTeamName(value: unknown): string;
+export function teamNameCore(value: unknown): string;
 export function filterTeams(teams: Team[], filters: TeamFilters): Team[];
+export function matchTeamName<T extends Pick<Team, "name">>(
+  teams: T[],
+  name: string | null | undefined,
+): T | null;

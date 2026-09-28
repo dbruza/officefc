@@ -16,9 +16,9 @@ export const SYSTEM_PROMPT = [
   "- `xg` is expected goals — a decimal like 1.4; transcribe it exactly as printed.",
   "- Set `detected_screen` to true ONLY if this is clearly such a stats screen; otherwise false.",
   "- Report your honest `confidence` (0–1) that the values are correct.",
-  "- Always answer by calling the report_match_stats tool — never with free text.",
+  "- Answer with the report_match_stats JSON object only — no other text.",
 ].join("\n");
 
 // The user-turn instruction that accompanies the image.
 export const USER_INSTRUCTION =
-  "Read this end-of-match stats screen and report the result and key stats via the tool.";
+  "Read this end-of-match stats screen and report the result and key stats as JSON.";

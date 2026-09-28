@@ -21,7 +21,7 @@ You need:
 - Firebase project `office-fc` on the Blaze plan, with Email/Password Auth, Firestore,
   Storage, and Functions enabled.
 - An Expo account and EAS CLI access.
-- An Anthropic API key.
+- An OpenRouter API key (photo stats extraction).
 - For an EAS-built iPhone app: a paid Apple Developer account and an iPhone with
   Developer Mode enabled.
 - For Android: a physical phone with installation from the EAS download link allowed.
@@ -58,10 +58,10 @@ The result should identify `office-fc`. If it does not:
 firebase use office-fc
 ```
 
-Store the Anthropic key in Secret Manager. Do not put it in `mobile/.env`:
+Store the OpenRouter key in Secret Manager. Do not put it in `mobile/.env`:
 
 ```bash
-firebase functions:secrets:set ANTHROPIC_API_KEY
+firebase functions:secrets:set OPENROUTER_API_KEY
 ```
 
 Deploy the backend, indexes, and security rules:
@@ -76,7 +76,7 @@ In Firebase Console, confirm:
 - Firestore and Storage exist in the same project used by the app.
 - Functions includes `extractMatchStats`, `submitAiAssistedMatch`,
   `getMatchPhotoUrl`, match lifecycle functions, and scheduled functions.
-- The `ANTHROPIC_API_KEY` secret is attached to `extractMatchStats`.
+- The `OPENROUTER_API_KEY` secret is attached to `extractMatchStats`.
 
 Official references:
 

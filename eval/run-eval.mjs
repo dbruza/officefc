@@ -2,8 +2,8 @@
    Compares the extractor's output against labeled stats-screen images.
 
      node eval/run-eval.mjs                  # MOCK mode (no network) — exercises the harness
-     node eval/run-eval.mjs --real           # REAL mode — scores Claude vs labels
-     node eval/run-eval.mjs --real --model claude-sonnet-4-5  # custom model
+     node eval/run-eval.mjs --real           # REAL mode — scores the model vs labels
+     node eval/run-eval.mjs --real --model meta/muse-spark-1.3  # score another OpenRouter model
      node eval/run-eval.mjs --real --output results.csv       # CSV output for tracking
 
    Grow the set by dropping an image in eval/images/ and a matching label in
@@ -12,7 +12,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { extractMatchFromImage } from "../functions/src/extract/core/extract.mjs";
-import { mockResponse } from "../functions/src/extract/core/anthropic.mjs";
+import { mockResponse } from "../functions/src/extract/core/openrouter.mjs";
 import { DEFAULT_MODEL } from "../functions/src/extract/core/schema.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -20,14 +20,14 @@ const labelsDir = join(here, "labels");
 const imagesDir = join(here, "images");
 
 const args = process.argv.slice(2);
-const MODE = args.includes("--real") && process.env.ANTHROPIC_API_KEY ? "REAL" : "MOCK";
-const MODEL = args.find((_, i) => args[i - 1] === "--model") || process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+const MODE = args.includes("--real") && process.env.OPENROUTER_API_KEY ? "REAL" : "MOCK";
+const MODEL = args.find((_, i) => args[i - 1] === "--model") || process.env.EXTRACTION_MODEL || DEFAULT_MODEL;
 const OUTPUT = args.find((_, i) => args[i - 1] === "--output") || null;
-const apiKey = process.env.ANTHROPIC_API_KEY;
-const baseUrl = process.env.ANTHROPIC_BASE_URL || undefined;
+const apiKey = process.env.OPENROUTER_API_KEY;
+const baseUrl = process.env.OPENROUTER_BASE_URL || undefined;
 
 if (args.includes("--real") && !apiKey) {
-  console.error("--real requires ANTHROPIC_API_KEY in the environment.");
+  console.error("--real requires OPENROUTER_API_KEY in the environment.");
   process.exit(1);
 }
 
@@ -132,7 +132,7 @@ async function run() {
     console.log(`  ${f.padEnd(20)} ${fieldRight[f]}/${n}` + (n ? ` (${Math.round((fieldRight[f] / n) * 100)}%)` : ""));
   }
   if (errors) console.log(`Errors: ${errors}`);
-  console.log(MODE === "MOCK" ? "\n(MOCK mode — set ANTHROPIC_API_KEY and use --real to score the real model.)\n" : "");
+  console.log(MODE === "MOCK" ? "\n(MOCK mode — set OPENROUTER_API_KEY and use --real to score the real model.)\n" : "");
 
   if (OUTPUT) {
     writeFileSync(OUTPUT, csvRows.join("\n"), "utf8");

@@ -5,6 +5,7 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "../auth";
 import { extractMatchFromImage } from "./core/extract.mjs";
+import { DEFAULT_MODEL } from "./core/schema.mjs";
 import {
   asHttpsError,
   assertValidDraftId,
@@ -13,8 +14,8 @@ import {
   type DraftState,
 } from "./draftSecurity";
 
-const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
-const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+const OPENROUTER_API_KEY = defineSecret("OPENROUTER_API_KEY");
+const EXTRACTION_MODEL = DEFAULT_MODEL;
 
 const db = getFirestore();
 const storage = getStorage();
@@ -92,7 +93,7 @@ function isImageType(contentType: string | undefined): boolean {
 
 export const extractMatchStats = loggedOnCall(
   "extractMatchStats",
-  { cors: true, secrets: [ANTHROPIC_API_KEY] },
+  { cors: true, secrets: [OPENROUTER_API_KEY] },
   async (req) => {
     const { uid } = requireAuth(req);
     await assertMember(uid);
@@ -186,8 +187,8 @@ export const extractMatchStats = loggedOnCall(
       const extractionResult = await extractMatchFromImage({
         imageBase64,
         mediaType: processedType,
-        model: ANTHROPIC_MODEL,
-        apiKey: ANTHROPIC_API_KEY.value(),
+        model: EXTRACTION_MODEL,
+        apiKey: OPENROUTER_API_KEY.value(),
       });
 
       await db.runTransaction(async (tx) => {
@@ -209,7 +210,7 @@ export const extractMatchStats = loggedOnCall(
             confidence: extractionResult.confidence,
             requiresReview: extractionResult.requiresReview,
             flags: extractionResult.flags,
-            model: ANTHROPIC_MODEL,
+            model: EXTRACTION_MODEL,
             extractedAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
           },

@@ -1,7 +1,7 @@
 // ESM (.mjs) on purpose: imported directly by the root `node --test` suite and compiled by functions tsc. Do not rename to .js.
-/* OfficeFC — extraction tool schema.
+/* OfficeFC — extraction output schema.
    Runtime-agnostic (plain ESM): imported by the Cloud Function AND by the
-   Node test/eval harness. Defines the single tool Claude must call so it returns
+   Node test/eval harness. Defines the JSON object the model must answer with, so it returns
    structured data instead of prose. */
 
 // Per-side stat shape. Every numeric field is nullable: the model returns null
@@ -35,16 +35,19 @@ const SIDE_SCHEMA = {
   additionalProperties: false,
 };
 
-export const EXTRACTION_TOOL_NAME = "report_match_stats";
+export const EXTRACTION_SCHEMA_NAME = "report_match_stats";
 
-export const EXTRACTION_TOOL = {
-  name: EXTRACTION_TOOL_NAME,
+// Passed as an OpenAI-style `response_format.json_schema`, so the provider constrains the whole
+// answer to this shape. Strict mode: every property required, nullables typed as unions.
+export const EXTRACTION_SCHEMA = {
+  name: EXTRACTION_SCHEMA_NAME,
+  strict: true,
   description:
     "Report the final result and key statistics read from a football video-game " +
     "(EA Sports FC / FIFA) end-of-match / full-time stats screen. The team on the " +
     "LEFT is `home`; the team on the RIGHT is `away`. Read only what is printed on " +
     "screen — never infer or guess. Use null for any value that is not clearly legible.",
-  input_schema: {
+  schema: {
     type: "object",
     properties: {
       detected_screen: {
@@ -66,8 +69,7 @@ export const EXTRACTION_TOOL = {
   },
 };
 
-// Vision-capable Claude model. Override per environment with ANTHROPIC_MODEL.
-// NOTE: confirm this is the current vision model id for your account before deploy.
-export const DEFAULT_MODEL = "claude-sonnet-4-5";
-
-export const ANTHROPIC_VERSION = "2023-06-01";
+// OpenRouter id of the vision model extractMatchStats calls. The eval harness defaults to it
+// too, and can score another model with --model or EXTRACTION_MODEL; production always uses
+// this one. Muse Spark always reasons (no off switch), so requests set a low effort instead.
+export const DEFAULT_MODEL = "meta/muse-spark-1.3-contributor";

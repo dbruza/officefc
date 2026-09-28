@@ -34,7 +34,7 @@ scheduled jobs.
 | --- | --- |
 | App | Expo 56, React Native, Expo Router, TypeScript |
 | Backend | Firebase Auth, Firestore, Storage, Cloud Functions |
-| AI assist | Anthropic vision extraction with human review |
+| AI assist | Vision-model stats extraction via OpenRouter, with human review |
 | Observability | Sentry (app and functions), Google Cloud Logging |
 | Quality | Node test runner, Firebase Rules Unit Testing, ESLint, Prettier |
 | Delivery | Firebase Hosting, EAS configuration, GitHub Actions |

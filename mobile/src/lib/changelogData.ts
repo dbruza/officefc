@@ -4,6 +4,26 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.10.2.0",
+    date: "2026-09-28",
+    sections: [
+      {
+        kind: "Fixed",
+        items: [
+          'Photo logging now pre-picks the right team more often, and never a wrong one. It used to take the top search result for the team name printed on the stats screen, so "Roma" picked Romania, "Milan" picked Inter and "Barcelona" picked Barcelona de Guayaquil, each skewing the ELO team-strength handicap if nobody noticed. Matching now ignores club affixes (FC, AC, SSC, "de" and so on), knows common short names and scoreboard codes (Man City, Spurs, PSG, Inter, BVB, MCI), and leaves the pick to you when a name could mean more than one team ("Manchester", "Paris").',
+          'Updating the team catalogue now carries admin renames and hidden teams over to the same club in the new catalogue. Each game edition gives every team a new id, so these overrides were silently dropped, even though the confirm dialog promised to keep them. The admin button is now "Update team catalogue" and reports how many overrides it carried.',
+          "Retired teams keep the catalogue version that first retired them, instead of being re-stamped with the latest version on every sync.",
+        ],
+      },
+      {
+        kind: "Changed",
+        items: [
+          "Stats-screen reading now goes through OpenRouter to Meta's Muse Spark 1.3 (contributor tier) instead of calling Anthropic's Claude Sonnet 4.5 directly. The Anthropic account had run out of credit, so every photo had failed since 21 September. The model is one constant (`DEFAULT_MODEL`), so any other OpenRouter vision model is a one-line change. The model now answers with JSON constrained to the stats schema rather than through a forced tool call, which Meta's endpoint doesn't accept. Muse Spark always reasons, so requests ask for low effort and leave 4096 tokens for reasoning and the answer. The backend reads a new `OPENROUTER_API_KEY` secret, and the photo screen's privacy note now names OpenRouter and Muse Spark. An empty or malformed answer is reported with the model's finish reason, and running out of OpenRouter credit fails at once instead of retrying.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.10.0.0",
     date: "2026-09-25",
     sections: [

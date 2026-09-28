@@ -3,7 +3,7 @@ import { Platform, useWindowDimensions } from "react-native";
 import { logger } from "@/lib/logger";
 import { uploadMatchPhoto } from "@/lib/upload";
 import { pickMatchPhoto } from "@/lib/photoPicker";
-import { filterTeams } from "@/lib/teamSearch";
+import { matchTeamName } from "@/lib/teamSearch";
 import {
   abandonMatchDraft,
   callExtractMatchStats,
@@ -14,13 +14,6 @@ import {
 } from "@/lib/league";
 import type { Player } from "@/types";
 import type { ExtractionResult, SnapFlowProps, SnapStep } from "./types";
-
-/** Best catalogue match for a team name the AI read off the photo, or null. */
-function matchCatalogueTeam(teams: Team[], name: string | null | undefined): Team | null {
-  if (!name?.trim()) return null;
-  const [best] = filterTeams(teams, { query: name, category: "all", overall: "all" });
-  return best ?? null;
-}
 
 /** Bounded error fields for logging; `code` picks up UploadError/Firebase error codes. */
 function errorContext(err: unknown): { message: string; code: string | null } {
@@ -147,8 +140,8 @@ export function useSnapFlow(props: SnapFlowProps) {
     const s = extraction.suggestion;
     const isHome = mySide === "home";
     return {
-      my: matchCatalogueTeam(teams, (isHome ? s.home : s.away).team_name),
-      opp: matchCatalogueTeam(teams, (isHome ? s.away : s.home).team_name),
+      my: matchTeamName(teams, (isHome ? s.home : s.away).team_name),
+      opp: matchTeamName(teams, (isHome ? s.away : s.home).team_name),
     };
   }, [usesExtraction, extraction, mySide, teams]);
 

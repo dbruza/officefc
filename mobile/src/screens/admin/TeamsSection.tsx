@@ -46,9 +46,9 @@ export function TeamsSection() {
 
   function confirmSync() {
     confirmAction({
-      title: "Update FIFA catalogue",
+      title: "Update team catalogue",
       message:
-        "Update to the bundled FIFA catalogue version? Custom teams and admin overrides will be preserved.",
+        "Switch the picker to the bundled team catalogue? Teams it no longer lists are retired but keep their ratings on past matches. Custom teams stay, and renamed or hidden teams carry over to the same club in the new catalogue.",
       confirmLabel: "Update",
       onConfirm: async () => {
         setSyncing(true);
@@ -56,7 +56,7 @@ export function TeamsSection() {
           const result = await seedTeams();
           showAlert(
             `Catalogue ${result.version} updated`,
-            `${result.updated} updated · ${result.deleted} removed · ${result.deactivated} superseded · ${result.active} active.`,
+            `${result.updated} updated · ${result.deleted} removed · ${result.deactivated} superseded · ${result.overridesCarried ?? 0} overrides carried · ${result.active} active.`,
           );
           load();
         } catch (error: unknown) {
@@ -180,7 +180,7 @@ export function TeamsSection() {
         disabled={syncing}
         style={{ marginBottom: spacing.lg }}
       >
-        {syncing ? "Updating…" : "Update FIFA catalogue"}
+        {syncing ? "Updating…" : "Update team catalogue"}
       </Button>
 
       <Button

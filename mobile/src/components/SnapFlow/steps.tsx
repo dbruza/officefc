@@ -72,9 +72,9 @@ export function CaptureStep({ flow }: { flow: SnapFlowState }) {
         </View>
         <View style={styles.privacyNotice}>
           <Txt size={11.5} color={colors.textDim} style={{ textAlign: "center", lineHeight: 17 }}>
-            Photos stay private. Anthropic processes the image for extraction. League members can
-            view submitted photos through temporary links, submitters can delete them, and abandoned
-            drafts are deleted after 24 hours.
+            To read the stats, the image is sent through OpenRouter to Meta's Muse Spark model.
+            League members can view submitted photos through temporary links, submitters can delete
+            them, and abandoned drafts are deleted after 24 hours.
           </Txt>
         </View>
         {flow.error ? (
