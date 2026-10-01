@@ -11,6 +11,7 @@ export function flagLabel(field: string): string {
     away_sot_gt_shots: "Away shots on target > total shots (clamped)",
     home_xg_implausible: "Home xG looked implausible and was clamped",
     away_xg_implausible: "Away xG looked implausible and was clamped",
+    score_stats_mismatch: "The score doesn't match the shots on target and saves",
   };
   return map[field] || field;
 }

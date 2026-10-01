@@ -85,7 +85,7 @@ See [the implementation overview](docs/implementation-plan.md) and
 
 Requirements:
 
-- Node.js 20
+- Node.js 24
 - npm
 - Java 21 for the Firebase Emulator Suite
 

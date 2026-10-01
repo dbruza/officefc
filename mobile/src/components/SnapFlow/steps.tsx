@@ -23,7 +23,8 @@ import { EloLine, MatchSubmitted } from "../MatchSubmitted";
 import { OpponentPicker } from "../OpponentPicker";
 import { PhotoThumb } from "../PhotoLightbox";
 import { ScoreStepper } from "../ScoreStepper";
-import { colors, spacing } from "@/theme";
+import { colors, radius, spacing } from "@/theme";
+import { mix, withAlpha } from "@/lib/color";
 import { firstName } from "@/lib/format";
 import { useBreakpoint } from "@/lib/responsive";
 import { webStyle } from "@/lib/web";
@@ -569,6 +570,9 @@ export function VerifyStep({ flow }: Flow) {
   const mine = flow.mySide === "home" ? s?.home : s?.away;
   const theirs = flow.mySide === "home" ? s?.away : s?.home;
   const oppFirst = flow.opponent ? firstName(flow.opponent.name) : "Opponent";
+  // The score cross-check is shown live below the score instead: the AI-time flag would linger
+  // in this list even after the player fixed the misread.
+  const visibleFlags = (flow.extraction?.flags ?? []).filter((f) => f !== "score_stats_mismatch");
   const editing = () => flow.clearError();
   // Any edit clears a stale submit error — the next attempt may well succeed.
   const edit =
@@ -587,6 +591,7 @@ export function VerifyStep({ flow }: Flow) {
           onBack={() => flow.setStep("teams")}
           onNext={() => void flow.handleSubmit()}
           nextLabel="Submit match"
+          nextDisabled={flow.scoreNeedsCheck}
           loading={flow.isSubmitting}
           error={flow.error}
           onRetry={() => void flow.handleSubmit()}
@@ -603,9 +608,9 @@ export function VerifyStep({ flow }: Flow) {
           {confLabel} ({(conf * 100).toFixed(0)}%)
         </Txt>
       </View>
-      {flow.extraction?.flags?.length ? (
+      {visibleFlags.length ? (
         <View style={styles.flagBox}>
-          {flow.extraction.flags.map((f) => (
+          {visibleFlags.map((f) => (
             <Txt key={f} size={12} color={colors.draw} style={{ lineHeight: 18 }}>
               <Txt size={12} color={colors.accent}>
                 !
@@ -654,6 +659,7 @@ export function VerifyStep({ flow }: Flow) {
           </ScoreSide>
         </View>
       </Card>
+      <ScoreCheckNote flow={flow} oppFirst={oppFirst} />
 
       <View style={{ marginTop: spacing.x2 }}>
         <View style={styles.statHead}>
@@ -727,6 +733,27 @@ export function VerifyStep({ flow }: Flow) {
             myColor={statColor(flow.myXg, mine?.xg)}
             oppColor={statColor(flow.opponentXg, theirs?.xg)}
           />
+          <StatEditRow
+            label="Saves"
+            myValue={flow.mySaves}
+            oppValue={flow.opponentSaves}
+            onChangeMy={edit(flow.setMySaves)}
+            onChangeOpp={edit(flow.setOpponentSaves)}
+            oppName={oppFirst}
+            myColor={statColor(flow.mySaves, mine?.saves)}
+            oppColor={statColor(flow.opponentSaves, theirs?.saves)}
+          />
+          <StatEditRow
+            label="Ball recovery (s)"
+            myValue={flow.myBallRecoveryTime}
+            oppValue={flow.opponentBallRecoveryTime}
+            onChangeMy={edit(flow.setMyBallRecoveryTime)}
+            onChangeOpp={edit(flow.setOpponentBallRecoveryTime)}
+            oppName={oppFirst}
+            decimal
+            myColor={statColor(flow.myBallRecoveryTime, mine?.ball_recovery_time)}
+            oppColor={statColor(flow.opponentBallRecoveryTime, theirs?.ball_recovery_time)}
+          />
         </View>
       </View>
 
@@ -746,6 +773,100 @@ export function VerifyStep({ flow }: Flow) {
     </StepPage>
   );
 }
+
+/**
+ * Live score cross-check under the score card. On a mismatch it spells out the arithmetic and
+ * blocks Submit until the player either takes the suggested score or confirms theirs.
+ */
+function ScoreCheckNote({ flow, oppFirst }: Flow & { oppFirst: string }) {
+  const check = flow.scoreCheck;
+  if (check.status === "unknown") return null;
+  if (check.status === "ok") {
+    return (
+      <View style={scoreCheckStyles.okRow} accessibilityLiveRegion="polite">
+        <Icon name="check" size={14} color={colors.accent} />
+        <Txt size={12} color={colors.textDim}>
+          Score matches the shots on target and saves
+        </Txt>
+      </View>
+    );
+  }
+  if (!flow.scoreNeedsCheck) {
+    return (
+      <View style={scoreCheckStyles.okRow}>
+        <Icon name="info" size={14} color={colors.textDim} />
+        <Txt size={12} color={colors.textDim}>
+          You kept the score as entered — the stats didn&apos;t add up to it.
+        </Txt>
+      </View>
+    );
+  }
+  const lines: string[] = [];
+  if (check.mine && !check.mine.ok) {
+    lines.push(
+      `You had ${flow.myShotsOnTarget} on target and ${oppFirst}'s keeper made ${flow.opponentSaves} saves — that's ${check.mine.implied}, but the score says ${check.mine.goals}.`,
+    );
+  }
+  if (check.theirs && !check.theirs.ok) {
+    lines.push(
+      `${oppFirst} had ${flow.opponentShotsOnTarget} on target and your keeper made ${flow.mySaves} saves — that's ${check.theirs.implied}, but the score says ${check.theirs.goals}.`,
+    );
+  }
+  const suggestedMine = check.mine && !check.mine.ok ? check.mine.implied : flow.myGoals;
+  const suggestedTheirs =
+    check.theirs && !check.theirs.ok ? check.theirs.implied : flow.opponentGoals;
+  return (
+    <Reveal from="down" duration={240}>
+      <View style={scoreCheckStyles.warn} accessibilityRole="alert">
+        <View style={scoreCheckStyles.warnHead}>
+          <Icon name="info" size={16} color={colors.gold} />
+          <Txt variant="head" size={14}>
+            Check the score against the photo
+          </Txt>
+        </View>
+        {lines.map((line) => (
+          <Txt key={line} size={12.5} color={colors.textDim} style={{ lineHeight: 18 }}>
+            {line}
+          </Txt>
+        ))}
+        <View style={scoreCheckStyles.warnActions}>
+          <Button size="sm" icon="check" onPress={flow.applyImpliedScore}>
+            {`Use ${suggestedMine}–${suggestedTheirs}`}
+          </Button>
+          <Button size="sm" variant="ghost" onPress={flow.confirmScore}>
+            The score is right
+          </Button>
+        </View>
+      </View>
+    </Reveal>
+  );
+}
+
+const scoreCheckStyles = {
+  okRow: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    marginTop: spacing.sm,
+    paddingHorizontal: 2,
+  },
+  warn: {
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.gold, 0.4),
+    backgroundColor: mix(colors.surface, colors.gold, 6),
+  },
+  warnHead: { flexDirection: "row" as const, alignItems: "center" as const, gap: spacing.sm },
+  warnActions: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+};
 
 function ScoreSide({
   player,

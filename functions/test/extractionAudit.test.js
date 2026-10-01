@@ -69,3 +69,19 @@ test("null / missing raw values are ignored", () => {
   assert.deepEqual(fieldsEdited(null, { myGoals: 1 }, "home"), []);
   assert.deepEqual(fieldsEdited({ home: { goals: null }, away: {} }, { myGoals: 1 }, "home"), []);
 });
+
+test("edits to saves and ball recovery time are audited per image side", () => {
+  const read = {
+    home: { goals: 3, saves: 8, ball_recovery_time: 4 },
+    away: { goals: 1, saves: 6, ball_recovery_time: 6 },
+  };
+  const submitted = {
+    myGoals: 3,
+    opponentGoals: 1,
+    mySaves: 8,
+    opponentSaves: 7, // corrected 6 -> 7
+    myBallRecoveryTime: 5, // corrected 4 -> 5
+    opponentBallRecoveryTime: 6,
+  };
+  assert.deepEqual(fieldsEdited(read, submitted, "home"), ["away_saves", "home_ballrecoverytime"]);
+});

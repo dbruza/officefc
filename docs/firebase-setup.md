@@ -5,7 +5,7 @@ the local Emulator Suite.
 
 ## Requirements
 
-- Node.js 20
+- Node.js 24
 - Java 21
 - A Firebase project on the Blaze plan for deployed Functions and Storage
 

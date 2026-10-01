@@ -3,6 +3,42 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.12.1.0] - 2026-10-01
+
+### Changed
+
+- Cloud Functions now run on Node.js 24 (`nodejs24`, supported until October 2028). The
+  Node.js 20 runtime is decommissioned on 30 October 2026, after which the backend could no
+  longer be deployed. The Functions SDKs move to firebase-functions 7.4 and firebase-admin
+  14.5. The code already used only the v2 trigger APIs and modular Admin imports, so no
+  function behaviour changes. CI and `.nvmrc` move to Node 24 as well, so tests run on the
+  same Node major that production executes.
+
+## [1.12.0.0] - 2026-10-01
+
+### Added
+
+- Photo logging now catches a misread score. On an EA SPORTS FC full-time screen, a side's
+  goals should equal its shots on target minus the other keeper's saves (give or take one,
+  for an own goal or a goal-line block). When the score disagrees, the check screen spells
+  out the sums, for example "You had 9 on target and Sam's keeper made 6 saves — that's 3,
+  but the score says 8", and Submit waits until you either take the suggested score or
+  confirm yours is right. The check re-runs as you edit, and the server records the outcome
+  with the match.
+- Shots on target are filled in again for FC 27 photos. The FC 24+ summary screen no longer
+  prints a shots-on-target row, so the AI now reads the Shot Accuracy panel and the app
+  works the count out from shots × accuracy (exact for any real match).
+- The AI also reads Saves and Ball Recovery Time. Both can be checked and edited before
+  submitting, are stored with the match, and show on the match page.
+
+### Changed
+
+- The reading instructions now describe the FC 24+ layout (home values and side panels on
+  the left, away on the right) and warn that photos of a TV taken at an angle can shift a
+  column up or down against its row labels.
+- The extraction eval scores Saves, Ball Recovery Time and Shot Accuracy for labels that
+  include them.
+
 ## [1.11.1.0] - 2026-10-01
 
 ### Fixed

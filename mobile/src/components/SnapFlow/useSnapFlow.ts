@@ -14,6 +14,7 @@ import {
 } from "@/lib/photoPicker";
 import { matchTeamName } from "@/lib/teamSearch";
 import { friendlyError } from "@/lib/friendlyError";
+import { checkScore } from "@/lib/league/statsCheck";
 import {
   abandonMatchDraft,
   callExtractMatchStats,
@@ -90,6 +91,12 @@ export function useSnapFlow(props: SnapFlowProps) {
   const [opponentShotsOnTarget, setOpponentShotsOnTarget] = useState<number | null>(null);
   const [myXg, setMyXg] = useState<number | null>(null);
   const [opponentXg, setOpponentXg] = useState<number | null>(null);
+  const [mySaves, setMySaves] = useState<number | null>(null);
+  const [opponentSaves, setOpponentSaves] = useState<number | null>(null);
+  const [myBallRecoveryTime, setMyBallRecoveryTime] = useState<number | null>(null);
+  const [opponentBallRecoveryTime, setOpponentBallRecoveryTime] = useState<number | null>(null);
+  /** The player saw "the score doesn't match the stats" and said the score is right anyway. */
+  const [scoreConfirmed, setScoreConfirmed] = useState(false);
   const activeDraftId = useRef<string | null>(null);
   const cancelRequested = useRef(false);
 
@@ -162,7 +169,33 @@ export function useSnapFlow(props: SnapFlowProps) {
     setOpponentShotsOnTarget(oppExtract.shots_on_target);
     setMyXg(myExtract.xg);
     setOpponentXg(oppExtract.xg);
+    setMySaves(myExtract.saves ?? null);
+    setOpponentSaves(oppExtract.saves ?? null);
+    setMyBallRecoveryTime(myExtract.ball_recovery_time ?? null);
+    setOpponentBallRecoveryTime(oppExtract.ball_recovery_time ?? null);
   }, [mySide, extraction, usesExtraction]);
+
+  // Live cross-check of the score against shots on target − the other keeper's saves. It runs
+  // on the CURRENT values, so fixing a misread clears the warning straight away.
+  const scoreCheck = useMemo(
+    () =>
+      checkScore(
+        { goals: myGoals, shotsOnTarget: myShotsOnTarget, saves: mySaves },
+        { goals: opponentGoals, shotsOnTarget: opponentShotsOnTarget, saves: opponentSaves },
+      ),
+    [myGoals, opponentGoals, myShotsOnTarget, opponentShotsOnTarget, mySaves, opponentSaves],
+  );
+  // Any change to the checked values asks again — a confirmation covers one set of numbers.
+  useEffect(() => {
+    setScoreConfirmed(false);
+  }, [myGoals, opponentGoals, myShotsOnTarget, opponentShotsOnTarget, mySaves, opponentSaves]);
+  const scoreNeedsCheck = scoreCheck.status === "mismatch" && !scoreConfirmed;
+
+  /** Replace each disagreeing side's goals with what shots on target − saves implies. */
+  function applyImpliedScore() {
+    if (scoreCheck.mine && !scoreCheck.mine.ok) setMyGoals(scoreCheck.mine.implied);
+    if (scoreCheck.theirs && !scoreCheck.theirs.ok) setOpponentGoals(scoreCheck.theirs.implied);
+  }
 
   // Catalogue teams matched from the team names the AI read, mapped to my/opponent side.
   const teamGuesses = useMemo(() => {
@@ -323,6 +356,7 @@ export function useSnapFlow(props: SnapFlowProps) {
 
   async function handleSubmit() {
     if (!draftId || !season || !opponent || !myTeam || !opponentTeam) return;
+    if (scoreNeedsCheck) return;
     setIsSubmitting(true);
     setError(null);
     try {
@@ -344,6 +378,11 @@ export function useSnapFlow(props: SnapFlowProps) {
           opponentShotsOnTarget,
           myXg,
           opponentXg,
+          mySaves,
+          opponentSaves,
+          myBallRecoveryTime,
+          opponentBallRecoveryTime,
+          scoreConfirmed,
         },
       });
       activeDraftId.current = null;
@@ -395,6 +434,11 @@ export function useSnapFlow(props: SnapFlowProps) {
     setOpponentShotsOnTarget(null);
     setMyXg(null);
     setOpponentXg(null);
+    setMySaves(null);
+    setOpponentSaves(null);
+    setMyBallRecoveryTime(null);
+    setOpponentBallRecoveryTime(null);
+    setScoreConfirmed(false);
     setSubmittedMatchId(null);
     setStep("capture");
   }
@@ -450,6 +494,18 @@ export function useSnapFlow(props: SnapFlowProps) {
     setMyXg,
     opponentXg,
     setOpponentXg,
+    mySaves,
+    setMySaves,
+    opponentSaves,
+    setOpponentSaves,
+    myBallRecoveryTime,
+    setMyBallRecoveryTime,
+    opponentBallRecoveryTime,
+    setOpponentBallRecoveryTime,
+    scoreCheck,
+    scoreNeedsCheck,
+    confirmScore: () => setScoreConfirmed(true),
+    applyImpliedScore,
     isSubmitting,
     submittedMatchId,
     myElo,

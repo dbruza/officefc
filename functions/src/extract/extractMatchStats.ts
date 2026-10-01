@@ -46,6 +46,7 @@ function responseFromDraft(draftId: string, data: DraftState & Record<string, un
     confidence: extraction.confidence ?? data.confidence ?? 0,
     requiresReview: extraction.requiresReview ?? data.requiresReview ?? true,
     flags: extraction.flags ?? data.flags ?? [],
+    consistency: extraction.consistency ?? null,
     suggestion: extraction.suggestion ?? null,
   };
 }

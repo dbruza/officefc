@@ -19,6 +19,12 @@ export interface ExtractionSuggestion {
     shots_on_target: number | null;
     xg: number | null;
     team_name: string | null;
+    /** Newer fields: absent on drafts extracted before 1.12. */
+    shot_accuracy?: number | null;
+    saves?: number | null;
+    ball_recovery_time?: number | null;
+    /** "derived" when shots on target came from shots × Shot Accuracy, not a printed row. */
+    shots_on_target_source?: "printed" | "derived" | null;
   };
   away: {
     goals: number | null;
@@ -27,6 +33,12 @@ export interface ExtractionSuggestion {
     shots_on_target: number | null;
     xg: number | null;
     team_name: string | null;
+    /** Newer fields: absent on drafts extracted before 1.12. */
+    shot_accuracy?: number | null;
+    saves?: number | null;
+    ball_recovery_time?: number | null;
+    /** "derived" when shots on target came from shots × Shot Accuracy, not a printed row. */
+    shots_on_target_source?: "printed" | "derived" | null;
   };
   homeResult: "W" | "D" | "L" | null;
 }
@@ -37,6 +49,8 @@ export interface ExtractionResult {
   confidence: number;
   requiresReview: boolean;
   flags: string[];
+  /** Server verdict on the AI's read: goals vs shots on target − saves. */
+  consistency?: { status: "ok" | "mismatch" | "unknown" } | null;
   suggestion: ExtractionSuggestion | null;
 }
 

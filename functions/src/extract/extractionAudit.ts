@@ -42,5 +42,7 @@ export function fieldsEdited(
   check("Shots", home.shots, away.shots);
   check("ShotsOnTarget", home.shots_on_target, away.shots_on_target);
   check("Xg", home.xg, away.xg);
+  check("Saves", home.saves, away.saves);
+  check("BallRecoveryTime", home.ball_recovery_time, away.ball_recovery_time);
   return edited;
 }

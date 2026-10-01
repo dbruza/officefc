@@ -24,14 +24,40 @@ const SIDE_SCHEMA = {
     shots: { type: ["integer", "null"], description: "Total shots for this side, or null." },
     shots_on_target: {
       type: ["integer", "null"],
-      description: "Shots on target for this side, or null.",
+      description:
+        "Shots on target for this side ONLY if printed as its own number, else null. " +
+        "Never compute it — EA SPORTS FC 24+ summary screens don't print it.",
     },
     xg: {
       type: ["number", "null"],
       description: "Expected goals (xG) for this side as printed (a decimal like 1.4), or null.",
     },
+    shot_accuracy: {
+      type: ["number", "null"],
+      description:
+        "Shot Accuracy percentage for this side (0–100) as printed, or null. On EA SPORTS FC " +
+        "screens it sits in a side panel: the LEFT panel is home, the RIGHT panel is away.",
+    },
+    saves: {
+      type: ["integer", "null"],
+      description: "Saves made by this side's goalkeeper (the Saves row), or null.",
+    },
+    ball_recovery_time: {
+      type: ["number", "null"],
+      description: "Ball Recovery Time in seconds for this side as printed, or null.",
+    },
   },
-  required: ["team_name", "goals", "possession", "shots", "shots_on_target", "xg"],
+  required: [
+    "team_name",
+    "goals",
+    "possession",
+    "shots",
+    "shots_on_target",
+    "xg",
+    "shot_accuracy",
+    "saves",
+    "ball_recovery_time",
+  ],
   additionalProperties: false,
 };
 

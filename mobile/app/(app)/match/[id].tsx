@@ -592,6 +592,16 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
         {(a?.xg != null || b?.xg != null) && (
           <StatsRow label="Expected goals" a={fmtXg(a?.xg)} b={fmtXg(b?.xg)} />
         )}
+        {(a?.saves != null || b?.saves != null) && (
+          <StatsRow label="Saves" a={a?.saves ?? "—"} b={b?.saves ?? "—"} />
+        )}
+        {(a?.ballRecoveryTime != null || b?.ballRecoveryTime != null) && (
+          <StatsRow
+            label="Ball recovery (s)"
+            a={a?.ballRecoveryTime ?? "—"}
+            b={b?.ballRecoveryTime ?? "—"}
+          />
+        )}
         <StatsRow label="Goals" a={match.aGoals} b={match.bGoals} />
       </View>
     </Card>

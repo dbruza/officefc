@@ -80,5 +80,5 @@ membership/ELO/status, but a user can read their own profile/membership during o
 
 - Functions run in the default region `us-central1` (matches the client's `getFunctions`).
 - The emulator runs functions with your local Node; a "node version" warning vs. the
-  declared `nodejs20` runtime is harmless for local dev.
+  declared `nodejs24` runtime is harmless for local dev.
 - Nothing here touches your live Firebase project — emulators are fully local.

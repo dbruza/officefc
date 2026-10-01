@@ -13,6 +13,7 @@ import {
   type MatchState,
 } from "./draftSecurity";
 import { fieldsEdited } from "./extractionAudit";
+import { checkScoreConsistency } from "./core/statsCheck.mjs";
 
 const db = getFirestore();
 
@@ -30,6 +31,8 @@ const STAT_BOUNDS: Record<string, { min: number; max: number; integer?: boolean 
   shots: { min: 0, max: 99, integer: true },
   shotsOnTarget: { min: 0, max: 99, integer: true },
   xg: { min: 0, max: 15 },
+  saves: { min: 0, max: 99, integer: true },
+  ballRecoveryTime: { min: 0, max: 120 },
 };
 
 /** Reject out-of-range submitted stats with an invalid-argument naming the field. */
@@ -170,6 +173,21 @@ export const submitAiAssistedMatch = loggedOnCall(
       const suggestion = (extraction?.suggestion ?? {}) as Record<string, unknown>;
       const isHomeSide = mySide === "home";
       const editedFields = fieldsEdited(suggestion, submittedGoalsAndStats, mySide);
+      // Re-run the score cross-check on what the player actually submitted (they may have
+      // edited the AI's reads). Recorded for audit, never blocking: after review, the player
+      // is the authority — the app asks them to confirm the score when it disagrees.
+      const statsCheck = checkScoreConsistency(
+        {
+          goals: myGoals,
+          shots_on_target: nullableNum(submittedGoalsAndStats.myShotsOnTarget),
+          saves: nullableNum(submittedGoalsAndStats.mySaves),
+        },
+        {
+          goals: oppGoals,
+          shots_on_target: nullableNum(submittedGoalsAndStats.opponentShotsOnTarget),
+          saves: nullableNum(submittedGoalsAndStats.opponentSaves),
+        },
+      ).status;
       const matchData = {
         seasonId,
         submittedBy: uid,
@@ -220,6 +238,22 @@ export const submitAiAssistedMatch = loggedOnCall(
         bXg: isHomeSide
           ? nullableNum(submittedGoalsAndStats.opponentXg)
           : nullableNum(submittedGoalsAndStats.myXg),
+        aSaves: isHomeSide
+          ? nullableNum(submittedGoalsAndStats.mySaves)
+          : nullableNum(submittedGoalsAndStats.opponentSaves),
+        bSaves: isHomeSide
+          ? nullableNum(submittedGoalsAndStats.opponentSaves)
+          : nullableNum(submittedGoalsAndStats.mySaves),
+        aBallRecoveryTime: isHomeSide
+          ? nullableNum(submittedGoalsAndStats.myBallRecoveryTime)
+          : nullableNum(submittedGoalsAndStats.opponentBallRecoveryTime),
+        bBallRecoveryTime: isHomeSide
+          ? nullableNum(submittedGoalsAndStats.opponentBallRecoveryTime)
+          : nullableNum(submittedGoalsAndStats.myBallRecoveryTime),
+        statsCheck,
+        // The player saw the "score doesn't match the stats" warning and kept their score.
+        scoreConfirmedOverStats:
+          statsCheck === "mismatch" && submittedGoalsAndStats.scoreConfirmed === true,
         rawExtraction: extraction ?? null,
       };
 

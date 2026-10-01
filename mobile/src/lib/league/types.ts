@@ -156,6 +156,9 @@ export interface MatchSideStats {
   shots?: number | null;
   shotsOnTarget?: number | null;
   xg?: number | null;
+  /** Photo-logged matches from 1.12 on. */
+  saves?: number | null;
+  ballRecoveryTime?: number | null;
 }
 
 /** How each side's ELO delta was produced — mirrors functions/src/elo.ts EloExplain. */
@@ -317,6 +320,12 @@ export interface AiAssistedSubmitInput {
     opponentShotsOnTarget?: number | null;
     myXg?: number | null;
     opponentXg?: number | null;
+    mySaves?: number | null;
+    opponentSaves?: number | null;
+    myBallRecoveryTime?: number | null;
+    opponentBallRecoveryTime?: number | null;
+    /** Kept the score although it disagreed with shots on target − saves. */
+    scoreConfirmed?: boolean;
   };
 }
 

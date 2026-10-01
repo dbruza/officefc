@@ -5,6 +5,8 @@
    It deliberately does NOT map sides to players — the app does that (the photo can't
    tell who played, only left vs right). */
 
+import { checkScoreConsistency, deriveShotsOnTarget } from "./statsCheck.mjs";
+
 const CONFIDENCE_FLOOR = 0.6; // below this we force manual review
 
 const isFiniteNum = (v) => typeof v === "number" && Number.isFinite(v);
@@ -26,6 +28,17 @@ function toPct(v) {
   return Math.max(0, Math.min(100, n));
 }
 
+/** Ball Recovery Time reads above this (seconds) are misreads, not a real match. */
+const RECOVERY_MAX_SECONDS = 120;
+
+/** Coerce a Ball Recovery Time read: non-negative seconds (decimals kept), else null. */
+function toSeconds(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = typeof v === "string" ? Number(String(v).replace(/s$/i, "").trim()) : v;
+  if (!isFiniteNum(n) || n < 0 || n > RECOVERY_MAX_SECONDS) return null;
+  return n;
+}
+
 /** Plausible ceiling for a single side's xG on a video-game scoreline. */
 const XG_MAX = 15;
 
@@ -44,6 +57,9 @@ function normalizeSide(side, label, flags) {
   let shots = toCount(s.shots);
   let sot = toCount(s.shots_on_target);
   const possession = toPct(s.possession);
+  const shot_accuracy = toPct(s.shot_accuracy);
+  const saves = toCount(s.saves);
+  const ball_recovery_time = toSeconds(s.ball_recovery_time);
   const xgRead = toXg(s.xg);
   let xg = xgRead.value;
   const team_name =
@@ -60,7 +76,20 @@ function normalizeSide(side, label, flags) {
     flags.push(`${label}_xg_implausible`);
     xg = xgRead.value;
   }
-  return { team_name, goals, possession, shots, shots_on_target: sot, xg };
+  // FC 24+ summary screens don't print shots on target; recover it from the Shot Accuracy panel.
+  const sotRead = deriveShotsOnTarget({ shots, shots_on_target: sot, shot_accuracy });
+  return {
+    team_name,
+    goals,
+    possession,
+    shots,
+    shots_on_target: sotRead.value,
+    shots_on_target_source: sotRead.source,
+    xg,
+    shot_accuracy,
+    saves,
+    ball_recovery_time,
+  };
 }
 
 /**
@@ -68,6 +97,7 @@ function normalizeSide(side, label, flags) {
  * @returns {{
  *   ok: boolean, reason?: string, detectedScreen: boolean, confidence: number,
  *   requiresReview: boolean, flags: string[],
+ *   consistency?: ReturnType<typeof checkScoreConsistency>,
  *   suggestion: null | { home: object, away: object, homeResult: 'W'|'D'|'L'|null }
  * }}
  */
@@ -94,6 +124,11 @@ export function normalizeExtraction(raw) {
   const home = normalizeSide(raw.home, "home", flags);
   const away = normalizeSide(raw.away, "away", flags);
 
+  // Goals vs shots on target − the other keeper's saves: a disagreement means the score (the
+  // value ELO leans on most) was probably misread, so the player must check it.
+  const consistency = checkScoreConsistency(home, away);
+  if (consistency.status === "mismatch") flags.push("score_stats_mismatch");
+
   // Possession should add up to ~100 when both are present.
   if (home.possession !== null && away.possession !== null) {
     if (Math.abs(home.possession + away.possession - 100) > 3) flags.push("possession_sum_off");
@@ -116,8 +151,17 @@ export function normalizeExtraction(raw) {
     confidence,
     requiresReview,
     flags,
+    consistency,
     suggestion: { home, away, homeResult },
   };
 }
 
-export const _internals = { toCount, toPct, toXg, XG_MAX, CONFIDENCE_FLOOR };
+export const _internals = {
+  toCount,
+  toPct,
+  toXg,
+  toSeconds,
+  XG_MAX,
+  RECOVERY_MAX_SECONDS,
+  CONFIDENCE_FLOOR,
+};

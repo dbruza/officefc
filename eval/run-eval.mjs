@@ -35,7 +35,18 @@ const mediaTypeFor = (f) => (/\.jpe?g$/i.test(f) ? "image/jpeg" : /\.webp$/i.tes
 const eq = (a, b) => a === b;
 const near = (a, b, t = 2) => a !== null && b !== null && Math.abs(a - b) <= t;
 
-const FIELDS = ["home_goals", "away_goals", "home_possession", "away_possession", "home_shots", "away_shots", "home_soT", "away_soT"];
+const CORE_FIELDS = ["home_goals", "away_goals", "home_possession", "away_possession", "home_shots", "away_shots", "home_soT", "away_soT"];
+// Scored only for labels that include them (EA SPORTS FC 24+ summary screens); older labels
+// leave them out, so they count as "not applicable" rather than wrong.
+const OPTIONAL_FIELDS = {
+  home_saves: ["home", "saves", (a, b) => a === b],
+  away_saves: ["away", "saves", (a, b) => a === b],
+  home_recovery: ["home", "ball_recovery_time", (a, b) => near(a, b, 0.5)],
+  away_recovery: ["away", "ball_recovery_time", (a, b) => near(a, b, 0.5)],
+  home_shot_acc: ["home", "shot_accuracy", (a, b) => near(a, b, 1)],
+  away_shot_acc: ["away", "shot_accuracy", (a, b) => near(a, b, 1)],
+};
+const FIELDS = [...CORE_FIELDS, ...Object.keys(OPTIONAL_FIELDS)];
 
 function compare(got, exp) {
   const goalsHit = eq(got.home.goals, exp.home.goals) && eq(got.away.goals, exp.away.goals);
@@ -49,8 +60,12 @@ function compare(got, exp) {
     home_soT: eq(got.home.shots_on_target, exp.home.shots_on_target),
     away_soT: eq(got.away.shots_on_target, exp.away.shots_on_target),
   };
+  for (const [field, [side, key, match]] of Object.entries(OPTIONAL_FIELDS)) {
+    if (exp[side]?.[key] === undefined) continue; // not labelled → not applicable
+    fieldResults[field] = match(got[side]?.[key] ?? null, exp[side][key]);
+  }
   const statsHit = Object.values(fieldResults).filter(Boolean).length - (fieldResults.home_goals ? 1 : 0) - (fieldResults.away_goals ? 1 : 0);
-  const statsTotal = 6;
+  const statsTotal = Object.keys(fieldResults).length - 2;
   return { goalsHit, fieldResults, statsHit, statsTotal };
 }
 
@@ -64,6 +79,7 @@ async function run() {
 
   let goalsRight = 0;
   const fieldRight = Object.fromEntries(FIELDS.map((f) => [f, 0]));
+  const fieldSeen = Object.fromEntries(FIELDS.map((f) => [f, 0]));
   let errors = 0;
   const csvRows = [["image", "goals_match", "confidence", "requires_review", "error", ...FIELDS].join(",")];
 
@@ -102,7 +118,10 @@ async function run() {
 
     const c = compare(result.suggestion, exp);
     goalsRight += c.goalsHit ? 1 : 0;
-    for (const f of FIELDS) if (c.fieldResults[f]) fieldRight[f]++;
+    for (const f of FIELDS) {
+      if (c.fieldResults[f]) fieldRight[f]++;
+      if (f in c.fieldResults) fieldSeen[f]++;
+    }
 
     const conf = result.confidence.toFixed(2);
     console.log(
@@ -120,7 +139,7 @@ async function run() {
         conf,
         result.requiresReview ? "1" : "0",
         "",
-        ...FIELDS.map((f) => (c.fieldResults[f] ? "1" : "0")),
+        ...FIELDS.map((f) => (!(f in c.fieldResults) ? "" : c.fieldResults[f] ? "1" : "0")),
       ].join(","));
     }
   }
@@ -129,7 +148,9 @@ async function run() {
   console.log(`\nGoals accuracy: ${goalsRight}/${n}` + (n ? ` (${Math.round((goalsRight / n) * 100)}%)` : ""));
   console.log("Per-field accuracy:");
   for (const f of FIELDS) {
-    console.log(`  ${f.padEnd(20)} ${fieldRight[f]}/${n}` + (n ? ` (${Math.round((fieldRight[f] / n) * 100)}%)` : ""));
+    const of = f in OPTIONAL_FIELDS ? fieldSeen[f] : n;
+    if (of === 0) continue; // optional field no label covered
+    console.log(`  ${f.padEnd(20)} ${fieldRight[f]}/${of}` + (of ? ` (${Math.round((fieldRight[f] / of) * 100)}%)` : ""));
   }
   if (errors) console.log(`Errors: ${errors}`);
   console.log(MODE === "MOCK" ? "\n(MOCK mode — set OPENROUTER_API_KEY and use --real to score the real model.)\n" : "");
