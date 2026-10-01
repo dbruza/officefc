@@ -20,7 +20,9 @@ import {
   cupChampion,
   drawBracket,
   forceAdvanceAt,
+  fromStoredRounds,
   isComplete,
+  toStoredRounds,
   type CupBracket,
 } from "./cupRules";
 import { sendPush } from "./notify";
@@ -34,16 +36,13 @@ function cupRef(seasonId: string) {
 function bracketFromSnap(data: Record<string, unknown>): CupBracket {
   // Written only by this module; validated shallowly so a hand-edited doc fails loudly
   // instead of advancing into a corrupt bracket.
-  const rounds = data.rounds;
-  if (!Array.isArray(rounds)) throw new HttpsError("data-loss", "Cup state is corrupt.");
-  return rounds.map((round: unknown) =>
-    (Array.isArray(round) ? round : []).map((tie: Record<string, unknown>) => ({
-      aId: typeof tie?.aId === "string" ? tie.aId : null,
-      bId: typeof tie?.bId === "string" ? tie.bId : null,
-      winnerId: typeof tie?.winnerId === "string" ? tie.winnerId : null,
-    })),
-  );
+  const bracket = fromStoredRounds(data.rounds);
+  if (!bracket) throw new HttpsError("data-loss", "Cup state is corrupt.");
+  return bracket;
 }
+
+/** Firestore error code for a transaction that kept losing contention (gRPC ABORTED). */
+const GRPC_ABORTED = 10;
 
 /**
  * Start a mid-season knockout cup from the league roster. Refuses a finalized season (its
@@ -97,7 +96,7 @@ export const startCup = loggedOnCall("startCup", { cors: true }, async (req) => 
       }
       tx.set(cupRef(seasonId), {
         status: "live",
-        rounds,
+        rounds: toStoredRounds(rounds),
         seed,
         createdAt: FieldValue.serverTimestamp(),
         createdBy: uid,
@@ -105,9 +104,18 @@ export const startCup = loggedOnCall("startCup", { cors: true }, async (req) => 
     });
   } catch (error) {
     if (error instanceof HttpsError) throw error;
-    // A lost race with a concurrent create surfaces as the same precondition the second
-    // caller would have seen had they read after the first one committed.
-    throw new HttpsError("failed-precondition", "This season already has a cup.");
+    // A transaction that exhausted its retries against a concurrent create surfaces as the
+    // same precondition the second caller would have seen had it read after the first one
+    // committed. Anything else is a real failure — report it as one rather than claiming a
+    // cup exists (that mislabel hid the nested-array write rejection for every draw).
+    if ((error as { code?: unknown })?.code === GRPC_ABORTED) {
+      throw new HttpsError("failed-precondition", "This season already has a cup.");
+    }
+    logger.error("startCup_write_failed", {
+      seasonId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw new HttpsError("internal", "Couldn't start the cup. Try again.");
   }
 
   logger.info("startCup", { seasonId, seed, entrants: memberIds.length });
@@ -150,7 +158,11 @@ export const forceAdvanceCup = loggedOnCall("forceAdvanceCup", { cors: true }, a
     } catch (error) {
       throw new HttpsError("failed-precondition", (error as Error).message);
     }
-    tx.set(ref, { ...snap.data()!, rounds: advanced, updatedAt: FieldValue.serverTimestamp() });
+    tx.set(ref, {
+      ...snap.data()!,
+      rounds: toStoredRounds(advanced),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
 
   // The bracket write above has committed either way — a push failure must not surface to
@@ -250,7 +262,7 @@ export async function maybeConsumeCupResult(input: CupMatchInput): Promise<void>
     }
     tx.set(cupRef(input.seasonId), {
       ...snap.data()!,
-      rounds: advanced,
+      rounds: toStoredRounds(advanced),
       updatedAt: FieldValue.serverTimestamp(),
     });
     return true;

@@ -23,6 +23,41 @@ export interface CupTie {
 /** rounds[0] holds the opening ties; each later round consumes the previous round's winners. */
 export type CupBracket = CupTie[][];
 
+/**
+ * Persisted form of one round. Firestore rejects arrays that directly contain arrays, so a
+ * CupBracket can't be written as-is — every round is wrapped in an object on the state
+ * doc (`rounds: [{ ties: [...] }, ...]`) and unwrapped on read. Writing the raw bracket made
+ * every startCup fail.
+ */
+export interface StoredCupRound {
+  ties: CupTie[];
+}
+
+/** Bracket → Firestore-safe `rounds` value (no nested arrays). */
+export function toStoredRounds(bracket: CupBracket): StoredCupRound[] {
+  return bracket.map((round) => ({
+    ties: round.map(({ aId, bId, winnerId }) => ({ aId, bId, winnerId })),
+  }));
+}
+
+/**
+ * Firestore `rounds` value → bracket, or null when it isn't a list of rounds at all (a
+ * corrupt or hand-edited doc — callers decide whether that's fatal). A round without a
+ * ties list reads as empty, and absent sides/winners read as null.
+ */
+export function fromStoredRounds(raw: unknown): CupBracket | null {
+  if (!Array.isArray(raw)) return null;
+  const str = (value: unknown) => (typeof value === "string" ? value : null);
+  return raw.map((round) => {
+    const ties = (round as { ties?: unknown } | null)?.ties;
+    return (Array.isArray(ties) ? ties : []).map((tie: Record<string, unknown> | null) => ({
+      aId: str(tie?.aId),
+      bId: str(tie?.bId),
+      winnerId: str(tie?.winnerId),
+    }));
+  });
+}
+
 /** Tiny deterministic PRNG (mulberry32): plenty for shuffling a league roster. */
 function mulberry32(seed: number): () => number {
   let t = seed >>> 0;

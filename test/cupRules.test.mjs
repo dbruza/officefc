@@ -10,6 +10,8 @@ import {
   forceAdvanceAt,
   isComplete,
   cupChampion,
+  toStoredRounds,
+  fromStoredRounds,
 } from "../functions/lib/cupRules.js";
 
 function ids(n) {
@@ -159,4 +161,42 @@ test("forceAdvanceAt can repair a voided-source tie (admin override path)", () =
   // rebuilt state doc, but forceAdvanceAt still guards against nonsense coordinates.
   assert.equal(wrong[0][0].winnerId, tie.aId);
   assert.throws(() => forceAdvanceAt(wrong, 0, 0, tie.bId), /already decided/);
+});
+
+/** Firestore rejects any array whose elements include an array, at any depth. */
+function hasNestedArray(value) {
+  if (Array.isArray(value)) {
+    return value.some((item) => Array.isArray(item) || hasNestedArray(item));
+  }
+  if (value && typeof value === "object") return Object.values(value).some(hasNestedArray);
+  return false;
+}
+
+test("storage: the raw bracket is a nested array — the shape Firestore rejected", () => {
+  assert.equal(hasNestedArray(drawBracket(ids(6), 7)), true);
+});
+
+test("storage: stored rounds hold no nested arrays, at any bracket size", () => {
+  for (const n of [2, 3, 5, 6, 8, 13]) {
+    const stored = toStoredRounds(drawBracket(ids(n), n));
+    assert.equal(hasNestedArray(stored), false, `${n} players`);
+    assert.ok(stored.every((round) => Array.isArray(round.ties)));
+  }
+});
+
+test("storage: round-trips a partly played bracket exactly", () => {
+  let b = drawBracket(ids(6), 3);
+  const [first] = b[0];
+  b = advance(b, first.aId, first.bId, first.bId);
+  assert.deepEqual(fromStoredRounds(toStoredRounds(b)), b);
+});
+
+test("storage: corrupt values read safely", () => {
+  assert.equal(fromStoredRounds(undefined), null);
+  assert.equal(fromStoredRounds("rounds"), null);
+  // A round without ties reads as empty; junk sides read as null.
+  assert.deepEqual(fromStoredRounds([{}, { ties: [{ aId: 3, bId: "p2" }] }]), [
+    [],
+    [{ aId: null, bId: "p2", winnerId: null }],
+  ]);
 });

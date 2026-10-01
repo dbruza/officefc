@@ -4,6 +4,18 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.11.1.0",
+    date: "2026-10-01",
+    sections: [
+      {
+        kind: "Fixed",
+        items: [
+          'Drawing the mid-season cup works. The bracket was saved as a list of rounds that were themselves lists, which Firestore refuses to store ("Nested arrays are not allowed"), so every draw failed, and the error was misreported as "This season already has a cup". Each round is now saved as `{ ties: [...] }`, and a genuine save failure now says the cup couldn\'t be started instead of claiming one exists. No cup could ever have been saved in the old shape, so there is nothing to migrate.',
+        ],
+      },
+    ],
+  },
+  {
     version: "1.11.0.0",
     date: "2026-10-01",
     sections: [

@@ -25,12 +25,15 @@ export async function getCup(seasonId: string): Promise<CupState | null> {
   const snap = await getDoc(doc(db, "seasons", seasonId, "cup", "state")).catch(() => null);
   if (!snap || !snap.exists()) return null;
   const data = snap.data();
-  const rawRounds = Array.isArray(data.rounds) ? data.rounds : [];
+  // Each round is stored as `{ ties: [...] }` — Firestore can't hold arrays of arrays
+  // (see StoredCupRound in functions/src/cupRules.ts).
+  const rawRounds: unknown[] = Array.isArray(data.rounds) ? data.rounds : [];
   return {
     status: data.status === "live" ? "live" : "complete",
-    rounds: rawRounds.map((round: unknown) =>
-      (Array.isArray(round) ? round : []).map((tie: Record<string, unknown>) => mapTie(tie)),
-    ),
+    rounds: rawRounds.map((round) => {
+      const ties = (round as { ties?: unknown } | null)?.ties;
+      return (Array.isArray(ties) ? ties : []).map((tie: Record<string, unknown>) => mapTie(tie));
+    }),
     seed: Number(data.seed ?? 0),
     createdAtMillis:
       typeof data.createdAt?.toMillis === "function" ? data.createdAt.toMillis() : null,
