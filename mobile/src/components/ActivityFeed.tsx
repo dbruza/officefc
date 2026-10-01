@@ -1,8 +1,16 @@
-/** League activity feed: newest-first results, milestones, upsets, and season awards. */
-import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+/**
+ * League activity feed: newest-first results, milestones, upsets, and season awards.
+ * Rows that lead somewhere (a match, a player) are hoverable links; the signed-in
+ * player reads as "You", and relative times re-tick each minute so a tab left open all
+ * morning doesn't keep saying "now".
+ */
+import { useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { Avatar } from "./Avatar";
+import { EmptyState } from "./feedback";
 import { Icon, type IconName } from "./Icon";
+import { Interactive } from "./Interactive";
+import { Reveal } from "./motion";
 import { Txt } from "./Txt";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
@@ -18,9 +26,10 @@ function str(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-function relativeTime(date: Date | null): string {
+/** Compact "how long ago": now / 5m / 3h / 2d / 14 Sep. `now` is injected so callers re-tick. */
+export function relativeTime(date: Date | null, now: number = Date.now()): string {
   if (!date) return "";
-  const seconds = Math.round((Date.now() - date.getTime()) / 1000);
+  const seconds = Math.round((now - date.getTime()) / 1000);
   if (seconds < 60) return "now";
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes}m`;
@@ -31,6 +40,16 @@ function relativeTime(date: Date | null): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
+/** Current time, refreshed every `intervalMs` — drives relative timestamps. */
+export function useNow(intervalMs = 60_000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 interface Line {
   icon: IconName;
   tint: string;
@@ -39,6 +58,9 @@ interface Line {
   /** Milestones (crowns, streaks, silverware) get accented rows; plain results stay quiet. */
   milestone?: boolean;
 }
+
+/** Name resolver. `object` = the grammatical object ("beat you"), so "You" lower-cases. */
+type NameFn = (uid: string, object?: boolean) => string;
 
 /**
  * Drop repeated "new #1" events for the same player: the crown only re-announces when the
@@ -62,8 +84,10 @@ function collapseRepeats(events: ActivityEvent[]): ActivityEvent[] {
   return events.filter((event) => kept.has(event.id));
 }
 
-function describe(event: ActivityEvent, name: (uid: string) => string): Line {
+function describe(event: ActivityEvent, name: NameFn, meId: string | undefined): Line {
   const p = event.payload;
+  // "You is on a streak" → "You're on a streak".
+  const isMe = (uid: string) => !!meId && uid === meId;
   switch (event.type) {
     case "match_result": {
       const aGoals = num(p.aGoals);
@@ -71,11 +95,13 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
       const aId = str(p.aId);
       const bId = str(p.bId);
       if (aGoals === bGoals) {
+        // Lead with "You" when the viewer was in it.
+        const [first, second] = isMe(bId) ? [bId, aId] : [aId, bId];
         return {
           icon: "ball",
           tint: colors.textDim,
-          primaryId: aId,
-          text: `${name(aId)} drew ${name(bId)} ${aGoals}–${bGoals}`,
+          primaryId: first,
+          text: `${name(first)} drew ${name(second, true)} ${aGoals}–${bGoals}`,
         };
       }
       const winner = aGoals > bGoals ? aId : bId;
@@ -86,7 +112,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         icon: "ball",
         tint: colors.text,
         primaryId: winner,
-        text: `${name(winner)} beat ${name(loser)} ${winGoals}–${loseGoals}`,
+        text: `${name(winner)} beat ${name(loser, true)} ${winGoals}–${loseGoals}`,
       };
     }
     case "upset": {
@@ -95,7 +121,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         icon: "bolt",
         tint: colors.accent,
         primaryId: winnerId,
-        text: `Upset — ${name(winnerId)} took down ${name(str(p.loserId))}`,
+        text: `Upset — ${name(winnerId, true)} took down ${name(str(p.loserId), true)}`,
         milestone: true,
       };
     }
@@ -105,7 +131,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         icon: "flame",
         tint: colors.win,
         primaryId: playerId,
-        text: `${name(playerId)} is on a ${num(p.count)}-win streak`,
+        text: `${isMe(playerId) ? "You're" : `${name(playerId)} is`} on a ${num(p.count)}-win streak`,
         milestone: true,
       };
     }
@@ -115,7 +141,7 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
         icon: "crown",
         tint: colors.accent,
         primaryId: playerId,
-        text: `${name(playerId)} is the new #1`,
+        text: `${isMe(playerId) ? "You're" : `${name(playerId)} is`} the new #1`,
         milestone: true,
       };
     }
@@ -159,33 +185,33 @@ function describe(event: ActivityEvent, name: (uid: string) => string): Line {
 export function ActivityFeed({
   events,
   players,
+  meId,
   onOpenMatch,
   onOpenPlayer,
 }: {
   events: ActivityEvent[];
   players: Map<string, LeaguePlayer>;
+  /** Signed-in player — their rows read "You" instead of their own name. */
+  meId?: string;
   onOpenMatch?: (matchId: string) => void;
   onOpenPlayer?: (uid: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const name = (uid: string) => {
+  const now = useNow();
+  const name: NameFn = (uid, object = false) => {
+    if (meId && uid === meId) return object ? "you" : "You";
     const player = players.get(uid);
-    return player ? firstName(player.name) : "A player";
+    return player ? firstName(player.name) : object ? "a player" : "A player";
   };
 
   if (events.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Icon name="bolt" size={22} color={colors.textDim} />
-        <View style={{ flex: 1 }}>
-          <Txt variant="head" size={14}>
-            Nothing's happened yet
-          </Txt>
-          <Txt size={12} color={colors.textDim} style={{ marginTop: 3 }}>
-            Confirmed results, streaks, and upsets will show up here.
-          </Txt>
-        </View>
-      </View>
+      <EmptyState
+        compact
+        icon="bolt"
+        title="Nothing's happened yet"
+        body="Confirmed results, streaks, and upsets will show up here."
+      />
     );
   }
 
@@ -193,28 +219,22 @@ export function ActivityFeed({
   const visible = expanded ? feed : feed.slice(0, COLLAPSED_COUNT);
   return (
     <View style={{ gap: spacing.sm }}>
-      {visible.map((event) => {
-        const line = describe(event, name);
+      {visible.map((event, index) => {
+        const line = describe(event, name, meId);
         const primary = players.get(line.primaryId);
         const matchId = str(event.payload.matchId);
         const onPress = matchId
-          ? () => onOpenMatch?.(matchId)
-          : line.primaryId
-            ? () => onOpenPlayer?.(line.primaryId)
+          ? onOpenMatch && (() => onOpenMatch(matchId))
+          : line.primaryId && onOpenPlayer
+            ? () => onOpenPlayer(line.primaryId)
             : undefined;
-        return (
-          <Pressable
-            key={event.id}
-            onPress={onPress}
-            style={({ pressed }) => [
-              styles.row,
-              line.milestone && {
-                borderColor: withAlpha(line.tint, 0.35),
-                backgroundColor: withAlpha(line.tint, 0.05),
-              },
-              pressed && { opacity: 0.9 },
-            ]}
-          >
+        const tinted = line.milestone && {
+          borderColor: withAlpha(line.tint, 0.35),
+          backgroundColor: withAlpha(line.tint, 0.05),
+        };
+        const time = relativeTime(event.createdAt, now);
+        const content = (
+          <>
             {primary ? (
               <Avatar player={primary} size={30} />
             ) : (
@@ -235,17 +255,44 @@ export function ActivityFeed({
               {line.text}
             </Txt>
             <Txt variant="mono" size={10.5} color={colors.textFaint}>
-              {relativeTime(event.createdAt)}
+              {time}
             </Txt>
-          </Pressable>
+          </>
+        );
+        return (
+          <Reveal key={event.id} index={index < 10 ? index : undefined} from="up">
+            {onPress ? (
+              <Interactive
+                onPress={onPress}
+                accessibilityRole="link"
+                accessibilityLabel={time ? `${line.text}, ${time}` : line.text}
+                pressScale={0.99}
+                style={[styles.row, tinted]}
+                hoverStyle={
+                  line.milestone
+                    ? { borderColor: withAlpha(line.tint, 0.6) }
+                    : { backgroundColor: colors.surface2, borderColor: colors.lineStrong }
+                }
+              >
+                {content}
+              </Interactive>
+            ) : (
+              <View style={[styles.row, tinted]}>{content}</View>
+            )}
+          </Reveal>
         );
       })}
       {feed.length > COLLAPSED_COUNT ? (
-        <Pressable onPress={() => setExpanded((value) => !value)} style={styles.more}>
-          <Txt variant="head" size={11} color={colors.accent}>
+        <Interactive
+          onPress={() => setExpanded((value) => !value)}
+          accessibilityState={{ expanded }}
+          style={styles.more}
+          hoverStyle={{ backgroundColor: colors.surface }}
+        >
+          <Txt variant="head" size={11} color={colors.accent} style={{ letterSpacing: 0.6 }}>
             {expanded ? "SHOW LESS" : `SHOW ${feed.length - COLLAPSED_COUNT} MORE`}
           </Txt>
-        </Pressable>
+        </Interactive>
       ) : null}
     </View>
   );
@@ -279,10 +326,6 @@ const styles = StyleSheet.create({
   more: {
     alignItems: "center",
     paddingVertical: spacing.sm,
-  },
-  empty: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
+    borderRadius: radius.md,
   },
 });

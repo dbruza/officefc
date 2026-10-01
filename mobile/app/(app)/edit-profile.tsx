@@ -1,42 +1,47 @@
-import { ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { ScreenHeader } from "@/components";
+/** In-app profile editing: the shared ProfileForm in a narrow page; saving toasts and returns. */
+import { KeyboardAvoidingView, Platform } from "react-native";
+import { Card, Page, Reveal, ScreenHeader, useSafeBack } from "@/components";
+import { useBreakpoint } from "@/lib/responsive";
 import { ProfileForm } from "@/screens/ProfileForm";
 import { useAuth } from "@/lib/auth";
-import { colors, spacing } from "@/theme";
+import { toast } from "@/lib/toast";
+
+const flat = { padding: 0, borderWidth: 0, backgroundColor: "transparent" } as const;
 
 export default function EditProfile() {
-  const router = useRouter();
+  const goBack = useSafeBack();
   const { profile, refresh } = useAuth();
+  const { isTablet } = useBreakpoint();
+
+  const form = (
+    <ProfileForm
+      initial={profile}
+      submitLabel="Save changes"
+      onSaved={async () => {
+        await refresh();
+        toast.success("Profile updated");
+        goBack();
+      }}
+    />
+  );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <ScreenHeader title="Edit profile" subtitle="Changes show up across the whole league." />
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <Page
+        width="narrow"
+        header={
+          <ScreenHeader title="Edit profile" subtitle="Changes show up across the whole league." />
+        }
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <ProfileForm
-            initial={profile}
-            submitLabel="Save changes"
-            onSaved={async () => {
-              await refresh();
-              router.back();
-            }}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        {/* Phones use the full width; bigger screens frame the form in a card. Same tree
+            either way, so resizing across the breakpoint never resets what was typed. */}
+        <Reveal>
+          <Card style={isTablet ? { padding: 24 } : flat}>{form}</Card>
+        </Reveal>
+      </Page>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, paddingBottom: spacing.x3 },
-});

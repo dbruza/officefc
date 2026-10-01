@@ -1,9 +1,19 @@
+/**
+ * State machine for the photo flow: pick/drop/paste an image → upload + AI extraction
+ * (a staged checklist) → which side you were → opponent → teams → verify & submit → done.
+ * Every failure lands back on a step with friendly copy; none of them disables the flow.
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Platform, useWindowDimensions } from "react-native";
 import { logger } from "@/lib/logger";
 import { uploadMatchPhoto } from "@/lib/upload";
-import { pickMatchPhoto } from "@/lib/photoPicker";
+import {
+  canUseCamera,
+  pickMatchPhoto,
+  prepareWebImageFile,
+  type SelectedMatchPhoto,
+} from "@/lib/photoPicker";
 import { matchTeamName } from "@/lib/teamSearch";
+import { friendlyError } from "@/lib/friendlyError";
 import {
   abandonMatchDraft,
   callExtractMatchStats,
@@ -13,7 +23,8 @@ import {
   type Team,
 } from "@/lib/league";
 import type { Player } from "@/types";
-import type { ExtractionResult, SnapFlowProps, SnapStep } from "./types";
+import { pause } from "./helpers";
+import type { ExtractionResult, SnapFlowProps, SnapPhase, SnapStep } from "./types";
 
 /** Bounded error fields for logging; `code` picks up UploadError/Firebase error codes. */
 function errorContext(err: unknown): { message: string; code: string | null } {
@@ -25,8 +36,21 @@ function errorContext(err: unknown): { message: string; code: string | null } {
 }
 
 export function useSnapFlow(props: SnapFlowProps) {
-  const { uid, profile, season, players, teams, standings, onCancel, onManualFallback, onDone } =
-    props;
+  const {
+    uid,
+    profile,
+    season,
+    players,
+    teams,
+    standings,
+    opponentHistory,
+    myRecentTeamIds,
+    initialOpponentId,
+    onCancel,
+    onManualFallback,
+    onViewMatch,
+    onDone,
+  } = props;
 
   const me: Player = {
     id: uid,
@@ -36,22 +60,28 @@ export function useSnapFlow(props: SnapFlowProps) {
     color: profile.color,
     isYou: true,
   };
-  const { width } = useWindowDimensions();
-  const showCameraOption = Platform.OS !== "web" || width < 768;
-  const isWebWide = Platform.OS === "web" && width >= 768;
+  // Touch-first devices get "Take a photo"; a desktop browser only gets the file picker
+  // (plus drag-and-drop and paste), whatever its window width.
+  const [showCameraOption] = useState(canUseCamera);
 
   const [step, setStep] = useState<SnapStep>("capture");
+  const [phase, setPhase] = useState<SnapPhase>("uploading");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mySide, setMySide] = useState<"home" | "away">("home");
-  const [opponent, setOpponent] = useState<LeaguePlayer | null>(null);
+  // Nothing is preselected on the side step: the AI can't know which side you were.
+  const [sideChosen, setSideChosen] = useState(false);
+  const [opponent, setOpponent] = useState<LeaguePlayer | null>(
+    () => players.find((player) => player.id === initialOpponentId) ?? null,
+  );
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [opponentTeam, setOpponentTeam] = useState<Team | null>(null);
   const [myGoals, setMyGoals] = useState(0);
   const [opponentGoals, setOpponentGoals] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedMatchId, setSubmittedMatchId] = useState<string | null>(null);
   const [myPossession, setMyPossession] = useState<number | null>(null);
   const [opponentPossession, setOpponentPossession] = useState<number | null>(null);
   const [myShots, setMyShots] = useState<number | null>(null);
@@ -179,11 +209,12 @@ export function useSnapFlow(props: SnapFlowProps) {
     }
   }
 
-  async function handleSelect(source: "camera" | "library") {
+  /** Shared tail of every way in (picker, camera, drop, paste). */
+  async function handlePicked(read: () => Promise<SelectedMatchPhoto | null>, source: string) {
     cancelRequested.current = false;
     setError(null);
     try {
-      const selected = await pickMatchPhoto(source);
+      const selected = await read();
       if (!selected) return;
       await cleanupDraft();
       setExtraction(null);
@@ -191,9 +222,18 @@ export function useSnapFlow(props: SnapFlowProps) {
       await handleUpload(selected.uri, selected.mimeType, selected.fileSize);
     } catch (err) {
       logger.error("snap_select_failed", { ...errorContext(err), source });
-      setError(err instanceof Error ? err.message : "Could not open that photo.");
+      setError(friendlyError(err, "Couldn't open that image. Try a JPEG or PNG screenshot."));
       setStep("capture");
     }
+  }
+
+  function handleSelect(source: "camera" | "library") {
+    return handlePicked(() => pickMatchPhoto(source), source);
+  }
+
+  /** Web: an image dropped onto the page or pasted from the clipboard. */
+  function handleFile(file: File) {
+    return handlePicked(() => prepareWebImageFile(file), "drop_or_paste");
   }
 
   async function handleLeave(destination: "cancel" | "manual") {
@@ -204,12 +244,13 @@ export function useSnapFlow(props: SnapFlowProps) {
       // Daily server cleanup is the fallback if the browser is offline while leaving.
       logger.warn("snap_cleanup_failed", errorContext(err));
     }
-    if (destination === "manual") onManualFallback();
+    if (destination === "manual") onManualFallback(opponent?.id);
     else onCancel();
   }
 
   async function handleUpload(uri: string, mimeType?: string, fileSize?: number) {
     setStep("processing");
+    setPhase("uploading");
     setError(null);
     try {
       const upload = await uploadMatchPhoto(uid, uri, mimeType, fileSize);
@@ -219,11 +260,11 @@ export function useSnapFlow(props: SnapFlowProps) {
         await cleanupDraft(upload.draftId);
         return;
       }
+      setPhase("reading");
       await handleExtract(upload.draftId, upload.storagePath);
     } catch (err) {
       logger.error("snap_upload_failed", errorContext(err));
-      const msg = err instanceof Error ? err.message : "Upload failed.";
-      setError(msg);
+      setError(friendlyError(err, "The photo didn't upload. Check your connection and try again."));
       setStep("capture");
     }
   }
@@ -252,13 +293,32 @@ export function useSnapFlow(props: SnapFlowProps) {
         setStep("capture");
         return;
       }
+      // Team matching is local and instant; hold the last checklist tick for a beat so the
+      // player sees all three stages land before the screen changes.
+      setPhase("matching");
+      await pause(450);
+      if (cancelRequested.current) return;
       setStep("side");
     } catch (err) {
       logger.error("snap_extract_failed", { ...errorContext(err), draftId: id });
-      const msg = err instanceof Error ? err.message : "Extraction failed.";
-      setError(msg);
+      setError(
+        friendlyError(err, "The AI couldn't read that photo just now. Try again, or log manually."),
+      );
       setStep("capture");
     }
+  }
+
+  function chooseSide(side: "home" | "away") {
+    setMySide(side);
+    setSideChosen(true);
+    // An opponent picked before the photo (deep link / mode switch) skips that step.
+    setStep(opponent ? "teams" : "opponent");
+  }
+
+  function chooseOpponent(player: LeaguePlayer) {
+    setOpponent(player);
+    // Let the check pop before moving on.
+    setTimeout(() => setStep("teams"), 160);
   }
 
   async function handleSubmit() {
@@ -266,7 +326,7 @@ export function useSnapFlow(props: SnapFlowProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      await submitAiAssistedMatch({
+      const { matchId } = await submitAiAssistedMatch({
         draftId,
         seasonId: season.id,
         opponentId: opponent.id,
@@ -287,31 +347,78 @@ export function useSnapFlow(props: SnapFlowProps) {
         },
       });
       activeDraftId.current = null;
+      setSubmittedMatchId(matchId ?? null);
       setStep("done");
     } catch (err) {
       logger.error("snap_submit_failed", { ...errorContext(err), draftId });
-      setError(err instanceof Error ? err.message : "Submission failed.");
+      setError(
+        friendlyError(
+          err,
+          "The match couldn't be submitted. Check your connection and try again — your values are kept.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  /** Back from the side step: drop this upload and pick a different photo. */
+  async function retake() {
+    try {
+      await cleanupDraft();
+    } catch (err) {
+      // Daily server cleanup is the fallback for an abandoned draft.
+      logger.warn("snap_cleanup_failed", errorContext(err));
+    }
+    rematch();
+  }
+
+  /** Start over for the next game against the same opponent (also used by retake). */
+  function rematch() {
+    cancelRequested.current = false;
+    activeDraftId.current = null;
+    autoTeamRef.current = { my: false, opp: false };
+    setDraftId(null);
+    setExtraction(null);
+    setImageUri(null);
+    setError(null);
+    setSideChosen(false);
+    setMyTeam(null);
+    setOpponentTeam(null);
+    setMyGoals(0);
+    setOpponentGoals(0);
+    setMyPossession(null);
+    setOpponentPossession(null);
+    setMyShots(null);
+    setOpponentShots(null);
+    setMyShotsOnTarget(null);
+    setOpponentShotsOnTarget(null);
+    setMyXg(null);
+    setOpponentXg(null);
+    setSubmittedMatchId(null);
+    setStep("capture");
+  }
+
   return {
     showCameraOption,
-    isWebWide,
     error,
+    clearError: () => setError(null),
     step,
     setStep,
+    phase,
     imageUri,
     extraction,
     mySide,
-    setMySide,
+    sideChosen,
+    chooseSide,
     opponent,
-    setOpponent,
+    chooseOpponent,
     players,
     teams,
     me,
     ratingByUid,
+    opponentHistory,
+    myRecentTeamIds,
     myTeam,
     setMyTeam: (team: Team | null) => {
       autoTeamRef.current.my = false;
@@ -344,12 +451,18 @@ export function useSnapFlow(props: SnapFlowProps) {
     opponentXg,
     setOpponentXg,
     isSubmitting,
+    submittedMatchId,
     myElo,
+    opponentElo,
     myDelta,
     opponentDelta,
     handleSelect,
+    handleFile,
     handleLeave,
     handleSubmit,
+    rematch,
+    retake,
+    onViewMatch,
     onDone,
   };
 }

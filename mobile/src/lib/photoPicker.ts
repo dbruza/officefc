@@ -80,11 +80,35 @@ async function pickNative(source: "camera" | "library"): Promise<SelectedMatchPh
   };
 }
 
+/**
+ * Only WebKit (Safari, and every iOS browser) can decode HEIC/HEIF in an <img>. Offering
+ * them elsewhere lets a Chrome/Firefox user pick a file we then can't read, so the picker
+ * only lists them where they'll work (iOS also converts HEIC to JPEG on pick when it isn't
+ * listed, so leaving it out there would be harmless too).
+ */
+function browserDecodesHeic(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return /Safari/.test(ua) && !/Chrome|Chromium|CriOS|Edg|OPR|Firefox|FxiOS|Android/.test(ua);
+}
+
+const WEB_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const HEIC_TYPES = ["image/heic", "image/heif"];
+
+function acceptedWebTypes(): string[] {
+  return browserDecodesHeic() ? [...WEB_IMAGE_TYPES, ...HEIC_TYPES] : WEB_IMAGE_TYPES;
+}
+
+function acceptedTypesLabel(): string {
+  return browserDecodesHeic() ? "JPEG, PNG, WebP, HEIC, or HEIF" : "JPEG, PNG, or WebP";
+}
+
 function chooseWebFile(source: "camera" | "library"): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+    input.accept = acceptedWebTypes().join(",");
     if (source === "camera") input.setAttribute("capture", "environment");
     input.style.display = "none";
     document.body.appendChild(input);
@@ -156,9 +180,22 @@ function blobToDataUri(blob: Blob): Promise<string> {
 
 async function pickWeb(source: "camera" | "library"): Promise<SelectedMatchPhoto | null> {
   const file = await chooseWebFile(source);
-  if (!file) return null;
+  return file ? prepareWebImageFile(file) : null;
+}
+
+/**
+ * Web: normalise an image File (picked, dropped, or pasted) to a ≤2048px JPEG data URI —
+ * the same shape the picker produces, so upload/extraction can't tell them apart.
+ */
+export async function prepareWebImageFile(file: File): Promise<SelectedMatchPhoto> {
   if (!file.type.startsWith("image/")) {
-    throw new PhotoPickerError("unsupported", "Choose a JPEG, PNG, WebP, HEIC, or HEIF image.");
+    throw new PhotoPickerError("unsupported", `Choose a ${acceptedTypesLabel()} image.`);
+  }
+  if (HEIC_TYPES.includes(file.type.toLowerCase()) && !browserDecodesHeic()) {
+    throw new PhotoPickerError(
+      "unsupported",
+      "This browser can't read HEIC photos. Export it as JPEG or PNG, or use Safari.",
+    );
   }
   if (file.size > MAX_SOURCE_SIZE) {
     throw new PhotoPickerError("too_large", "That image is too large. Choose a photo under 25 MB.");
@@ -189,4 +226,15 @@ export async function pickMatchPhoto(
   source: "camera" | "library",
 ): Promise<SelectedMatchPhoto | null> {
   return Platform.OS === "web" ? pickWeb(source) : pickNative(source);
+}
+
+/**
+ * Whether "Take a photo" makes sense here: always on native; on web only for touch-first
+ * devices (a phone browser can open the camera; a desktop with a webcam shouldn't offer it,
+ * whatever the window width).
+ */
+export function canUseCamera(): boolean {
+  if (Platform.OS !== "web") return true;
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
 }

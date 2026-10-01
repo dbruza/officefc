@@ -1,26 +1,69 @@
-import { useState } from "react";
-import { View } from "react-native";
-import { FormScreen, TextField, Button, Txt, Card } from "@/components";
+/**
+ * Step 4 of first run: redeem the league's join code. An invite link (/join?code=…)
+ * prefills it — and because a signed-out visitor gets bounced to sign-in first, the code
+ * is stashed the moment this screen sees it and read back when they arrive here later.
+ */
+import { useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { Button, Card, FormScreen, Icon, TextField, Txt } from "@/components";
+import { SubmitButton, submitOnEnter } from "@/components/FormScreen";
 import { useAuth } from "@/lib/auth";
 import { redeemInvite } from "@/lib/membership";
 import { isAllowlistedAdmin } from "@/lib/constants";
 import { authErrorMessage } from "@/lib/authErrors";
 import { confirmAction } from "@/lib/dialogs";
-import { colors, spacing } from "@/theme";
+import {
+  clearStashedJoinCode,
+  normalizeJoinCode,
+  readStashedJoinCode,
+  stashJoinCode,
+} from "@/lib/inviteLink";
+import { useBreakpoint } from "@/lib/responsive";
+import { colors } from "@/theme";
 
 export default function Join() {
   const { user, refresh, signOutUser } = useAuth();
-  const [code, setCode] = useState("");
+  const params = useLocalSearchParams<{ code?: string | string[] }>();
+  const linkCode = normalizeJoinCode(
+    (Array.isArray(params.code) ? params.code[0] : params.code) ?? "",
+  );
+  const [code, setCode] = useState(linkCode);
+  // True when the code came from an invite link rather than being typed.
+  const [fromLink, setFromLink] = useState(linkCode.length > 0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Once the user types, a late-arriving stashed code must not overwrite their input.
+  const typed = useRef(false);
   const admin = isAllowlistedAdmin(user?.email);
+  const { isWeb, isTablet } = useBreakpoint();
+
+  useEffect(() => {
+    if (linkCode) {
+      // Runs before the root navigator's redirect (child effects fire first), so a
+      // signed-out visitor's code survives the trip through sign-up.
+      void stashJoinCode(linkCode);
+      return;
+    }
+    let cancelled = false;
+    void readStashedJoinCode().then((stashed) => {
+      if (cancelled || !stashed || typed.current) return;
+      setCode(stashed);
+      setFromLink(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [linkCode]);
 
   async function submit() {
+    if (busy) return;
     setError(null);
     if (!admin && code.trim().length === 0) return setError("Enter your join code.");
     setBusy(true);
     try {
       await redeemInvite(code);
+      await clearStashedJoinCode();
       await refresh(); // routing → app once membership exists
     } catch (e) {
       setError(authErrorMessage(e));
@@ -33,14 +76,21 @@ export default function Join() {
       title="Join your league"
       subtitle={
         admin
-          ? "You're on the admin allowlist — we'll set you up to run the league."
-          : "Enter your league's join code — ask an admin to share it."
+          ? "You're on the admin allowlist, so we'll set you up to run the league."
+          : fromLink
+            ? "Your invite code is filled in. Check it and you're in."
+            : "Enter your league's join code. Ask an admin to share it (or their invite link)."
       }
+      documentTitle="Join league"
+      step={4}
+      onSubmit={submit}
       footer={
         <View style={{ alignItems: "center" }}>
           <Button
             variant="ghost"
             size="sm"
+            icon="logout"
+            style={{ alignSelf: "center" }}
             onPress={() =>
               confirmAction({
                 title: "Sign out?",
@@ -57,35 +107,53 @@ export default function Join() {
       }
     >
       {admin ? (
-        <Card style={{ borderColor: colors.accent, borderWidth: 1 }}>
-          <Txt variant="head" size={13} color={colors.accent}>
-            Admin setup
-          </Txt>
+        <Card style={styles.adminCard}>
+          <View style={styles.adminHead}>
+            <Icon name="shield" size={16} color={colors.accent} />
+            <Txt variant="head" size={13} color={colors.accent}>
+              Admin setup
+            </Txt>
+          </View>
           <Txt size={13} color={colors.textDim} style={{ marginTop: 4, lineHeight: 19 }}>
-            Tap below to create the league and join as an admin — no code needed. You can then share
-            a season join code with everyone else.
+            Continue to create the league and join as an admin, no code needed. You can then share a
+            season join code with everyone else.
           </Txt>
         </Card>
       ) : (
         <TextField
           label="Join code"
           value={code}
-          onChangeText={(t) => setCode(t.toUpperCase().replace(/\s/g, ""))}
+          onChangeText={(t) => {
+            typed.current = true;
+            setCode(normalizeJoinCode(t));
+            setFromLink(false);
+            setError(null);
+          }}
           placeholder="e.g. OFC-7F3K9"
           autoCapitalize="characters"
           autoCorrect={false}
-          onSubmitEditing={submit}
+          autoComplete="off"
+          spellCheck={false}
           returnKeyType="go"
+          onSubmitEditing={submitOnEnter(submit)}
+          hint={error ?? (fromLink ? "From your invite link." : undefined)}
+          error={!!error}
+          autoFocus={isWeb && isTablet && !linkCode}
         />
       )}
-      {error ? (
-        <Txt size={13} color={colors.loss} style={{ marginTop: spacing.xs }}>
+      {admin && error ? (
+        <Txt size={13} color={colors.loss} accessibilityLiveRegion="polite">
           {error}
         </Txt>
       ) : null}
-      <Button full size="lg" onPress={submit}>
+      <SubmitButton loading={busy} onPress={submit}>
         {busy ? "Joining…" : admin ? "Create league & join" : "Join league"}
-      </Button>
+      </SubmitButton>
     </FormScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  adminCard: { borderColor: colors.accent, borderWidth: 1 },
+  adminHead: { flexDirection: "row", alignItems: "center", gap: 6 },
+});

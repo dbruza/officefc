@@ -1,10 +1,13 @@
 /**
  * Bottom-tab navigator for the four main pages. Tab screens stay mounted between
  * switches (no stack replace animation) and the AppTabBar renders once as
- * persistent navigator chrome instead of inside each screen.
+ * persistent navigator chrome instead of inside each screen. From the tablet
+ * breakpoint up the (app) layout's SideNav takes over and the tab bar hides.
  */
 import { Tabs } from "expo-router";
 import { AppTabBar, type AppTab } from "@/components";
+import { usePendingCount } from "@/lib/pendingCount";
+import { useBreakpoint } from "@/lib/responsive";
 import { colors } from "@/theme";
 
 const ROUTE_TO_TAB: Record<string, AppTab> = {
@@ -15,6 +18,8 @@ const ROUTE_TO_TAB: Record<string, AppTab> = {
 };
 
 export default function TabsLayout() {
+  const { isTablet } = useBreakpoint();
+  const pendingCount = usePendingCount();
   return (
     <Tabs
       screenOptions={{
@@ -22,9 +27,14 @@ export default function TabsLayout() {
         freezeOnBlur: true,
         sceneStyle: { backgroundColor: colors.bg },
       }}
-      tabBar={({ state }) => (
-        <AppTabBar active={ROUTE_TO_TAB[state.routes[state.index]?.name] ?? "home"} />
-      )}
+      tabBar={({ state }) =>
+        isTablet ? null : (
+          <AppTabBar
+            active={ROUTE_TO_TAB[state.routes[state.index]?.name] ?? "home"}
+            pendingCount={pendingCount}
+          />
+        )
+      }
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="leaderboard" />

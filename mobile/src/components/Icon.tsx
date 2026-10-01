@@ -41,7 +41,27 @@ export type IconName =
   | "settings"
   | "eye"
   | "eyeOff"
-  | "calendar";
+  | "calendar"
+  | "refresh"
+  | "copy"
+  | "share"
+  | "inbox"
+  | "bell"
+  | "users"
+  | "sparkle"
+  | "arrowRight"
+  | "clock"
+  | "logout"
+  | "download"
+  | "upload"
+  | "link"
+  | "minus"
+  | "star"
+  | "grid"
+  | "list"
+  | "dice"
+  | "zoom"
+  | "command";
 
 export interface IconProps {
   name: IconName;
@@ -227,6 +247,105 @@ export function Icon({ name, size = 20, stroke = 2, color = colors.text }: IconP
         <Rect x="3.5" y="5" width="17" height="15" rx="2.5" {...common} />
         <Path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" {...common} />
       </G>
+    ),
+    refresh: (
+      <G {...common}>
+        <Path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" {...common} />
+        <Path d="M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16" {...common} />
+        <Path d="M20 20v-4h-4" {...common} />
+      </G>
+    ),
+    copy: (
+      <G {...common}>
+        <Rect x="8" y="8" width="12" height="12" rx="2.5" {...common} />
+        <Path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" {...common} />
+      </G>
+    ),
+    share: (
+      <G {...common}>
+        <Path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" {...common} />
+        <Path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" {...common} />
+      </G>
+    ),
+    inbox: (
+      <G {...common}>
+        <Path d="M3 13h5l1.5 3h5l1.5-3h5" {...common} />
+        <Path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5l2.5-8Z" {...common} />
+      </G>
+    ),
+    bell: (
+      <G {...common}>
+        <Path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z" {...common} />
+        <Path d="M10 20.5a2.2 2.2 0 0 0 4 0" {...common} />
+      </G>
+    ),
+    users: (
+      <G {...common}>
+        <Circle cx="9" cy="8" r="3.5" {...common} />
+        <Path d="M2.5 20c1-3.5 3.8-5 6.5-5s5.5 1.5 6.5 5" {...common} />
+        <Path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 15.3c1.7.6 3 2 3.5 4.7" {...common} />
+      </G>
+    ),
+    sparkle: (
+      <Path
+        d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8L12 3ZM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"
+        {...common}
+      />
+    ),
+    arrowRight: <Path d="M5 12h14M13 6l6 6-6 6" {...common} />,
+    clock: (
+      <G {...common}>
+        <Circle cx="12" cy="12" r="9" {...common} />
+        <Path d="M12 7v5l3 2" {...common} />
+      </G>
+    ),
+    logout: (
+      <G {...common}>
+        <Path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" {...common} />
+        <Path d="M15 8l4 4-4 4M19 12H9" {...common} />
+      </G>
+    ),
+    download: <Path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14" {...common} />,
+    upload: <Path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 20h14" {...common} />,
+    link: (
+      <G {...common}>
+        <Path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1" {...common} />
+        <Path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" {...common} />
+      </G>
+    ),
+    minus: <Path d="M5 12h14" {...common} />,
+    star: (
+      <Path
+        d="m12 3.5 2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9l-5.3 2.7 1-5.8-4.2-4.1 5.9-.9L12 3.5Z"
+        {...common}
+      />
+    ),
+    grid: (
+      <G {...common}>
+        <Rect x="4" y="4" width="7" height="7" rx="1.5" {...common} />
+        <Rect x="13" y="4" width="7" height="7" rx="1.5" {...common} />
+        <Rect x="4" y="13" width="7" height="7" rx="1.5" {...common} />
+        <Rect x="13" y="13" width="7" height="7" rx="1.5" {...common} />
+      </G>
+    ),
+    list: <Path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" {...common} />,
+    dice: (
+      <G {...common}>
+        <Rect x="4" y="4" width="16" height="16" rx="3.5" {...common} />
+        <Path d="M8.5 8.5h.01M15.5 8.5h.01M12 12h.01M8.5 15.5h.01M15.5 15.5h.01" {...common} />
+      </G>
+    ),
+    zoom: (
+      <G {...common}>
+        <Circle cx="11" cy="11" r="7" {...common} />
+        <Path d="m20 20-3.2-3.2M11 8v6M8 11h6" {...common} />
+      </G>
+    ),
+    command: (
+      <Path
+        d="M9 6v12M15 6v12M6 9h12M6 15h12M9 6a3 3 0 1 0-3 3M15 6a3 3 0 1 1 3 3M9 18a3 3 0 1 1-3-3M15 18a3 3 0 1 0 3-3"
+        {...common}
+      />
     ),
   };
   return (

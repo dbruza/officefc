@@ -1,7 +1,11 @@
-/** One row in the season's recent-results feed: both players, score, ELO swings. */
-import { Pressable, StyleSheet, View } from "react-native";
+/**
+ * One row in the season's recent-results feed: both players, score, ELO swings.
+ * Pressable (with hover) only when `onPress` is given; otherwise a plain row.
+ */
+import { StyleSheet, View } from "react-native";
 import { Avatar } from "./Avatar";
 import { EloDelta } from "./chips";
+import { Interactive } from "./Interactive";
 import { Txt } from "./Txt";
 import { colors, radius } from "@/theme";
 import { firstName } from "@/lib/format";
@@ -37,6 +41,9 @@ function Side({
   );
 }
 
+const dateLabel = (date: Date | null) =>
+  date ? date.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—";
+
 export function SeasonMatchRow({
   match,
   playerA,
@@ -50,8 +57,9 @@ export function SeasonMatchRow({
 }) {
   const aWin = match.aGoals > match.bGoals;
   const bWin = match.bGoals > match.aGoals;
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}>
+  const label = `${playerA.name} ${match.aGoals}, ${playerB.name} ${match.bGoals}, ${dateLabel(match.date)}`;
+  const content = (
+    <>
       <Side player={playerA} win={aWin} delta={match.aDelta} />
       <View style={styles.centre}>
         <Txt variant="monoBold" size={19} numberOfLines={1}>
@@ -66,13 +74,30 @@ export function SeasonMatchRow({
           </Txt>
         </Txt>
         <Txt size={9.5} color={colors.textFaint} numberOfLines={1} style={{ marginTop: 3 }}>
-          {match.date
-            ? match.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-            : "—"}
+          {dateLabel(match.date)}
         </Txt>
       </View>
       <Side player={playerB} win={bWin} delta={match.bDelta} end />
-    </Pressable>
+    </>
+  );
+  if (!onPress) {
+    return (
+      <View style={styles.row} accessible accessibilityLabel={label}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <Interactive
+      onPress={onPress}
+      accessibilityRole="link"
+      accessibilityLabel={`${label}. Open match`}
+      pressScale={0.99}
+      style={styles.row}
+      hoverStyle={{ backgroundColor: colors.surface2, borderColor: colors.lineStrong }}
+    >
+      {content}
+    </Interactive>
   );
 }
 

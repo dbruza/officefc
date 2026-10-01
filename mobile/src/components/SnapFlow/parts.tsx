@@ -1,30 +1,88 @@
-import { Pressable, TextInput, View } from "react-native";
-import { Button, Txt } from "@/components";
-import { colors } from "@/theme";
+/** Building blocks shared by the photo-flow steps: header, progress, footer, stat inputs. */
+import { useEffect, useState, type ReactNode } from "react";
+import { TextInput, View, type TextStyle } from "react-native";
+import Animated, { type CSSAnimationKeyframes } from "react-native-reanimated";
+// Primitives by path, not the barrel: the barrel re-exports SnapFlow (require cycle).
+import { Button, IconButton } from "../Button";
+import { ErrorCard } from "../feedback";
+import { EASE_OUT } from "../motion";
+import { Txt } from "../Txt";
+import { colors, spacing } from "@/theme";
+import { useBreakpoint } from "@/lib/responsive";
+import { webStyle } from "@/lib/web";
 import { parseStatInput } from "./helpers";
 import { styles } from "./styles";
 
-export function ProgressBar({
-  current,
-  total,
-  label,
+export const STEP_LABELS = ["Your side", "Opponent", "Teams", "Verify & submit"];
+
+export function SnapHeader({
+  onClose,
+  progress,
+  children,
 }: {
-  current: number;
-  total: number;
-  label: string;
+  onClose: () => void;
+  /** Index into STEP_LABELS; omitted on capture / processing. */
+  progress?: number;
+  children?: ReactNode;
 }) {
+  const { isDesktop } = useBreakpoint();
   return (
     <View>
-      <View style={styles.progressHeader}>
-        <Txt size={11.5} color={colors.textDim}>
-          Step {current + 1} of {total} · {label}
-        </Txt>
+      <View style={[styles.headerRow, isDesktop && styles.headerRowDesktop]}>
+        <IconButton icon="x" accessibilityLabel="Close" onPress={onClose} iconSize={20} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Txt
+            variant="head"
+            size={isDesktop ? 26 : 21}
+            accessibilityRole="header"
+            numberOfLines={1}
+            style={isDesktop ? { letterSpacing: -0.3 } : undefined}
+          >
+            Log a match
+          </Txt>
+          <Txt size={12} color={colors.textDim} style={{ marginTop: 2 }} numberOfLines={1}>
+            {progress != null
+              ? `Photo · Step ${progress + 1} of ${STEP_LABELS.length} · ${STEP_LABELS[progress]}`
+              : "From a photo of the stats screen"}
+          </Txt>
+        </View>
       </View>
-      <View style={styles.track}>
-        {Array.from({ length: total }).map((_, i) => (
-          <View key={i} style={[styles.trackSeg, i <= current && styles.trackSegOn]} />
-        ))}
-      </View>
+      {progress != null ? <ProgressBar current={progress} total={STEP_LABELS.length} /> : null}
+      {children}
+    </View>
+  );
+}
+
+// Each step mounts its own page, so the newest segment fills with a one-shot animation
+// rather than a transition (there's no previous width to transition from).
+const FILL: CSSAnimationKeyframes = { from: { width: "0%" }, to: { width: "100%" } };
+
+/** Segmented progress; the segment for the current step fills in as the step opens. */
+export function ProgressBar({ current, total }: { current: number; total: number }) {
+  return (
+    <View
+      style={styles.track}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 1, max: total, now: current + 1 }}
+    >
+      {Array.from({ length: total }, (_, i) => (
+        <View key={i} style={styles.trackSeg}>
+          {i < current ? <View style={[styles.trackFill, { width: "100%" }]} /> : null}
+          {i === current ? (
+            <Animated.View
+              style={{
+                ...styles.trackFill,
+                width: "100%",
+                animationName: FILL,
+                animationDuration: 420,
+                animationDelay: 60,
+                animationTimingFunction: EASE_OUT,
+                animationFillMode: "backwards",
+              }}
+            />
+          ) : null}
+        </View>
+      ))}
     </View>
   );
 }
@@ -36,116 +94,150 @@ export function FlowFooter({
   nextDisabled,
   hideNext,
   loading,
+  error,
+  onRetry,
+  backLabel = "Back",
 }: {
   onBack: () => void;
-  onNext: () => void;
+  onNext?: () => void;
   nextLabel?: string;
   nextDisabled?: boolean;
   hideNext?: boolean;
   loading?: boolean;
+  /** Shown above the buttons so a failed submit is always visible. */
+  error?: string | null;
+  onRetry?: () => void;
+  backLabel?: string;
 }) {
+  const { isDesktop } = useBreakpoint();
+  const submit = nextLabel.startsWith("Submit");
   return (
-    <View style={styles.footer}>
-      <Button variant="dark" size="md" icon="back" onPress={onBack}>
-        Back
-      </Button>
-      {!hideNext ? (
-        <Button
-          size="md"
-          icon={nextLabel === "Submit match" ? "check" : undefined}
-          onPress={() => onNext()}
-          disabled={nextDisabled || loading}
-        >
-          {loading ? "Submitting…" : nextLabel}
-        </Button>
-      ) : null}
-    </View>
-  );
-}
-
-export function ScoreBox({
-  label,
-  value,
-  color,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <View style={{ flex: 1, alignItems: "center", minWidth: 0 }}>
-      <Txt size={11} color={colors.textDim} numberOfLines={1}>
-        {label}
-      </Txt>
-      <View style={styles.stepper}>
-        <Pressable
-          onPress={() => onChange(Math.max(0, value - 1))}
-          disabled={value === 0}
-          style={[styles.stepBtn, value === 0 && { opacity: 0.35 }]}
-        >
-          <Txt variant="monoBold" size={22}>
-            -
-          </Txt>
-        </Pressable>
-        <TextInput
-          value={String(value)}
-          onChangeText={(t) => {
-            const n = Number.parseInt(t.replace(/[^0-9]/g, ""), 10);
-            onChange(Number.isFinite(n) ? Math.min(99, n) : 0);
-          }}
-          keyboardType="number-pad"
-          selectTextOnFocus
-          style={[styles.scoreInput, { color }]}
+    <View style={[styles.footer, isDesktop && styles.footerDesktop]}>
+      {error ? (
+        <ErrorCard
+          message={error}
+          onRetry={onRetry}
+          retrying={loading}
+          style={{ marginBottom: spacing.md }}
         />
-        <Pressable onPress={() => onChange(Math.min(99, value + 1))} style={styles.stepBtn}>
-          <Txt variant="monoBold" size={22}>
-            +
-          </Txt>
-        </Pressable>
+      ) : null}
+      <View style={styles.footerRow}>
+        {isDesktop ? <View style={{ flex: 1 }} /> : null}
+        <Button variant={isDesktop ? "ghost" : "dark"} size="lg" icon="back" onPress={onBack}>
+          {backLabel}
+        </Button>
+        {!hideNext && onNext ? (
+          <Button
+            size="lg"
+            icon={submit ? "check" : "arrowRight"}
+            onPress={onNext}
+            disabled={nextDisabled}
+            loading={loading}
+            style={isDesktop ? { minWidth: 200 } : { flexGrow: 1 }}
+          >
+            {nextLabel}
+          </Button>
+        ) : null}
       </View>
     </View>
   );
 }
 
+/**
+ * Numeric stat field that keeps the typed text while focused, so "1." can become "1.5"
+ * (parsing every keystroke used to snap "1." back to "1"). Each complete number is
+ * committed as it's typed — a tap on Submit with the keyboard still up keeps the value.
+ */
+export function StatInput({
+  value,
+  onChange,
+  decimal,
+  label,
+  color = colors.text,
+}: {
+  value: number | null;
+  onChange: (value: number | null) => void;
+  decimal?: boolean;
+  label: string;
+  color?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(value != null ? String(value) : "");
+  useEffect(() => {
+    if (!focused) setDraft(value != null ? String(value) : "");
+  }, [value, focused]);
+  return (
+    <TextInput
+      value={draft}
+      onChangeText={(text) => {
+        const clean = decimal ? text.replace(/[^0-9.,]/g, "") : text.replace(/[^0-9]/g, "");
+        setDraft(clean);
+        onChange(parseStatInput(clean));
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => {
+        setFocused(false);
+        const parsed = parseStatInput(draft);
+        onChange(parsed);
+        setDraft(parsed != null ? String(parsed) : "");
+      }}
+      placeholder="—"
+      placeholderTextColor={colors.textFaint}
+      keyboardType={decimal ? "decimal-pad" : "number-pad"}
+      inputMode={decimal ? "decimal" : "numeric"}
+      selectTextOnFocus
+      accessibilityLabel={label}
+      style={[
+        styles.statInput,
+        { color },
+        focused && { borderColor: colors.lineStrong },
+        webStyle({ outlineStyle: "none" }) as TextStyle,
+      ]}
+    />
+  );
+}
+
+/** "You / Opp" stat grid row: label, my value, their value. */
 export function StatEditRow({
   label,
   myValue,
   oppValue,
   onChangeMy,
   onChangeOpp,
+  oppName,
+  decimal,
+  myColor,
+  oppColor,
 }: {
   label: string;
   myValue: number | null;
   oppValue: number | null;
   onChangeMy: (v: number | null) => void;
   onChangeOpp: (v: number | null) => void;
+  oppName: string;
+  decimal?: boolean;
+  myColor?: string;
+  oppColor?: string;
 }) {
   return (
     <View style={styles.statEditRow}>
-      <Txt size={12} color={colors.textDim} style={{ width: 110 }}>
+      <Txt size={12.5} color={colors.textDim} style={styles.statLabel}>
         {label}
       </Txt>
       <View style={styles.statEditFields}>
-        <TextInput
-          value={myValue != null ? String(myValue) : ""}
-          onChangeText={(t) => onChangeMy(parseStatInput(t))}
-          placeholder="—"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="numeric"
-          style={styles.statInput}
+        <StatInput
+          value={myValue}
+          onChange={onChangeMy}
+          decimal={decimal}
+          label={`Your ${label.toLowerCase()}`}
+          color={myColor}
         />
-        <Txt size={12} color={colors.textFaint}>
-          vs
-        </Txt>
-        <TextInput
-          value={oppValue != null ? String(oppValue) : ""}
-          onChangeText={(t) => onChangeOpp(parseStatInput(t))}
-          placeholder="—"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="numeric"
-          style={styles.statInput}
+        <StatInput
+          value={oppValue}
+          onChange={onChangeOpp}
+          decimal={decimal}
+          label={`${oppName}'s ${label.toLowerCase()}`}
+          color={oppColor}
         />
       </View>
     </View>

@@ -1,18 +1,34 @@
+/**
+ * Match detail. Where a `match_pending` push lands, so when the viewer is the named
+ * opponent of a result awaiting confirmation it carries a pinned Confirm / Dispute bar
+ * (same resolve path as the inbox). Shows the result, both rating moves (previewed while
+ * pending), the "why it moved" breakdown, stats, the stats photo (capped, true aspect,
+ * click to zoom) and the MVP vote. Desktop splits into two columns under the hero.
+ */
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, View } from "react-native";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import {
   Avatar,
   Button,
   Card,
+  Columns,
+  CountUp,
   EloDelta,
+  EmptyState,
+  ErrorCard,
   Icon,
+  Page,
+  Reveal,
   ScreenHeader,
   SectionLabel,
+  SkeletonCard,
   StatCard,
+  Tag,
   Txt,
 } from "@/components";
+import { VerdictActions } from "@/components/MatchVerdict";
+import { PhotoThumb } from "@/components/PhotoLightbox";
 import {
   deleteMatchPhoto,
   explainMatchEloParagraph,
@@ -24,14 +40,19 @@ import {
   type LeaguePlayer,
   type Season,
 } from "@/lib/league";
-// Direct module import: the league barrel isn't extended for every leaf module.
+// Direct module imports: the league barrel isn't extended for every leaf module.
 import { castVote, getMatchVotes, type MatchVotes } from "@/lib/league/matchVotes";
+import { getPendingImpacts, type PendingImpact } from "@/lib/league/pendingImpact";
 import { useAuth } from "@/lib/auth";
 import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
-import { showAlert } from "@/lib/dialogs";
+import { confirmAction } from "@/lib/dialogs";
+import { friendlyError } from "@/lib/friendlyError";
+import { toast } from "@/lib/toast";
+import { useBreakpoint } from "@/lib/responsive";
 import { firstName, fmtXg } from "@/lib/format";
+import { timeAgo } from "@/lib/when";
 
 interface MatchData {
   match: LeagueMatch | null;
@@ -41,18 +62,22 @@ interface MatchData {
   photoExpires: number;
   /** Null for finals/unconfirmed matches, or when the votes read failed — hide the card. */
   votes: MatchVotes | null;
+  /** Rating preview while the result awaits confirmation. */
+  preview: PendingImpact | null;
 }
 
 export default function MatchDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuth();
   const viewerId = user?.uid ?? null;
+  const { isDesktop } = useBreakpoint();
   const [deleting, setDeleting] = useState(false);
   const [photoHidden, setPhotoHidden] = useState(false);
 
   const {
     data,
-    loading,
+    refreshing,
     error: loadFailed,
     reload,
   } = useFocusData<MatchData>(
@@ -77,6 +102,10 @@ export default function MatchDetailRoute() {
         result && result.status === "confirmed"
           ? await getMatchVotes(id, viewerId).catch(() => null)
           : null;
+      const preview =
+        result && result.status === "pending_confirmation"
+          ? ((await getPendingImpacts([result]).catch(() => null))?.get(result.id) ?? null)
+          : null;
       return {
         match: result,
         season,
@@ -84,6 +113,7 @@ export default function MatchDetailRoute() {
         photoUrl,
         photoExpires,
         votes,
+        preview,
       };
     }, [id, viewerId]),
   );
@@ -91,155 +121,377 @@ export default function MatchDetailRoute() {
   const season = data?.season ?? null;
   const players = data?.players ?? new Map<string, LeaguePlayer>();
   const votes = data?.votes ?? null;
+  const preview = data?.preview ?? null;
   const photoUrl = photoHidden ? null : (data?.photoUrl ?? null);
   const photoExpires = data?.photoExpires ?? 0;
-  const error = loadFailed ? "Couldn't load this match." : null;
-
-  const handleDeletePhoto = async () => {
-    setDeleting(true);
-    try {
-      await deleteMatchPhoto(id);
-      setPhotoHidden(true);
-      void reload();
-    } catch {
-      showAlert("Could not delete photo", "Try again or ask an admin.");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   const a = match ? players.get(match.aId) : null;
   const b = match ? players.get(match.bId) : null;
+  const pending = match?.status === "pending_confirmation";
+  const viewerIsParticipant = !!match && (viewerId === match.aId || viewerId === match.bId);
+  const awaitingViewer = pending && viewerIsParticipant && match?.submittedBy !== viewerId;
+  const viewerSubmitted = !!match && match.submittedBy === viewerId;
+  const submitter = match ? players.get(match.submittedBy) : null;
+  const opponentOfViewer = match
+    ? players.get(viewerId === match.aId ? match.bId : match.aId)
+    : null;
+
   const subtitle = match
     ? `${formatDate(match.date)}${season ? ` · ${season.name}` : ""}`
     : undefined;
 
-  return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <ScreenHeader title="Match detail" subtitle={subtitle} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {loading ? <ActivityIndicator color={colors.accent} /> : null}
-        {error ? (
-          <Card>
-            <Txt color={colors.loss}>{error}</Txt>
-            <Button variant="dark" size="sm" style={{ marginTop: spacing.md }} onPress={reload}>
-              Retry
-            </Button>
-          </Card>
-        ) : null}
-        {!loading && !match ? (
-          <Card style={{ alignItems: "center" }}>
-            <Icon name="info" color={colors.textDim} />
-            <Txt variant="head" size={16} style={{ marginTop: spacing.sm }}>
-              Match not found
-            </Txt>
-          </Card>
-        ) : null}
-        {match && a && b ? (
-          <>
-            <View style={styles.hero}>
-              <PlayerSide
-                player={a}
-                team={match.aTeam}
-                delta={match.aDelta}
-                winner={match.aGoals > match.bGoals}
-              />
-              <View style={styles.score}>
-                <Txt variant="monoBold" size={48} style={{ letterSpacing: -2 }}>
-                  {match.aGoals}
-                  <Txt variant="monoBold" size={44} color={colors.textFaint}>
-                    :
-                  </Txt>
-                  {match.bGoals}
-                </Txt>
-                <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
-                  {match.status === "confirmed"
-                    ? "FULL TIME"
-                    : match.status.replace("_", " ").toUpperCase()}
-                </Txt>
-              </View>
-              <PlayerSide
-                player={b}
-                team={match.bTeam}
-                delta={match.bDelta}
-                winner={match.bGoals > match.aGoals}
-              />
-            </View>
+  const handleDeletePhoto = () =>
+    confirmAction({
+      title: "Delete this photo?",
+      message:
+        "The stats screenshot is removed for everyone. The score and stats you submitted stay. This can't be undone.",
+      confirmLabel: "Delete photo",
+      destructive: true,
+      onConfirm: async () => {
+        setDeleting(true);
+        try {
+          await deleteMatchPhoto(id);
+          setPhotoHidden(true);
+          toast.success("Photo deleted");
+          void reload();
+        } catch (err) {
+          toast.error(friendlyError(err, "Couldn't delete the photo. Try again in a moment."));
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
 
-            <View style={styles.statRow}>
-              <View style={{ flex: 1 }}>
-                <StatCard
-                  label={`${firstName(a.name)} ELO`}
-                  value={match.aEloAfter ?? "—"}
-                  sub={
-                    match.aEloBefore !== null && match.aEloAfter !== null
-                      ? `${match.aEloBefore} → ${match.aEloAfter}`
-                      : "Pending confirmation"
-                  }
-                  accent={(match.aDelta ?? 0) >= 0}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <StatCard
-                  label={`${firstName(b.name)} ELO`}
-                  value={match.bEloAfter ?? "—"}
-                  sub={
-                    match.bEloBefore !== null && match.bEloAfter !== null
-                      ? `${match.bEloBefore} → ${match.bEloAfter}`
-                      : "Pending confirmation"
-                  }
-                  accent={(match.bDelta ?? 0) >= 0}
-                />
-              </View>
-            </View>
+  const header = (
+    <ScreenHeader
+      title="Match detail"
+      subtitle={subtitle}
+      onRefresh={() => void reload()}
+      refreshing={refreshing}
+    />
+  );
 
-            {match.status === "confirmed" && match.eloExplain ? (
-              <EloExplainPanel match={match} playerA={a} playerB={b} />
-            ) : null}
+  const verdictBar =
+    awaitingViewer && match ? (
+      <View style={[styles.verdictBar, isDesktop && styles.verdictBarDesktop]}>
+        <Txt
+          size={12.5}
+          color={colors.textDim}
+          style={isDesktop ? { flex: 1, lineHeight: 18 } : { marginBottom: spacing.sm }}
+        >
+          {submitter ? firstName(submitter.name) : "Your opponent"} logged this result. Confirm it
+          to put it in the table, or dispute it for an admin to settle.
+        </Txt>
+        <View style={isDesktop ? { width: 400 } : undefined}>
+          <VerdictActions
+            matchId={match.id}
+            opponentName={opponentOfViewer ? firstName(opponentOfViewer.name) : "your opponent"}
+            size="lg"
+            onResolved={() => void reload()}
+            confirmMessage={
+              preview
+                ? `Result confirmed · your ELO ${
+                    viewerId === match.aId ? preview.aEloBefore : preview.bEloBefore
+                  } → ${
+                    viewerId === match.aId
+                      ? preview.aEloBefore + preview.aDelta
+                      : preview.bEloBefore + preview.bDelta
+                  }`
+                : "Result confirmed — it's in the table."
+            }
+          />
+        </View>
+      </View>
+    ) : undefined;
 
-            {photoUrl ? (
-              <View style={{ marginTop: spacing.x2 }}>
-                <SectionLabel
-                  action={
-                    <Button
-                      variant="dark"
-                      size="sm"
-                      onPress={handleDeletePhoto}
-                      disabled={deleting}
-                    >
-                      {deleting ? "Deleting…" : "Delete photo"}
-                    </Button>
-                  }
+  // `loading` only flips once the fetch is scheduled; no data and no error means "loading".
+  if (!data && !loadFailed) {
+    return (
+      <Page header={header} width="default">
+        <View style={{ gap: spacing.md }}>
+          <SkeletonCard height={200} />
+          <Columns at="desktop" gap={spacing.md}>
+            <SkeletonCard height={120} />
+            <SkeletonCard height={120} />
+          </Columns>
+          <SkeletonCard height={180} />
+        </View>
+      </Page>
+    );
+  }
+
+  if (loadFailed && !data) {
+    return (
+      <Page header={header} width="narrow">
+        <ErrorCard
+          message="Couldn't load this match. Check your connection and retry."
+          onRetry={() => void reload()}
+          retrying={refreshing}
+        />
+      </Page>
+    );
+  }
+
+  if (!match || !a || !b) {
+    return (
+      <Page header={header} width="narrow">
+        <EmptyState
+          icon="info"
+          title="Match not found"
+          body="It may have been voided or removed by an admin."
+          action={{
+            label: "Your games",
+            icon: "list",
+            onPress: () => router.replace("/(app)/games" as Href),
+          }}
+        />
+      </Page>
+    );
+  }
+
+  const aDelta = match.aDelta ?? (preview && !preview.finals ? preview.aDelta : null);
+  const bDelta = match.bDelta ?? (preview && !preview.finals ? preview.bDelta : null);
+
+  const ratings = (
+    <Reveal delay={80}>
+      <View style={styles.statRow}>
+        <View style={{ flex: 1 }}>
+          <EloCard player={a} match={match} side="a" preview={preview} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <EloCard player={b} match={match} side="b" preview={preview} />
+        </View>
+      </View>
+      {match.status === "confirmed" && match.eloExplain ? (
+        <EloExplainPanel match={match} playerA={a} playerB={b} />
+      ) : null}
+    </Reveal>
+  );
+
+  const details = (
+    <Reveal delay={140}>
+      <SectionLabel>Stats screen</SectionLabel>
+      <StatsPanel match={match} />
+
+      {photoUrl ? (
+        <View style={{ marginTop: spacing.x2 }}>
+          <SectionLabel
+            action={
+              viewerSubmitted ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  icon="x"
+                  onPress={handleDeletePhoto}
+                  loading={deleting}
                 >
-                  Stats photo
-                </SectionLabel>
-                <Image source={{ uri: photoUrl }} style={styles.photo} resizeMode="contain" />
-                <Txt size={10} color={colors.textDim} style={{ marginTop: 4 }}>
-                  Signed URL expires {new Date(photoExpires).toLocaleTimeString()}. Open again to
-                  refresh.
-                </Txt>
-              </View>
-            ) : null}
+                  Delete photo
+                </Button>
+              ) : undefined
+            }
+          >
+            Stats photo
+          </SectionLabel>
+          <PhotoThumb uri={photoUrl} maxHeight={360} label="Stats photo" />
+          <Txt size={10.5} color={colors.textFaint} style={{ marginTop: 6 }}>
+            Private link — expires {new Date(photoExpires).toLocaleTimeString()}. Reopen the match
+            to refresh it.
+          </Txt>
+        </View>
+      ) : null}
 
-            <View style={{ marginTop: spacing.x2 }}>
-              <SectionLabel>Stats screen</SectionLabel>
-              <StatsPanel match={match} />
-            </View>
+      {votes !== null && !votes.isFinals ? (
+        <MvpVoteCard
+          matchId={id}
+          votes={votes}
+          playerA={a}
+          playerB={b}
+          viewerId={viewerId}
+          onVoted={() => void reload()}
+        />
+      ) : null}
+    </Reveal>
+  );
 
-            {votes !== null && !votes.isFinals ? (
-              <MvpVoteCard
-                matchId={id}
-                votes={votes}
-                playerA={a}
-                playerB={b}
-                viewerId={viewerId}
-                onVoted={() => void reload()}
-              />
-            ) : null}
-          </>
-        ) : null}
-      </ScrollView>
-    </SafeAreaView>
+  return (
+    <Page
+      header={header}
+      footer={verdictBar}
+      width="default"
+      onRefresh={() => void reload()}
+      refreshing={refreshing}
+    >
+      <Reveal from="scale">
+        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+          <PlayerSide
+            player={a}
+            team={match.aTeam}
+            delta={aDelta}
+            winner={match.aGoals > match.bGoals}
+            pending={pending}
+            size={isDesktop ? 72 : 54}
+          />
+          <View style={styles.score}>
+            <Txt variant="monoBold" size={isDesktop ? 64 : 48} style={{ letterSpacing: -2 }}>
+              {match.aGoals}
+              <Txt variant="monoBold" size={isDesktop ? 58 : 44} color={colors.textFaint}>
+                :
+              </Txt>
+              {match.bGoals}
+            </Txt>
+            <StatusTag match={match} />
+          </View>
+          <PlayerSide
+            player={b}
+            team={match.bTeam}
+            delta={bDelta}
+            winner={match.bGoals > match.aGoals}
+            pending={pending}
+            size={isDesktop ? 72 : 54}
+          />
+        </View>
+      </Reveal>
+
+      <StatusBanner
+        match={match}
+        viewerSubmitted={viewerSubmitted}
+        awaitingViewer={awaitingViewer}
+        opponentName={opponentOfViewer ? firstName(opponentOfViewer.name) : "your opponent"}
+      />
+
+      <Columns at="desktop" gap={spacing.x2} style={{ marginTop: spacing.lg }}>
+        {ratings}
+        {details}
+      </Columns>
+    </Page>
+  );
+}
+
+function StatusTag({ match }: { match: LeagueMatch }) {
+  if (match.status === "confirmed") {
+    return (
+      <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
+        FULL TIME
+      </Txt>
+    );
+  }
+  const tone = match.status === "pending_confirmation" ? "accent" : "loss";
+  const label =
+    match.status === "pending_confirmation"
+      ? "AWAITING CONFIRMATION"
+      : match.status === "disputed"
+        ? "DISPUTED"
+        : "VOIDED";
+  return (
+    <View style={{ marginTop: 4 }}>
+      <Tag tone={tone}>{label}</Tag>
+    </View>
+  );
+}
+
+/** One line under the hero explaining where a non-final result stands. */
+function StatusBanner({
+  match,
+  viewerSubmitted,
+  awaitingViewer,
+  opponentName,
+}: {
+  match: LeagueMatch;
+  viewerSubmitted: boolean;
+  awaitingViewer: boolean;
+  opponentName: string;
+}) {
+  let icon: "clock" | "info" | "flame" = "clock";
+  let text: string | null = null;
+  if (match.status === "pending_confirmation") {
+    text = awaitingViewer
+      ? "This result needs your verdict — it doesn't count until you confirm it."
+      : viewerSubmitted
+        ? `Sent ${timeAgo(match.date)} — waiting for ${opponentName} to confirm. Nothing counts until they do.`
+        : "Awaiting confirmation from the opponent.";
+  } else if (match.status === "disputed") {
+    icon = "flame";
+    text = "Disputed — an admin will review it and settle the score. Ratings are unaffected.";
+  } else if (match.status === "voided") {
+    icon = "info";
+    text = "Voided by an admin — this result doesn't count.";
+  }
+  if (!text) return null;
+  const warn = match.status !== "pending_confirmation";
+  return (
+    <Reveal delay={60}>
+      <View
+        style={[
+          styles.banner,
+          warn && {
+            borderColor: withAlpha(colors.loss, 0.35),
+            backgroundColor: withAlpha(colors.loss, 0.06),
+          },
+        ]}
+        accessibilityRole="summary"
+      >
+        <Icon name={icon} size={16} color={warn ? colors.loss : colors.accent} />
+        <Txt size={13} color={colors.text} style={{ flex: 1, lineHeight: 18 }}>
+          {text}
+        </Txt>
+      </View>
+    </Reveal>
+  );
+}
+
+function EloCard({
+  player,
+  match,
+  side,
+  preview,
+}: {
+  player: LeaguePlayer;
+  match: LeagueMatch;
+  side: "a" | "b";
+  preview: PendingImpact | null;
+}) {
+  const before = side === "a" ? match.aEloBefore : match.bEloBefore;
+  const after = side === "a" ? match.aEloAfter : match.bEloAfter;
+  const delta = side === "a" ? match.aDelta : match.bDelta;
+  if (before !== null && after !== null) {
+    return (
+      <StatCard label={`${firstName(player.name)} ELO`} accent={(delta ?? 0) >= 0}>
+        <CountUp
+          value={after}
+          from={before}
+          duration={1000}
+          variant="monoBold"
+          size={30}
+          color={(delta ?? 0) >= 0 ? colors.accent : colors.text}
+          style={{ lineHeight: 31, letterSpacing: -0.6 }}
+        />
+        <Txt size={11.5} color={colors.textDim}>
+          {before} → {after}
+        </Txt>
+      </StatCard>
+    );
+  }
+  if (preview && match.status === "pending_confirmation") {
+    const pBefore = side === "a" ? preview.aEloBefore : preview.bEloBefore;
+    const pDelta = side === "a" ? preview.aDelta : preview.bDelta;
+    return (
+      <StatCard
+        label={`${firstName(player.name)} ELO`}
+        value={preview.finals ? pBefore : pBefore + pDelta}
+        sub={
+          preview.finals
+            ? "Finals — no ELO change"
+            : `${pBefore} → ${pBefore + pDelta} if confirmed`
+        }
+      />
+    );
+  }
+  return (
+    <StatCard
+      label={`${firstName(player.name)} ELO`}
+      value="—"
+      sub={match.status === "pending_confirmation" ? "Pending confirmation" : "Not rated"}
+    />
   );
 }
 
@@ -248,27 +500,36 @@ function PlayerSide({
   team,
   delta,
   winner,
+  pending,
+  size,
 }: {
   player: LeaguePlayer;
   team: string;
   delta: number | null;
   winner: boolean;
+  pending: boolean;
+  size: number;
 }) {
   return (
     <View style={styles.playerSide}>
-      <Avatar player={player} size={54} ring={winner} jersey />
-      <Txt variant="bodyMedium" size={13.5} style={{ marginTop: spacing.sm }} numberOfLines={1}>
+      <Avatar player={player} size={size} ring={winner} jersey />
+      <Txt variant="bodyMedium" size={14} style={{ marginTop: spacing.sm }} numberOfLines={1}>
         {firstName(player.name)}
       </Txt>
       <View style={styles.team}>
         <Icon name="jersey" size={11} color={colors.textDim} />
-        <Txt size={10.5} color={colors.textDim} numberOfLines={1}>
+        <Txt size={11} color={colors.textDim} numberOfLines={1}>
           {team}
         </Txt>
       </View>
       {delta !== null ? (
-        <View style={{ marginTop: 5 }}>
+        <View style={{ marginTop: 5, flexDirection: "row", alignItems: "center", gap: 4 }}>
           <EloDelta delta={delta} size={12} />
+          {pending ? (
+            <Txt size={10} color={colors.textFaint}>
+              preview
+            </Txt>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -290,21 +551,12 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
 
   if (!hasStats) {
     return (
-      <Card style={styles.noStats}>
-        <Icon
-          name={match.source === "ai_assisted" ? "photo" : "edit"}
-          size={24}
-          color={colors.textDim}
-        />
-        <View style={{ flex: 1 }}>
-          <Txt variant="head" size={14}>
-            {match.source === "ai_assisted" ? "Photo processed" : "Manual result"}
-          </Txt>
-          <Txt size={12} color={colors.textDim} style={{ marginTop: 3 }}>
-            Detailed match stats were not recorded for this result.
-          </Txt>
-        </View>
-      </Card>
+      <EmptyState
+        compact
+        icon={match.source === "ai_assisted" ? "photo" : "edit"}
+        title={match.source === "ai_assisted" ? "Photo processed" : "Manual result"}
+        body="Detailed match stats were not recorded for this result."
+      />
     );
   }
 
@@ -315,7 +567,7 @@ function StatsPanel({ match }: { match: LeagueMatch }) {
         <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
           FULL TIME · STATS
         </Txt>
-        <Icon name="photo" size={15} color={colors.textDim} />
+        {match.source === "ai_assisted" ? <Tag tone="accent">AI</Tag> : null}
       </View>
       {possession !== null ? (
         <View style={{ marginBottom: spacing.md }}>
@@ -382,9 +634,9 @@ function EloExplainPanel({
       <Card style={styles.statsPanel}>
         {paragraph ? (
           <Txt
-            size={11.5}
+            size={12}
             color={colors.textDim}
-            style={{ lineHeight: 16.5, marginBottom: spacing.md }}
+            style={{ lineHeight: 18, marginBottom: spacing.md }}
           >
             {paragraph}
           </Txt>
@@ -413,13 +665,13 @@ function EloExplainPanel({
 function StatsRow({ label, a, b }: { label: string; a: string | number; b: string | number }) {
   return (
     <View style={styles.statsRow}>
-      <Txt variant="monoBold" size={12}>
+      <Txt variant="monoBold" size={12.5}>
         {a}
       </Txt>
       <Txt variant="head" size={9.5} color={colors.textDim} style={styles.kicker}>
         {label.toUpperCase()}
       </Txt>
-      <Txt variant="monoBold" size={12} style={{ textAlign: "right" }}>
+      <Txt variant="monoBold" size={12.5} style={{ textAlign: "right" }}>
         {b}
       </Txt>
     </View>
@@ -460,9 +712,14 @@ function MvpVoteCard({
     setSubmitting(candidateId === playerA.id ? "a" : "b");
     try {
       await castVote(matchId, candidateId);
+      toast.success(
+        `Vote counted for ${firstName(candidateId === playerA.id ? playerA.name : playerB.name)}`,
+      );
       onVoted();
-    } catch {
-      showAlert("Vote not counted", "Voting may have closed — try again in a moment.");
+    } catch (err) {
+      toast.error(
+        friendlyError(err, "Vote not counted — voting may have closed. Try again in a moment."),
+      );
     } finally {
       setSubmitting(null);
     }
@@ -481,7 +738,7 @@ function MvpVoteCard({
     <View style={{ marginTop: spacing.x2 }}>
       <SectionLabel
         action={
-          <Txt size={10} color={colors.textDim}>
+          <Txt size={10.5} color={colors.textDim}>
             {windowOpen && votes.closesAt !== null
               ? `Closes ${new Date(votes.closesAt).toLocaleString()}`
               : "Voting closed"}
@@ -493,28 +750,28 @@ function MvpVoteCard({
       <Card style={styles.statsPanel}>
         {mayVote ? (
           <>
-            <Txt size={11.5} color={colors.textDim} style={{ marginBottom: spacing.md }}>
+            <Txt size={12} color={colors.textDim} style={{ marginBottom: spacing.md }}>
               Who was the man of the match?
             </Txt>
             <View style={styles.voteButtons}>
-              <Button
-                variant="dark"
-                size="sm"
-                onPress={() => handleVote(playerA.id)}
-                disabled={viewerId === playerA.id || submitting !== null}
-              >
-                {submitting === "a" ? "Voting…" : firstName(playerA.name)}
-              </Button>
-              <Button
-                variant="dark"
-                size="sm"
-                onPress={() => handleVote(playerB.id)}
-                disabled={viewerId === playerB.id || submitting !== null}
-              >
-                {submitting === "b" ? "Voting…" : firstName(playerB.name)}
-              </Button>
+              {[playerA, playerB].map((player, index) => (
+                <Button
+                  key={player.id}
+                  variant={votes.myCandidateId === player.id ? "primary" : "dark"}
+                  size="sm"
+                  icon={votes.myCandidateId === player.id ? "check" : "star"}
+                  onPress={() => handleVote(player.id)}
+                  disabled={
+                    viewerId === player.id ||
+                    (submitting !== null && submitting !== (index === 0 ? "a" : "b"))
+                  }
+                  loading={submitting === (index === 0 ? "a" : "b")}
+                >
+                  {firstName(player.name)}
+                </Button>
+              ))}
             </View>
-            <Txt size={10} color={colors.textDim} style={{ marginTop: spacing.sm }}>
+            <Txt size={10.5} color={colors.textDim} style={{ marginTop: spacing.sm }}>
               Can&apos;t vote for yourself
               {votes.myCandidateId !== null ? " · tap again to change your vote" : ""}
             </Txt>
@@ -561,8 +818,6 @@ function TallyRow({ label, count, total }: { label: string; count: number; total
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.x3 },
   hero: {
     flexDirection: "row",
     alignItems: "center",
@@ -575,6 +830,7 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     backgroundColor: mix(colors.surface, "#243347", 24),
   },
+  heroDesktop: { minHeight: 240, paddingHorizontal: spacing.x4 },
   playerSide: { flex: 1, alignItems: "center", minWidth: 0 },
   team: {
     flexDirection: "row",
@@ -582,12 +838,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 3,
     marginTop: 3,
-    maxWidth: 96,
+    maxWidth: 160,
   },
   score: { alignItems: "center", paddingHorizontal: 2 },
   kicker: { letterSpacing: 1.15 },
-  statRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md },
-  noStats: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  banner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    paddingLeft: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.accent, 0.3),
+    backgroundColor: withAlpha(colors.accent, 0.06),
+  },
+  statRow: { flexDirection: "row", gap: spacing.sm },
   statsPanel: {
     backgroundColor: mix(colors.surface, "#17304a", 18),
     borderColor: withAlpha(colors.accent, 0.13),
@@ -611,13 +878,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface2,
   },
   possessionFill: { height: "100%", backgroundColor: colors.accent },
-  photo: {
-    width: "100%",
-    aspectRatio: 900 / 1280,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    marginTop: spacing.sm,
-  },
   voteButtons: { flexDirection: "row", gap: spacing.sm },
   tallyTrack: { height: 4, marginTop: 3, opacity: 0.7 },
+  verdictBarDesktop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.x2,
+    paddingBottom: spacing.lg,
+  },
+  verdictBar: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    backgroundColor: colors.bg,
+  },
 });

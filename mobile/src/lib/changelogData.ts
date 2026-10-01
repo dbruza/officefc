@@ -4,6 +4,47 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.11.0.0",
+    date: "2026-10-01",
+    sections: [
+      {
+        kind: "Added",
+        items: [
+          'The web app now uses the whole browser window. From tablet width up, a side rail replaces the bottom tab bar and stays put on every screen, with Log match (shortcut N), search, an Inbox badge for results awaiting you, and your profile. On desktop the screens split into columns: Home puts your season, inbox and "Play next" beside your place in the table and the activity feed; the table becomes a sortable data table with a podium; profiles get a wide ELO chart with a hover read-out.',
+          "⌘K / Ctrl+K opens a command palette to jump to any player or screen, or start a match against someone.",
+          'Home now answers "where am I and who\'s next": a "results need your OK" banner, "waiting on" rows for results you logged, a mini table of the places around you with the ELO gap, and a "Play next" pick (an open cup tie, then the nearest-rated opponent you haven\'t played this season). Tapping a suggestion opens Log match with that opponent already chosen.',
+          "Logging a match is quicker: the app remembers how you last logged, opponents are sorted by who you play most with a search box, your team defaults to the one you used last, score and review are one step, Enter/Esc and arrow keys work on desktop, and the finish screen offers Rematch. Photo logging accepts drag-and-drop and pasting a screenshot on desktop, shows the photo next to the values you're checking, and walks through upload, reading and team matching step by step.",
+          'The opponent can confirm or dispute straight from the match page a "match pending" push opens. Confirmation cards show when the game was played and what confirming does to your ELO; disputing asks for an optional reason.',
+          "Finals and the cup draw as a real bracket on wide screens, with your route and the champion's route highlighted, and a champion celebration the first time you see the result.",
+          "Season recaps play as a story you tap or arrow through, ending on a share card that can be downloaded or shared from the browser too.",
+          "Admin opens on an overview: season phase with the next step, the results queue, the join code (copy code or invite link), and the cup. Invite links prefill the join code, even through sign-up.",
+          "Every screen loads with placeholders shaped like its content, fades in, and counts up the numbers that matter. Buttons, rows and cards respond to hover, press and keyboard focus. Motion is skipped when the device asks for reduced motion.",
+        ],
+      },
+      {
+        kind: "Changed",
+        items: [
+          "Dialogs on the web are now in-app and styled (Esc cancels, Enter confirms) instead of the browser's pop-ups, and success messages are short toasts instead of alerts.",
+          "Activating, starting finals and finalizing a season all ask first and can't be double-clicked. Finalizing the active season offers to activate the next one in the same step, and warns when there's no next season (otherwise a placeholder season is recreated). A season can now be finalized before its end date, after a warning that it ends early.",
+          "Sign-in and sign-up are a split screen on desktop with a step indicator through onboarding. Enter moves between fields and submits, and password managers recognise the forms. The verify-email screen moves on by itself once you've clicked the link.",
+          'ELO changes read "+12" / "−7"; the ▲/▼ arrows now only mean rank movement.',
+          "Tertiary text is brighter for readability, and browser tabs show the screen name plus a count of results awaiting you.",
+        ],
+      },
+      {
+        kind: "Fixed",
+        items: [
+          "On the web, several confirmations and error messages never appeared: starting the cup, forcing a cup tie, awarding a finals walkover and failed prediction saves.",
+          "A failed submit or fixture deal no longer leaves Log match permanently stuck; photo-logging submit errors are now shown.",
+          "The web app has a refresh button and refreshes when you come back to the tab, since pull-to-refresh doesn't exist in a browser.",
+          "Back buttons work after refreshing the page or opening a shared link, and a signed-out visitor following a shared link lands on it after signing in.",
+          "Head-to-head showed clean sheets and the ELO swing against the wrong player whenever player A wasn't first alphabetically, and briefly kept the previous pair's record after switching players.",
+          "Tapping the Admin chip on Home also opened your profile; the table's champion crown went to the latest champion on past seasons; Home showed made-up numbers when it couldn't load; and the ELO chart stayed 326px wide on larger screens.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.10.2.0",
     date: "2026-09-28",
     sections: [

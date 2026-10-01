@@ -1,10 +1,18 @@
 /** Labeled text input, themed to match the dark UI. */
-import { useState } from "react";
-import { Pressable, View, TextInput, StyleSheet, type TextInputProps } from "react-native";
+import { useState, type Ref } from "react";
+import {
+  Pressable,
+  View,
+  TextInput,
+  StyleSheet,
+  type TextInputProps,
+  type TextStyle,
+} from "react-native";
 import { Icon } from "./Icon";
 import { Txt } from "./Txt";
 import { colors, radius, fonts } from "@/theme";
 import { withAlpha } from "@/lib/color";
+import { webStyle, webTransition } from "@/lib/web";
 
 export interface TextFieldProps extends TextInputProps {
   label?: string;
@@ -15,6 +23,8 @@ export interface TextFieldProps extends TextInputProps {
   prefix?: string;
   /** Password-style field: hides input and adds a show/hide toggle. */
   secure?: boolean;
+  /** Forwarded to the inner TextInput (React 19 passes `ref` as a prop) for focus chaining. */
+  ref?: Ref<TextInput>;
 }
 
 export function TextField({
@@ -40,13 +50,18 @@ export function TextField({
       <View
         style={[
           styles.field,
+          webTransition,
           {
             borderColor: error
               ? colors.loss
               : focused
                 ? withAlpha(colors.accent, 0.6)
-                : colors.line,
+                : "rgba(255,255,255,0.12)",
           },
+          focused &&
+            webStyle({
+              boxShadow: `0 0 0 3px ${withAlpha(error ? colors.loss : colors.accent, 0.14)}`,
+            }),
         ]}
       >
         {prefix ? (
@@ -55,6 +70,7 @@ export function TextField({
           </Txt>
         ) : null}
         <TextInput
+          accessibilityLabel={label}
           {...rest}
           secureTextEntry={secure ? hidden : rest.secureTextEntry}
           onFocus={(e) => {
@@ -66,7 +82,7 @@ export function TextField({
             onBlur?.(e);
           }}
           placeholderTextColor={colors.textFaint}
-          style={[styles.input, style]}
+          style={[styles.input, webStyle({ outlineStyle: "none" }) as TextStyle, style]}
         />
         {secure ? (
           <Pressable
@@ -74,13 +90,20 @@ export function TextField({
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel={hidden ? "Show password" : "Hide password"}
+            // hitSlop is ignored on web, so pad the target itself.
+            style={{ padding: 6, margin: -6, borderRadius: radius.sm }}
           >
             <Icon name={hidden ? "eye" : "eyeOff"} size={18} color={colors.textDim} />
           </Pressable>
         ) : null}
       </View>
       {hint ? (
-        <Txt size={11.5} color={error ? colors.loss : colors.textDim} style={{ marginTop: 5 }}>
+        <Txt
+          size={11.5}
+          color={error ? colors.loss : colors.textDim}
+          style={{ marginTop: 5 }}
+          accessibilityLiveRegion={error ? "polite" : undefined}
+        >
           {hint}
         </Txt>
       ) : null}

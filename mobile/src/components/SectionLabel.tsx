@@ -15,7 +15,13 @@ export function SectionLabel({
 }) {
   return (
     <View style={[styles.row, style]}>
-      <Txt variant="head" size={12} color={colors.textDim} style={styles.label}>
+      <Txt
+        variant="head"
+        size={12}
+        color={colors.textDim}
+        style={styles.label}
+        accessibilityRole="header"
+      >
         {children.toUpperCase()}
       </Txt>
       {action}

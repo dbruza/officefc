@@ -1,9 +1,14 @@
-/** Profile section: the teams a player uses, their favourite, and how each one performs. */
+/**
+ * Profile section: the teams a player uses, their favourite, and how each one performs.
+ * Rows are read-only facts (no team pages yet), so they're plain views, not pressables.
+ */
 import { useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Card } from "./Card";
 import { FormChips } from "./chips";
+import { EmptyState } from "./feedback";
 import { Icon } from "./Icon";
+import { Interactive } from "./Interactive";
 import { Txt } from "./Txt";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
@@ -103,9 +108,12 @@ export function TeamsPlayed({ summary }: { summary: TeamRecordSummary }) {
 
   if (!favourite) {
     return (
-      <Card style={{ alignItems: "center" }}>
-        <Txt color={colors.textDim}>No teams played yet.</Txt>
-      </Card>
+      <EmptyState
+        compact
+        icon="jersey"
+        title="No teams yet"
+        body="Teams show up here once a confirmed result is on the books."
+      />
     );
   }
 
@@ -165,15 +173,16 @@ export function TeamsPlayed({ summary }: { summary: TeamRecordSummary }) {
       ))}
 
       {others.length > COLLAPSED_COUNT ? (
-        <Pressable
+        <Interactive
           onPress={() => setExpanded((value) => !value)}
+          accessibilityState={{ expanded }}
           style={styles.more}
-          accessibilityRole="button"
+          hoverStyle={{ backgroundColor: colors.surface }}
         >
-          <Txt variant="head" size={11} color={colors.accent}>
+          <Txt variant="head" size={11} color={colors.accent} style={{ letterSpacing: 0.6 }}>
             {expanded ? "SHOW LESS" : `SHOW ${others.length - COLLAPSED_COUNT} MORE`}
           </Txt>
-        </Pressable>
+        </Interactive>
       ) : null}
     </View>
   );
@@ -223,5 +232,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surface,
   },
-  more: { alignItems: "center", paddingVertical: spacing.sm },
+  more: { alignItems: "center", paddingVertical: spacing.sm, borderRadius: radius.md },
 });

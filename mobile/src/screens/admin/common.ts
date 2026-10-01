@@ -1,9 +1,9 @@
+/**
+ * Shared admin styles. (Error copy lives in `callableErrorMessage` in @/lib/authErrors —
+ * raw Firebase messages never reach the screen.)
+ */
 import { StyleSheet } from "react-native";
 import { colors, radius, spacing } from "@/theme";
-
-export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Something went wrong.";
-}
 
 export const formStyles = StyleSheet.create({
   input: {

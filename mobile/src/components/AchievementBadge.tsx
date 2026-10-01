@@ -1,18 +1,45 @@
 /** A profile achievement tile — unlock state, accent icon, progress toward the goal. */
 import { StyleSheet, View } from "react-native";
+import Animated, { useReducedMotion, type CSSAnimationKeyframes } from "react-native-reanimated";
 import { Icon } from "./Icon";
 import { Txt } from "./Txt";
+import { EASE_OUT, staggerDelay } from "./motion";
 import { colors, radius } from "@/theme";
 import { withAlpha } from "@/lib/color";
 import type { Achievement } from "@/lib/awards";
 
-export function AchievementBadge({ achievement }: { achievement: Achievement }) {
+// The fill is laid out at its final width and scales in from the left edge, so one
+// module-level keyframe set serves every percentage.
+const FILL: CSSAnimationKeyframes = {
+  from: { transform: [{ scaleX: 0 }] },
+  to: { transform: [{ scaleX: 1 }] },
+};
+
+export function AchievementBadge({
+  achievement,
+  index = 0,
+}: {
+  achievement: Achievement;
+  /** Position in the grid — staggers the progress-bar fill. */
+  index?: number;
+}) {
+  const reduced = useReducedMotion();
   const locked = !achievement.unlocked;
+  const label = `${achievement.name}: ${achievement.desc}. ${
+    locked ? `${achievement.cur} of ${achievement.goal}` : "Unlocked"
+  }`;
   return (
     <View
+      accessible
+      accessibilityLabel={label}
       style={[
         styles.card,
-        { borderColor: locked ? colors.line : withAlpha(achievement.accent, 0.35) },
+        locked
+          ? { borderColor: colors.line }
+          : {
+              borderColor: withAlpha(achievement.accent, 0.35),
+              backgroundColor: withAlpha(achievement.accent, 0.04),
+            },
       ]}
     >
       <View style={styles.head}>
@@ -58,12 +85,28 @@ export function AchievementBadge({ achievement }: { achievement: Achievement }) 
       </View>
       {locked && !achievement.oneShot ? (
         <View style={styles.track}>
-          <View
-            style={[
-              styles.fill,
-              { width: `${achievement.pct}%`, backgroundColor: achievement.accent },
-            ]}
-          />
+          {reduced ? (
+            <View
+              style={[
+                styles.fill,
+                { width: `${achievement.pct}%`, backgroundColor: achievement.accent },
+              ]}
+            />
+          ) : (
+            <Animated.View
+              style={{
+                ...StyleSheet.flatten(styles.fill),
+                width: `${achievement.pct}%`,
+                backgroundColor: achievement.accent,
+                transformOrigin: "left",
+                animationName: FILL,
+                animationDuration: 700,
+                animationDelay: staggerDelay(index, 200),
+                animationTimingFunction: EASE_OUT,
+                animationFillMode: "backwards",
+              }}
+            />
+          )}
         </View>
       ) : null}
     </View>
@@ -79,6 +122,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 9,
     minWidth: 0,
+    // Fill the grid cell so tiles in one row share a height (the track pins to the bottom).
+    flexGrow: 1,
   },
   head: {
     flexDirection: "row",
@@ -102,6 +147,7 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 4,
+    marginTop: "auto",
     borderRadius: radius.pill,
     backgroundColor: colors.surface2,
     overflow: "hidden",

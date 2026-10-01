@@ -1,6 +1,7 @@
 /** Small inline indicators: form chips, ELO delta, leaderboard movement. */
 import { View } from "react-native";
 import { Txt } from "./Txt";
+import { Reveal } from "./motion";
 import { colors, resultColor } from "@/theme";
 import type { MatchResult } from "@/types";
 
@@ -22,41 +23,50 @@ export function FormChips({
     );
   }
   return (
-    <View style={{ flexDirection: "row", gap }}>
+    <View
+      style={{ flexDirection: "row", gap }}
+      accessible
+      accessibilityLabel={`Form: ${results.join(" ")}`}
+    >
       {results.map((r, i) => (
-        <View
-          key={i}
-          style={{
-            width: size,
-            height: size,
-            borderRadius: 6,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: resultColor[r],
-            opacity: 0.45 + (i + 1) / (results.length * 1.8),
-          }}
-        >
-          <Txt
-            variant="monoBold"
-            size={Math.round(size * 0.5)}
-            color={r === "D" ? "#0a0c10" : colors.onAccent}
+        <Reveal key={i} from="scale" index={i} delay={80} duration={260}>
+          <View
+            style={{
+              width: size,
+              height: size,
+              borderRadius: 6,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: resultColor[r],
+              opacity: 0.45 + (i + 1) / (results.length * 1.8),
+            }}
           >
-            {r}
-          </Txt>
-        </View>
+            <Txt variant="monoBold" size={Math.round(size * 0.5)} color={colors.onAccent}>
+              {r}
+            </Txt>
+          </View>
+        </Reveal>
       ))}
     </View>
   );
 }
 
-/** Signed ELO change, coloured by sign. */
+/**
+ * Signed ELO change, coloured by sign (a zero change reads as a neutral ±0). No arrow:
+ * ▲/▼ are reserved for rank movement, so "+12" can't be misread as "up 12 places".
+ */
 export function EloDelta({ delta, size = 13 }: { delta: number; size?: number }) {
-  const pos = delta >= 0;
+  if (delta === 0) {
+    return (
+      <Txt variant="monoBold" size={size} color={colors.textDim}>
+        ±0
+      </Txt>
+    );
+  }
+  const pos = delta > 0;
   return (
     <Txt variant="monoBold" size={size} color={pos ? colors.win : colors.loss}>
-      {pos ? "▲" : "▼"}
-      {pos ? "+" : ""}
-      {delta}
+      {pos ? `+${delta}` : `−${Math.abs(delta)}`}
     </Txt>
   );
 }

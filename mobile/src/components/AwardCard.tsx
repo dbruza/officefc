@@ -1,7 +1,12 @@
-/** A season-award row: accent icon tile, title + stat, winner + context. */
-import { Pressable, StyleSheet, View } from "react-native";
+/**
+ * A season-award row: accent icon tile, title + stat, winner + context. Tappable (hover
+ * + press feedback) only when the award points at a specific match; otherwise a plain
+ * row, so nothing pretends to be clickable.
+ */
+import { StyleSheet, View } from "react-native";
 import { Avatar } from "./Avatar";
 import { Icon } from "./Icon";
+import { Interactive } from "./Interactive";
 import { Txt } from "./Txt";
 import { colors, radius } from "@/theme";
 import { withAlpha } from "@/lib/color";
@@ -21,11 +26,8 @@ export function AwardCard({
   const meta = AWARD_META[award.key];
   const tappable = Boolean(award.matchId && onPress);
   if (!winner) return null;
-  return (
-    <Pressable
-      onPress={tappable ? () => onPress?.(award) : undefined}
-      style={({ pressed }) => [styles.card, tappable && pressed && { opacity: 0.9 }]}
-    >
+  const content = (
+    <>
       <View
         style={[
           styles.iconTile,
@@ -66,7 +68,22 @@ export function AwardCard({
           </View>
         </View>
       </View>
-    </Pressable>
+    </>
+  );
+  if (!tappable) {
+    return <View style={styles.card}>{content}</View>;
+  }
+  return (
+    <Interactive
+      onPress={() => onPress?.(award)}
+      accessibilityRole="link"
+      accessibilityLabel={`${meta.title}: ${winner.name}, ${award.stat} ${award.statLabel}. Open the match`}
+      pressScale={0.99}
+      style={styles.card}
+      hoverStyle={styles.cardHover}
+    >
+      {content}
+    </Interactive>
   );
 }
 
@@ -81,6 +98,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: radius.md,
+  },
+  cardHover: {
+    backgroundColor: colors.surface2,
+    borderColor: colors.lineStrong,
   },
   iconTile: {
     width: 42,

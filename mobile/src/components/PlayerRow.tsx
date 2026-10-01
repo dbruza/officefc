@@ -1,6 +1,8 @@
 /** Reusable leaderboard / list row: rank, avatar, name, form-or-record, ELO, movement. */
-import { Pressable, View, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { Txt } from "./Txt";
+import { Interactive } from "./Interactive";
+import { CountUp } from "./motion";
 import { Avatar } from "./Avatar";
 import { RankBadge } from "./RankBadge";
 import { FormChips, Movement } from "./chips";
@@ -20,6 +22,11 @@ export interface PlayerRowProps {
   compact?: boolean;
   /** Reigning-champion treatment on the avatar (gold ring + trophy badge). */
   champion?: boolean;
+  /**
+   * Keep an empty 26px rank column when `rank` is absent so unranked rows line up
+   * with ranked ones in the same list.
+   */
+  reserveRank?: boolean;
   onPress?: () => void;
 }
 
@@ -33,21 +40,24 @@ export function PlayerRow({
   you,
   compact,
   champion,
+  reserveRank,
   onPress,
 }: PlayerRowProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        {
-          backgroundColor: you ? mix(colors.surface, colors.accent, 9) : colors.surface,
-          borderColor: you ? withAlpha(colors.accent, 0.35) : colors.line,
-          opacity: pressed ? 0.9 : 1,
-        },
-      ]}
-    >
-      {rank ? <RankBadge rank={rank} /> : null}
+  const label = [
+    player.name,
+    you ? "(you)" : null,
+    rank ? `rank ${rank}` : null,
+    elo !== undefined ? `${elo} ELO` : "unranked",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const surface = {
+    backgroundColor: you ? mix(colors.surface, colors.accent, 9) : colors.surface,
+    borderColor: you ? withAlpha(colors.accent, 0.35) : colors.line,
+  };
+  const content = (
+    <>
+      {rank ? <RankBadge rank={rank} /> : reserveRank ? <View style={styles.rankSlot} /> : null}
       <Avatar player={player} size={38} jersey champion={champion} />
       <View style={styles.mid}>
         <View style={styles.nameRow}>
@@ -80,17 +90,37 @@ export function PlayerRow({
         ) : null}
       </View>
       <View style={styles.right}>
-        <Txt
-          variant="monoBold"
-          size={18}
-          color={elo === undefined ? colors.textFaint : colors.text}
-          style={{ letterSpacing: -0.4 }}
-        >
-          {elo ?? "—"}
-        </Txt>
+        {elo === undefined ? (
+          <Txt variant="monoBold" size={18} color={colors.textFaint}>
+            —
+          </Txt>
+        ) : (
+          <CountUp value={elo} variant="monoBold" size={18} style={{ letterSpacing: -0.4 }} />
+        )}
         {move !== undefined ? <Movement move={move} /> : null}
       </View>
-    </Pressable>
+    </>
+  );
+  if (!onPress) {
+    return (
+      <View style={[styles.row, surface]} accessible accessibilityLabel={label}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <Interactive
+      onPress={onPress}
+      accessibilityLabel={label}
+      pressScale={0.99}
+      style={[styles.row, surface]}
+      hoverStyle={{
+        backgroundColor: you ? mix(colors.surface, colors.accent, 14) : colors.surface2,
+        borderColor: you ? withAlpha(colors.accent, 0.55) : colors.lineStrong,
+      }}
+    >
+      {content}
+    </Interactive>
   );
 }
 
@@ -105,6 +135,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
   },
+  rankSlot: { width: 26 },
   mid: { flex: 1, minWidth: 0 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   youTag: {

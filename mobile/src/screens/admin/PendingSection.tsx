@@ -1,59 +1,82 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { Txt } from "@/components";
-import {
-  getAdminPendingMatches,
-  getLeaguePlayers,
-  type AdminPendingMatch,
-  type LeaguePlayer,
-} from "@/lib/league";
-import { colors, spacing } from "@/theme";
+/**
+ * Admin → Results: every pending or disputed match, disputes first. The queue is loaded by
+ * the admin screen (the overview card counts the same list), so this only renders it —
+ * skeletons while loading, an error card on failure, and "all clear" only when it truly is.
+ */
+import { useMemo } from "react";
+import { View } from "react-native";
+import { EmptyState, ErrorCard, Grid, Reveal, SkeletonCard } from "@/components";
+import type { AdminPendingMatch, LeaguePlayer } from "@/lib/league";
+import { spacing } from "@/theme";
 import { AdminMatchCard } from "./AdminMatchCard";
+import { SectionHead } from "./SectionHead";
 
-export function PendingSection() {
-  const [matches, setMatches] = useState<AdminPendingMatch[]>([]);
-  const [players, setPlayers] = useState<Map<string, LeaguePlayer>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = async () => {
-    setLoading(true);
-    try {
-      const [p, roster] = await Promise.all([getAdminPendingMatches(), getLeaguePlayers()]);
-      setMatches(p);
-      setPlayers(new Map(roster.map((player) => [player.id, player])));
-      setError(null);
-    } catch {
-      setError("Failed to load admin data.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    reload();
-  }, []);
+export function PendingSection({
+  matches,
+  players,
+  loading,
+  error,
+  reload,
+}: {
+  matches: AdminPendingMatch[] | null;
+  players: Map<string, LeaguePlayer>;
+  loading: boolean;
+  error: string | null;
+  reload: () => Promise<unknown>;
+}) {
+  // Disputes need a human; plain pendings auto-confirm eventually. Oldest first within each.
+  const sorted = useMemo(
+    () =>
+      [...(matches ?? [])].sort(
+        (a, b) =>
+          Number(b.status === "disputed") - Number(a.status === "disputed") ||
+          (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0),
+      ),
+    [matches],
+  );
+  const disputed = sorted.filter((m) => m.status === "disputed").length;
 
   return (
     <View>
-      <Txt variant="head" size={18} style={{ marginBottom: spacing.lg }}>
-        Pending & Disputed
-      </Txt>
+      <SectionHead
+        title="Results to review"
+        subtitle={
+          matches && matches.length > 0
+            ? `${matches.length} waiting${disputed ? ` · ${disputed} disputed` : ""}. Disputes are listed first.`
+            : "Pending and disputed results land here."
+        }
+      />
 
-      {loading ? <ActivityIndicator color={colors.accent} /> : null}
-
-      {matches.length === 0 ? (
-        <Txt color={colors.textDim}>No pending matches.</Txt>
+      {matches === null && error ? (
+        <ErrorCard message={error} onRetry={() => void reload()} retrying={loading} />
+      ) : matches === null ? (
+        <View style={{ gap: spacing.md }}>
+          <SkeletonCard height={150} />
+          <SkeletonCard height={150} />
+        </View>
+      ) : sorted.length === 0 ? (
+        <EmptyState
+          icon="check"
+          title="All caught up"
+          body="No pending or disputed results. New disputes show up here with a badge."
+        />
       ) : (
-        matches.map((m) => (
-          <AdminMatchCard key={m.id} match={m} players={players} onResolved={reload} />
-        ))
+        <Grid min={360} maxColumns={2} gap={spacing.md}>
+          {sorted.map((m, i) => (
+            <Reveal key={m.id} index={i}>
+              <AdminMatchCard match={m} players={players} onResolved={() => void reload()} />
+            </Reveal>
+          ))}
+        </Grid>
       )}
 
-      {error ? (
-        <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg }}>
-          {error}
-        </Txt>
+      {matches !== null && error ? (
+        <ErrorCard
+          message={error}
+          onRetry={() => void reload()}
+          retrying={loading}
+          style={{ marginTop: spacing.lg }}
+        />
       ) : null}
     </View>
   );

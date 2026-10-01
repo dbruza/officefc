@@ -1,14 +1,36 @@
-import { useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+/**
+ * Team field + searchable catalogue picker. Phones get a bottom sheet; from tablet width
+ * up it's a centred dialog (a full-width sheet across a desktop monitor reads as broken).
+ * Keyboard-first on web: the search box autofocuses, ↑/↓ move the highlight, Enter picks
+ * it (the top result by default), Escape closes. `recentTeamIds` seeds a Recent row and
+ * `quickPicks` render one-tap chips under the closed field ("Last time: Arsenal").
+ */
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
+  type TextStyle,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { filterTeams, type TeamCategoryFilter, type TeamOverallFilter } from "@/lib/teamSearch";
 import type { Team } from "@/lib/league";
 import type { Player } from "@/types";
-import { colors, radius, spacing } from "@/theme";
+import { colors, elevation, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 import { plural } from "@/lib/format";
+import { useBreakpoint } from "@/lib/responsive";
+import { webStyle } from "@/lib/web";
 import { Avatar } from "./Avatar";
+import { IconButton } from "./Button";
 import { Icon } from "./Icon";
+import { Interactive } from "./Interactive";
+import { Reveal } from "./motion";
 import { Txt } from "./Txt";
 
 const CATEGORY_FILTERS: Array<{ value: TeamCategoryFilter; label: string }> = [
@@ -26,58 +48,249 @@ const OVERALL_FILTERS: Array<{ value: TeamOverallFilter; label: string }> = [
   { value: "unrated", label: "Unrated" },
 ];
 
+/** Fixed row height (+ gap) so the list can scroll the keyboard highlight into view. */
+const ROW_HEIGHT = 78;
+const ROW_GAP = spacing.sm;
+const LIST_PAD = spacing.lg;
+
 export interface TeamPickerProps {
   label: string;
   player: Player | null;
   teams: Team[];
   value: Team | null;
   onChange: (team: Team) => void;
+  /** Teams this player used recently, newest first — shown as a Recent row in the picker. */
+  recentTeamIds?: string[];
+  /** One-tap suggestions under the closed field (e.g. the opponent's last team vs you). */
+  quickPicks?: { label: string; team: Team }[];
+  /** Small note under the field ("Your last team"). */
+  hint?: string;
 }
 
-export function TeamPicker({ label, player, teams, value, onChange }: TeamPickerProps) {
+export function TeamPicker({
+  label,
+  player,
+  teams,
+  value,
+  onChange,
+  recentTeamIds,
+  quickPicks,
+  hint,
+}: TeamPickerProps) {
+  const { isTablet } = useBreakpoint();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<TeamCategoryFilter>("all");
   const [overall, setOverall] = useState<TeamOverallFilter>("all");
+  const [highlight, setHighlight] = useState(0);
+  const listRef = useRef<FlatList<Team>>(null);
 
   const results = useMemo(
     () => filterTeams(teams, { query, category, overall }),
     [teams, query, category, overall],
   );
+  const recent = useMemo(() => {
+    if (!recentTeamIds?.length) return [];
+    const byId = new Map(teams.map((team) => [team.id, team]));
+    return recentTeamIds
+      .map((id) => byId.get(id))
+      .filter((team): team is Team => !!team)
+      .slice(0, 6);
+  }, [recentTeamIds, teams]);
+  const showRecent = recent.length > 0 && !query && category === "all" && overall === "all";
+
+  // A new result set starts the highlight back at the top result.
+  useEffect(() => setHighlight(0), [query, category, overall]);
 
   function showPicker() {
     setQuery("");
     setCategory("all");
     setOverall("all");
+    setHighlight(0);
     setOpen(true);
-  }
-
-  function closePicker() {
-    setOpen(false);
   }
 
   function selectTeam(team: Team) {
     onChange(team);
-    closePicker();
+    setOpen(false);
   }
+
+  function moveHighlight(delta: number) {
+    if (results.length === 0) return;
+    const next = Math.max(0, Math.min(results.length - 1, highlight + delta));
+    setHighlight(next);
+    listRef.current?.scrollToIndex({ index: next, viewPosition: 0.5, animated: true });
+  }
+
+  function onSearchKey(event: NativeSyntheticEvent<TextInputKeyPressEventData>) {
+    const key = event.nativeEvent.key;
+    if (key === "ArrowDown" || key === "ArrowUp") {
+      event.preventDefault();
+      moveHighlight(key === "ArrowDown" ? 1 : -1);
+    }
+  }
+
+  const sheet = (
+    <View style={styles.sheetInner}>
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Txt variant="head" size={18} accessibilityRole="header">
+            {label}
+          </Txt>
+          <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
+            {plural(results.length, "team")}
+            {isTablet ? " · ↑↓ to move · Enter to pick · Esc to close" : ""}
+          </Txt>
+        </View>
+        <IconButton
+          icon="x"
+          accessibilityLabel="Close team picker"
+          onPress={() => setOpen(false)}
+        />
+      </View>
+
+      <View style={styles.filters}>
+        <View style={styles.searchBox}>
+          <Icon name="search" size={16} color={colors.textDim} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search teams"
+            placeholderTextColor={colors.textFaint}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus
+            returnKeyType="done"
+            onKeyPress={onSearchKey}
+            onSubmitEditing={() => {
+              const pick = results[highlight] ?? results[0];
+              if (pick) selectTeam(pick);
+            }}
+            accessibilityLabel={`Search teams for ${label}`}
+            style={[styles.searchInput, webStyle({ outlineStyle: "none" }) as TextStyle]}
+          />
+          {query ? (
+            <Interactive
+              onPress={() => setQuery("")}
+              accessibilityLabel="Clear search"
+              style={styles.clear}
+              hoverStyle={{ backgroundColor: colors.surface3 }}
+            >
+              <Icon name="x" size={14} color={colors.textDim} />
+            </Interactive>
+          ) : null}
+        </View>
+
+        {showRecent ? (
+          <View style={styles.recentRow}>
+            <Txt variant="head" size={10.5} color={colors.textDim} style={styles.recentLabel}>
+              RECENT
+            </Txt>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}
+              keyboardShouldPersistTaps="handled"
+            >
+              {recent.map((team) => (
+                <FilterChip
+                  key={team.id}
+                  label={team.overall != null ? `${team.name} · ${team.overall}` : team.name}
+                  selected={team.id === value?.id}
+                  onPress={() => selectTeam(team)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipRow}
+          keyboardShouldPersistTaps="handled"
+        >
+          {CATEGORY_FILTERS.map((filter) => (
+            <FilterChip
+              key={filter.value}
+              label={filter.label}
+              selected={category === filter.value}
+              onPress={() => setCategory(filter.value)}
+            />
+          ))}
+          <View style={styles.chipDivider} />
+          {OVERALL_FILTERS.map((filter) => (
+            <FilterChip
+              key={filter.value}
+              label={filter.label}
+              selected={overall === filter.value}
+              onPress={() => setOverall(filter.value)}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      <FlatList
+        ref={listRef}
+        style={{ flex: 1 }}
+        data={results}
+        keyExtractor={(team) => team.id}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.listContent}
+        getItemLayout={(_, index) => ({
+          length: ROW_HEIGHT + ROW_GAP,
+          offset: LIST_PAD + (ROW_HEIGHT + ROW_GAP) * index,
+          index,
+        })}
+        initialNumToRender={12}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Txt variant="head" size={16}>
+              No teams found
+            </Txt>
+            <Txt color={colors.textDim} size={12.5} style={{ marginTop: spacing.sm }}>
+              Try clearing a filter or using a broader search.
+            </Txt>
+          </View>
+        }
+        renderItem={({ item, index }) => (
+          <TeamResult
+            team={item}
+            selected={item.id === value?.id}
+            // Keyboard highlight only where a keyboard is likely (tablet/desktop widths).
+            highlighted={isTablet && index === highlight}
+            onPress={() => selectTeam(item)}
+          />
+        )}
+      />
+    </View>
+  );
 
   return (
     <View>
       <View style={styles.fieldLabel}>
         <Avatar player={player} size={20} />
-        <Txt variant="head" size={11} color={colors.textDim}>
+        <Txt variant="head" size={11} color={colors.textDim} style={{ letterSpacing: 0.6 }}>
           {label.toUpperCase()}
         </Txt>
+        {hint ? (
+          <Txt size={11} color={colors.textFaint} style={{ marginLeft: "auto" }}>
+            {hint}
+          </Txt>
+        ) : null}
       </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${label}: ${value?.name ?? "No team selected"}`}
+      <Interactive
+        accessibilityLabel={`${label}: ${value?.name ?? "No team selected"}. Change team`}
         onPress={showPicker}
+        pressScale={0.99}
         style={[styles.teamField, value && styles.teamFieldFilled]}
+        hoverStyle={{ borderColor: value ? withAlpha(colors.accent, 0.6) : colors.lineStrong }}
       >
         <Icon name="jersey" size={17} color={value ? player?.color : colors.textDim} />
-        <View style={{ flex: 1 }}>
-          <Txt color={value ? colors.text : colors.textDim}>{value?.name ?? "Search teams…"}</Txt>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Txt color={value ? colors.text : colors.textDim} numberOfLines={1}>
+            {value?.name ?? "Search teams…"}
+          </Txt>
           {value ? (
             <Txt size={10.5} color={colors.textDim} numberOfLines={1} style={{ marginTop: 2 }}>
               {value.competition}
@@ -85,117 +298,57 @@ export function TeamPicker({ label, player, teams, value, onChange }: TeamPicker
             </Txt>
           ) : null}
         </View>
+        {value?.overall != null ? (
+          <Txt variant="monoBold" size={15} color={colors.accent}>
+            {value.overall}
+          </Txt>
+        ) : null}
         <Icon name="search" size={16} color={colors.textDim} />
-      </Pressable>
+      </Interactive>
+      {quickPicks?.length ? (
+        <View style={styles.quickRow}>
+          {quickPicks.map((pick) => (
+            <FilterChip
+              key={pick.team.id}
+              label={pick.label}
+              selected={pick.team.id === value?.id}
+              onPress={() => onChange(pick.team)}
+            />
+          ))}
+        </View>
+      ) : null}
 
       <Modal
         visible={open}
-        animationType="slide"
+        animationType={isTablet ? "fade" : "slide"}
         transparent
         statusBarTranslucent
-        onRequestClose={closePicker}
+        onRequestClose={() => setOpen(false)}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable
-            accessibilityRole="button"
+        <View style={[styles.modalOverlay, isTablet && styles.modalOverlayCentered]}>
+          <Interactive
             accessibilityLabel="Close team picker"
-            onPress={closePicker}
-            style={StyleSheet.absoluteFill}
+            onPress={() => setOpen(false)}
+            pressScale={1}
+            focusable={false}
+            style={[StyleSheet.absoluteFill, webStyle({ cursor: "default" })]}
           />
-          <View style={styles.sheet}>
-            <SafeAreaView style={styles.sheetSafe} edges={["bottom"]}>
-              <View style={styles.handle} />
-              <View style={styles.header}>
-                <Pressable onPress={closePicker} style={styles.iconButton}>
-                  <Icon name="x" size={20} stroke={2.5} />
-                </Pressable>
-                <View style={{ flex: 1 }}>
-                  <Txt variant="head" size={18}>
-                    {label}
-                  </Txt>
-                  <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
-                    {plural(results.length, "team")}
-                  </Txt>
-                </View>
-              </View>
-
-              <View style={styles.filters}>
-                <View style={styles.searchBox}>
-                  <Icon name="search" size={16} color={colors.textDim} />
-                  <TextInput
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder="Search teams"
-                    placeholderTextColor={colors.textFaint}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoFocus
-                    style={styles.searchInput}
-                  />
-                  {query ? (
-                    <Pressable onPress={() => setQuery("")}>
-                      <Icon name="x" size={16} color={colors.textDim} />
-                    </Pressable>
-                  ) : null}
-                </View>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipRow}
-                >
-                  {CATEGORY_FILTERS.map((filter) => (
-                    <FilterChip
-                      key={filter.value}
-                      label={filter.label}
-                      selected={category === filter.value}
-                      onPress={() => setCategory(filter.value)}
-                    />
-                  ))}
-                </ScrollView>
-
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipRow}
-                >
-                  {OVERALL_FILTERS.map((filter) => (
-                    <FilterChip
-                      key={filter.value}
-                      label={filter.label}
-                      selected={overall === filter.value}
-                      onPress={() => setOverall(filter.value)}
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-
-              <FlatList
-                style={{ flex: 1 }}
-                data={results}
-                keyExtractor={(team) => team.id}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={
-                  <View style={styles.empty}>
-                    <Txt variant="head" size={16}>
-                      No teams found
-                    </Txt>
-                    <Txt color={colors.textDim} size={12.5} style={{ marginTop: spacing.sm }}>
-                      Try clearing a filter or using a broader search.
-                    </Txt>
-                  </View>
-                }
-                renderItem={({ item }) => (
-                  <TeamResult
-                    team={item}
-                    selected={item.id === value?.id}
-                    onPress={() => selectTeam(item)}
-                  />
-                )}
-              />
-            </SafeAreaView>
-          </View>
+          {isTablet ? (
+            <Reveal
+              from="scale"
+              duration={200}
+              style={[styles.dialog, webStyle({ boxShadow: elevation.overlay })]}
+            >
+              {sheet}
+            </Reveal>
+          ) : (
+            <View style={styles.sheet}>
+              <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
+                <View style={styles.handle} />
+                {sheet}
+              </SafeAreaView>
+            </View>
+          )}
         </View>
       </Modal>
     </View>
@@ -212,25 +365,44 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}>
-      <Txt size={12} color={selected ? colors.accent : colors.textDim}>
+    <Interactive
+      onPress={onPress}
+      accessibilityState={{ selected }}
+      pressScale={0.96}
+      style={[styles.chip, selected && styles.chipSelected]}
+      hoverStyle={selected ? undefined : { borderColor: colors.lineStrong }}
+    >
+      <Txt size={12} color={selected ? colors.accent : colors.textDim} numberOfLines={1}>
         {label}
       </Txt>
-    </Pressable>
+    </Interactive>
   );
 }
 
 function TeamResult({
   team,
   selected,
+  highlighted,
   onPress,
 }: {
   team: Team;
   selected: boolean;
+  highlighted: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} style={[styles.resultRow, selected && styles.selectedRow]}>
+    <Interactive
+      onPress={onPress}
+      accessibilityLabel={`${team.name}${team.overall != null ? `, overall ${team.overall}` : ""}`}
+      accessibilityState={{ selected }}
+      pressScale={0.99}
+      style={[
+        styles.resultRow,
+        highlighted && styles.highlightedRow,
+        selected && styles.selectedRow,
+      ]}
+      hoverStyle={{ backgroundColor: colors.surface2, borderColor: colors.lineStrong }}
+    >
       <View style={styles.overall}>
         <Txt variant="monoBold" size={team.overall == null ? 11 : 18} color={colors.accent}>
           {team.overall ?? "N/A"}
@@ -239,8 +411,8 @@ function TeamResult({
           OVR
         </Txt>
       </View>
-      <View style={{ flex: 1 }}>
-        <Txt variant="bodyMedium" size={14}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt variant="bodyMedium" size={14} numberOfLines={1}>
           {team.name}
         </Txt>
         <Txt size={10.5} color={colors.textDim} numberOfLines={1} style={{ marginTop: 3 }}>
@@ -255,7 +427,12 @@ function TeamResult({
         </Txt>
       </View>
       {selected ? <Icon name="check" size={17} color={colors.accent} /> : null}
-    </Pressable>
+      {highlighted && !selected ? (
+        <Txt variant="mono" size={10} color={colors.textFaint}>
+          ↵
+        </Txt>
+      ) : null}
+    </Interactive>
   );
 }
 
@@ -279,14 +456,16 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   teamFieldFilled: { borderColor: withAlpha(colors.accent, 0.35) },
+  quickRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.sm },
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.58)",
   },
+  modalOverlayCentered: { justifyContent: "center", alignItems: "center", padding: spacing.x2 },
   sheet: {
-    height: "78%",
-    maxHeight: 680,
+    height: "82%",
+    maxHeight: 700,
     backgroundColor: colors.bg,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
@@ -295,7 +474,18 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     overflow: "hidden",
   },
-  sheetSafe: { flex: 1 },
+  dialog: {
+    width: "100%",
+    maxWidth: 560,
+    height: "80%",
+    maxHeight: 720,
+    backgroundColor: colors.bg,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    overflow: "hidden",
+  },
+  sheetInner: { flex: 1 },
   handle: {
     alignSelf: "center",
     width: 42,
@@ -309,20 +499,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xs,
+    paddingTop: spacing.md,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
   },
   filters: {
     gap: spacing.sm,
@@ -346,7 +526,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 12,
   },
-  chipRow: { gap: spacing.sm },
+  clear: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recentRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  recentLabel: { letterSpacing: 1 },
+  chipRow: { gap: spacing.sm, alignItems: "center" },
+  chipDivider: { width: 1, height: 18, backgroundColor: colors.line, marginHorizontal: 2 },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: 7,
@@ -359,19 +549,20 @@ const styles = StyleSheet.create({
     borderColor: withAlpha(colors.accent, 0.45),
     backgroundColor: withAlpha(colors.accent, 0.08),
   },
-  listContent: { padding: spacing.lg, paddingBottom: spacing.x3 },
+  listContent: { padding: LIST_PAD, paddingBottom: spacing.x3 },
   resultRow: {
-    minHeight: 82,
+    height: ROW_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: ROW_GAP,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: radius.md,
     backgroundColor: colors.surface,
   },
+  highlightedRow: { borderColor: colors.lineStrong, backgroundColor: colors.surface2 },
   selectedRow: {
     borderColor: withAlpha(colors.accent, 0.45),
     backgroundColor: withAlpha(colors.accent, 0.07),

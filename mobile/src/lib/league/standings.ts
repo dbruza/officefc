@@ -5,6 +5,13 @@ import { asDate, nullableNumber } from "./firestoreMap";
 import type { EloHistoryPoint, PlayerStats, Standing } from "./types";
 import type { MatchResult } from "@/types";
 
+/**
+ * Confirmed games a player needs before holding a ranked place. Mirrors
+ * functions/src/elo.ts MIN_RANKED_GAMES — the server decides `ranked`; this copy only
+ * drives UI copy ("3 games to qualify", "1 more game to rank").
+ */
+export const MIN_RANKED_GAMES = 3;
+
 function mapStanding(uid: string, data: Record<string, unknown>): Standing {
   const rank = nullableNumber(data.rank) ?? 0;
   return {

@@ -1,25 +1,47 @@
-/** Shared identity form: used by onboarding profile setup and in-app profile editing. */
-import { useMemo, useState } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
-import { TextField, Button, Txt, Avatar } from "@/components";
+/**
+ * Shared identity form: used by onboarding profile setup and in-app profile editing.
+ * Validation shows under each field once the user has tried to submit (not while they
+ * are still typing their first attempt), and Enter walks name → handle → jersey → save.
+ */
+import { useMemo, useRef, useState } from "react";
+import { View, StyleSheet, type TextInput } from "react-native";
+import { Avatar, Icon, Interactive, Txt } from "@/components";
+import { Form, RefTextField, SubmitButton, submitOnEnter } from "@/components/FormScreen";
 import { useAuth } from "@/lib/auth";
 import { saveProfile, type ProfileInput } from "@/lib/profiles";
 import { authErrorMessage } from "@/lib/authErrors";
 import { initialsOf, type Player } from "@/types";
 import { colors, spacing } from "@/theme";
 
+/** Avatar colours, named for screen readers and the hover tooltip. */
 const SWATCHES = [
-  "#00ff87",
-  "#ff5470",
-  "#5b9dff",
-  "#ffb020",
-  "#c06bff",
-  "#36e0c8",
-  "#ff8a3d",
-  "#9aa7ff",
-];
+  { color: "#00ff87", name: "Pitch green" },
+  { color: "#ff5470", name: "Red" },
+  { color: "#5b9dff", name: "Blue" },
+  { color: "#ffb020", name: "Amber" },
+  { color: "#c06bff", name: "Purple" },
+  { color: "#36e0c8", name: "Teal" },
+  { color: "#ff8a3d", name: "Orange" },
+  { color: "#9aa7ff", name: "Lavender" },
+] as const;
 
 const HANDLE_RE = /^[a-z0-9_]{2,20}$/;
+
+type FieldErrors = Partial<Record<"displayName" | "handle" | "jersey", string>>;
+
+function cleanHandle(raw: string): string {
+  return raw.trim().replace(/^@/, "").toLowerCase();
+}
+
+function validate(displayName: string, handle: string, jersey: string): FieldErrors {
+  const errors: FieldErrors = {};
+  const n = Number(jersey);
+  if (displayName.trim().length < 2) errors.displayName = "Enter at least 2 characters.";
+  if (!HANDLE_RE.test(cleanHandle(handle)))
+    errors.handle = "2–20 characters: letters, numbers or underscores.";
+  if (!jersey || !Number.isInteger(n) || n < 1 || n > 99) errors.jersey = "Pick a number 1–99.";
+  return errors;
+}
 
 export function ProfileForm({
   initial,
@@ -35,9 +57,15 @@ export function ProfileForm({
   const [displayName, setDisplayName] = useState(initial?.displayName ?? "");
   const [handle, setHandle] = useState(initial?.handle ?? "");
   const [jersey, setJersey] = useState(initial ? String(initial.jersey) : "");
-  const [color, setColor] = useState(initial?.color ?? SWATCHES[0]);
+  const [color, setColor] = useState<string>(initial?.color ?? SWATCHES[0].color);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Field errors stay hidden until the first submit attempt, then track edits live.
+  const [attempted, setAttempted] = useState(false);
+  const handleRef = useRef<TextInput>(null);
+  const jerseyRef = useRef<TextInput>(null);
+
+  const fieldErrors = attempted ? validate(displayName, handle, jersey) : {};
 
   const preview: Player = useMemo(
     () => ({
@@ -52,18 +80,21 @@ export function ProfileForm({
   );
 
   async function submit() {
+    if (busy) return;
     setError(null);
-    const cleanHandle = handle.trim().replace(/^@/, "").toLowerCase();
-    const n = Number(jersey);
-    if (displayName.trim().length < 2) return setError("Enter your display name.");
-    if (!HANDLE_RE.test(cleanHandle))
-      return setError("Handle: 2–20 chars, letters/numbers/underscore.");
-    if (!Number.isInteger(n) || n < 1 || n > 99) return setError("Jersey number must be 1–99.");
-    if (!user) return setError("Session expired — sign in again.");
+    setAttempted(true);
+    const errors = validate(displayName, handle, jersey);
+    if (Object.keys(errors).length > 0) return;
+    if (!user) return setError("Session expired. Sign in again.");
 
     setBusy(true);
     try {
-      await saveProfile(user.uid, { displayName, handle: cleanHandle, jersey: n, color });
+      await saveProfile(user.uid, {
+        displayName,
+        handle: cleanHandle(handle),
+        jersey: Number(jersey),
+        color,
+      });
       await onSaved();
     } catch (e) {
       setError(authErrorMessage(e));
@@ -73,74 +104,119 @@ export function ProfileForm({
 
   return (
     <View style={styles.form}>
-      <View style={styles.previewRow}>
-        <Avatar player={preview} size={64} jersey ring />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Txt variant="head" size={18} numberOfLines={1}>
-            {preview.name}
-          </Txt>
-          <Txt variant="mono" size={13} color={colors.textDim}>
-            @{preview.handle} · #{preview.jersey || "—"}
-          </Txt>
+      <Form onSubmit={submit}>
+        <View style={styles.previewRow}>
+          <Avatar player={preview} size={64} jersey ring />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Txt variant="head" size={18} numberOfLines={1}>
+              {preview.name}
+            </Txt>
+            <Txt variant="mono" size={13} color={colors.textDim}>
+              @{preview.handle} · #{preview.jersey || "—"}
+            </Txt>
+          </View>
         </View>
-      </View>
 
-      <TextField
-        label="Display name"
-        value={displayName}
-        onChangeText={setDisplayName}
-        placeholder="Marcus Bell"
-        autoCapitalize="words"
-      />
-      <TextField
-        label="Handle"
-        value={handle}
-        onChangeText={setHandle}
-        placeholder="marcus"
-        prefix="@"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-      <TextField
-        label="Jersey number"
-        value={jersey}
-        onChangeText={(t) => setJersey(t.replace(/[^0-9]/g, "").slice(0, 2))}
-        placeholder="10"
-        keyboardType="number-pad"
-        inputMode="numeric"
-      />
+        <RefTextField
+          label="Display name"
+          value={displayName}
+          onChangeText={setDisplayName}
+          placeholder="Marcus Bell"
+          autoCapitalize="words"
+          autoComplete="name"
+          textContentType="name"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => handleRef.current?.focus()}
+          hint={fieldErrors.displayName ?? "How you'll appear on the table."}
+          error={!!fieldErrors.displayName}
+        />
+        <RefTextField
+          ref={handleRef}
+          label="Handle"
+          value={handle}
+          onChangeText={setHandle}
+          placeholder="marcus"
+          prefix="@"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="off"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => jerseyRef.current?.focus()}
+          hint={fieldErrors.handle}
+          error={!!fieldErrors.handle}
+        />
+        <RefTextField
+          ref={jerseyRef}
+          label="Jersey number"
+          value={jersey}
+          onChangeText={(t) => setJersey(t.replace(/[^0-9]/g, "").slice(0, 2))}
+          placeholder="10"
+          keyboardType="number-pad"
+          inputMode="numeric"
+          autoComplete="off"
+          returnKeyType="done"
+          onSubmitEditing={submitOnEnter(submit)}
+          hint={fieldErrors.jersey}
+          error={!!fieldErrors.jersey}
+        />
 
-      <View>
-        <Txt
-          variant="head"
-          size={11}
-          color={colors.textDim}
-          style={{ letterSpacing: 1.2, marginBottom: 10 }}
-        >
-          AVATAR COLOUR
-        </Txt>
-        <View style={styles.swatches}>
-          {SWATCHES.map((c) => (
-            <Pressable
-              key={c}
-              onPress={() => setColor(c)}
-              style={[
-                styles.swatch,
-                { backgroundColor: c, borderColor: color === c ? colors.text : "transparent" },
-              ]}
-            />
-          ))}
+        <View>
+          <Txt
+            variant="head"
+            size={11}
+            color={colors.textDim}
+            style={{ letterSpacing: 1.2, marginBottom: 10 }}
+            nativeID="avatar-colour-label"
+          >
+            AVATAR COLOUR
+          </Txt>
+          <View
+            style={styles.swatches}
+            accessibilityRole="radiogroup"
+            accessibilityLabelledBy="avatar-colour-label"
+          >
+            {SWATCHES.map((swatch) => {
+              const selected = color === swatch.color;
+              return (
+                <Interactive
+                  key={swatch.color}
+                  onPress={() => setColor(swatch.color)}
+                  accessibilityRole="radio"
+                  accessibilityLabel={swatch.name}
+                  accessibilityState={{ checked: selected }}
+                  pressScale={0.9}
+                  style={[
+                    styles.swatch,
+                    {
+                      backgroundColor: swatch.color,
+                      borderColor: selected ? colors.text : "transparent",
+                    },
+                  ]}
+                  hoverStyle={[
+                    { transform: [{ scale: 1.08 }] },
+                    !selected && { borderColor: colors.lineStrong },
+                  ]}
+                >
+                  {selected ? (
+                    <Icon name="check" size={16} color={colors.onAccent} stroke={3} />
+                  ) : null}
+                </Interactive>
+              );
+            })}
+          </View>
         </View>
-      </View>
 
-      {error ? (
-        <Txt size={13} color={colors.loss}>
-          {error}
-        </Txt>
-      ) : null}
-      <Button full size="lg" onPress={submit}>
-        {busy ? "Saving…" : submitLabel}
-      </Button>
+        {error ? (
+          <Txt size={13} color={colors.loss} accessibilityLiveRegion="polite">
+            {error}
+          </Txt>
+        ) : null}
+        <SubmitButton loading={busy} onPress={submit}>
+          {busy ? "Saving…" : submitLabel}
+        </SubmitButton>
+      </Form>
     </View>
   );
 }
@@ -148,6 +224,14 @@ export function ProfileForm({
 const styles = StyleSheet.create({
   form: { gap: spacing.lg },
   previewRow: { flexDirection: "row", alignItems: "center", gap: spacing.lg },
-  swatches: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 3 },
+  // 8 × 36 + 7 × 8 = 344: one row on a 375pt phone.
+  swatches: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  swatch: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

@@ -1,22 +1,58 @@
-import { useEffect, useMemo, useState } from "react";
+/**
+ * Log a match — the core loop. Three ways in (photo, auto-matchup, manual) plus the
+ * finals tie when one is open. The last-used way is remembered, so regulars land
+ * straight in their flow; a segmented switch on the first step changes it in one tap.
+ *
+ * Manual/auto run a three-step wizard (opponent → teams → score & submit). Phones keep
+ * the stepped layout; desktop adds a sticky live match card (players, teams, score, both
+ * ratings before → after) and keyboard control (Enter = next, Esc = back). A
+ * `?opponent=<uid>` link (Home "Play next", profile "Log match vs") preselects the
+ * opponent and skips to teams.
+ *
+ * Errors are split: a failed league load blocks the screen (ErrorCard + Retry); a failed
+ * action (deal, submit) shows inline, never disables the flow, and clears on the next edit.
+ */
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import Animated from "react-native-reanimated";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ActivityIndicator,
-  InteractionManager,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Avatar, Button, Card, EloDelta, Icon, SnapFlow, TeamPicker, Txt } from "@/components";
+  Avatar,
+  Button,
+  Card,
+  Columns,
+  EASE_OUT,
+  EmptyState,
+  ErrorCard,
+  Grid,
+  Icon,
+  IconButton,
+  Interactive,
+  Page,
+  Reveal,
+  Segmented,
+  Skeleton,
+  SkeletonRows,
+  SnapFlow,
+  Tag,
+  TeamPicker,
+  Txt,
+  useSafeBack,
+  type IconName,
+  type SegmentOption,
+} from "@/components";
+import { EloLine, MatchSubmitted } from "@/components/MatchSubmitted";
+import { OpponentPicker } from "@/components/OpponentPicker";
+import { ScoreStepper } from "@/components/ScoreStepper";
+import { StickySplit } from "@/components/StickySplit";
 import { useAuth } from "@/lib/auth";
 import {
   createFixture,
   getActiveSeason,
   getBracket,
   getLeaguePlayers,
+  getPlayerMatches,
   getStandings,
   getTeams,
   previewElo,
@@ -32,64 +68,156 @@ import {
   type Standing,
   type Team,
 } from "@/lib/league";
+import { friendlyError } from "@/lib/friendlyError";
+import { EMPTY_HISTORY, summarizeHistory, type MatchHistorySummary } from "@/lib/matchHistory";
+import { useBreakpoint } from "@/lib/responsive";
+import { useDocumentTitle } from "@/lib/web";
+import { firstName } from "@/lib/format";
 import { colors, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
 import type { Player } from "@/types";
 
-const STEP_NAMES = ["Opponent", "Teams", "Score", "Review"];
-const AUTO_STEP_NAMES = ["Opponent", "Matchup", "Score", "Review"];
-const FINALS_STEP_NAMES = ["Tie", "Teams", "Score", "Review"];
+type FlowMode = "manual" | "auto" | "snap";
+type Mode = "choose" | FlowMode | "finals";
 
-const DECIDED_BY_OPTIONS: Array<{ value: Exclude<FinalsDecidedBy, "walkover">; label: string }> = [
+const LAST_MODE_KEY = "officefc:log-match:last-mode";
+const STEP_NAMES = ["Opponent", "Teams", "Score"];
+const AUTO_STEP_NAMES = ["Opponent", "Matchup", "Score"];
+const FINALS_STEP_NAMES = ["Tie", "Teams", "Score"];
+const LAST_STEP = 2;
+
+const MODE_OPTIONS: SegmentOption<FlowMode>[] = [
+  { value: "snap", label: "Photo", icon: "camera" },
+  { value: "auto", label: "Auto", icon: "swords" },
+  { value: "manual", label: "Manual", icon: "edit" },
+];
+
+const DECIDED_BY_OPTIONS: SegmentOption<Exclude<FinalsDecidedBy, "walkover">>[] = [
   { value: "regulation", label: "Full time" },
   { value: "extra_time", label: "Extra time" },
   { value: "penalties", label: "Penalties" },
 ];
 
+interface LeagueData {
+  season: Season | null;
+  players: LeaguePlayer[];
+  teams: Team[];
+  standings: Standing[];
+  bracket: FinalsBracket | null;
+  history: MatchHistorySummary;
+  lastMode: FlowMode | null;
+}
+
+interface SubmittedResult {
+  matchId: string;
+  myGoals: number;
+  opponentGoals: number;
+  myDelta: number;
+  opponentDelta: number;
+}
+
+async function readLastMode(): Promise<FlowMode | null> {
+  try {
+    const stored = await AsyncStorage.getItem(LAST_MODE_KEY);
+    return stored === "manual" || stored === "auto" || stored === "snap" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberMode(mode: FlowMode) {
+  // Best effort: private windows / blocked storage just fall back to the chooser.
+  AsyncStorage.setItem(LAST_MODE_KEY, mode).catch(() => undefined);
+}
+
+async function loadLeague(uid: string): Promise<LeagueData> {
+  const [season, roster, teams, played, lastMode] = await Promise.all([
+    getActiveSeason(),
+    getLeaguePlayers(),
+    getTeams(),
+    // Only sorts the opponent list / defaults teams — never block logging on it.
+    getPlayerMatches(uid).catch(() => []),
+    readLastMode(),
+  ]);
+  const [standings, bracket] = season
+    ? await Promise.all([
+        getStandings(season.id),
+        season.phase === "finals" ? getBracket(season.id) : Promise.resolve(null),
+      ])
+    : [[], null];
+  return {
+    season,
+    players: roster.filter((player) => player.id !== uid),
+    teams,
+    standings,
+    bracket,
+    history: summarizeHistory(played, uid),
+    lastMode,
+  };
+}
+
 export default function LogMatch() {
   const router = useRouter();
+  const safeBack = useSafeBack();
+  const params = useLocalSearchParams<{ opponent?: string }>();
   const { user, profile } = useAuth();
-  const [mode, setMode] = useState<"choose" | "manual" | "snap" | "auto" | "finals">("choose");
+  const { isTablet, isDesktop, isWeb } = useBreakpoint();
+  useDocumentTitle("Log a match");
+
+  const [data, setData] = useState<LeagueData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [mode, setMode] = useState<Mode>("choose");
   const [step, setStep] = useState(0);
-  const [fixture, setFixture] = useState<Fixture | null>(null);
-  const [dealing, setDealing] = useState(false);
-  const [bracket, setBracket] = useState<FinalsBracket | null>(null);
-  const [decidedBy, setDecidedBy] = useState<Exclude<FinalsDecidedBy, "walkover">>("regulation");
-  const [season, setSeason] = useState<Season | null>(null);
-  const [players, setPlayers] = useState<LeaguePlayer[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [standings, setStandings] = useState<Standing[]>([]);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [opponent, setOpponent] = useState<LeaguePlayer | null>(null);
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [opponentTeam, setOpponentTeam] = useState<Team | null>(null);
   const [myGoals, setMyGoals] = useState(0);
   const [opponentGoals, setOpponentGoals] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [scoreTouched, setScoreTouched] = useState(false);
+  const [fixture, setFixture] = useState<Fixture | null>(null);
+  const [dealing, setDealing] = useState(false);
+  const [dealError, setDealError] = useState<string | null>(null);
+  const [decidedBy, setDecidedBy] = useState<Exclude<FinalsDecidedBy, "walkover">>("regulation");
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<SubmittedResult | null>(null);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const opponentScoreRef = useRef<TextInput>(null);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialised = useRef(false);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      setData(await loadLeague(user.uid));
+    } catch (err) {
+      setLoadError(
+        friendlyError(err, "Couldn't load the league. Check your connection and try again."),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    // Defer the fetch until the push animation settles so the transition stays smooth.
-    const task = InteractionManager.runAfterInteractions(() => {
-      Promise.all([getActiveSeason(), getLeaguePlayers(), getTeams()])
-        .then(async ([activeSeason, roster, teamList]) => {
-          setSeason(activeSeason);
-          setPlayers(roster.filter((player) => player.id !== user?.uid));
-          setTeams(teamList);
-          if (activeSeason) {
-            setStandings(await getStandings(activeSeason.id));
-            if (activeSeason.phase === "finals") setBracket(await getBracket(activeSeason.id));
-          }
-          if (!activeSeason)
-            setError("No active season yet. Ask an admin to initialize the league.");
-          else if (teamList.length === 0) setError("No active teams are available yet.");
-        })
-        .catch(() => setError("Couldn't load the league. Check the connection and try again."))
-        .finally(() => setLoading(false));
-    });
-    return () => task.cancel();
-  }, [user?.uid]);
+    void load();
+    return () => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    };
+  }, [load]);
+
+  const season = data?.season ?? null;
+  const players = useMemo(() => data?.players ?? [], [data]);
+  const teams = useMemo(() => data?.teams ?? [], [data]);
+  const history = data?.history ?? EMPTY_HISTORY;
+  const standings = useMemo(() => data?.standings ?? [], [data]);
+  const bracket = data?.bracket ?? null;
 
   const me: Player | null = profile
     ? {
@@ -113,8 +241,6 @@ export default function LogMatch() {
   );
   const myElo = ratingByUid.get(user?.uid ?? "") ?? 1500;
   const opponentElo = ratingByUid.get(opponent?.id ?? "") ?? 1500;
-  const myGames = gamesByUid.get(user?.uid ?? "") ?? 0;
-  const opponentGames = gamesByUid.get(opponent?.id ?? "") ?? 0;
   const premierId = season?.reigningPremierId ?? null;
   // Finals decide the bracket and are excluded from the rating walk entirely, so the server
   // commits a delta of exactly 0 — the preview must not imply otherwise.
@@ -128,7 +254,7 @@ export default function LogMatch() {
           opponentGoals,
           myTeam?.overall,
           opponentTeam?.overall,
-          myGames,
+          gamesByUid.get(user?.uid ?? "") ?? 0,
           premierId,
           user?.uid ?? null,
           opponent.id,
@@ -143,12 +269,13 @@ export default function LogMatch() {
           myGoals,
           opponentTeam?.overall,
           myTeam?.overall,
-          opponentGames,
+          gamesByUid.get(opponent.id) ?? 0,
           premierId,
           opponent.id,
           user?.uid ?? null,
         )
       : 0;
+
   // The caller's open finals tie, if any — surfaces the finals card and locks the flow.
   const myOpenSlot = useMemo(() => {
     if (!bracket || !user) return null;
@@ -162,34 +289,21 @@ export default function LogMatch() {
     return null;
   }, [bracket, user]);
 
-  const canContinue =
-    (step === 0 && !!opponent) ||
-    (step === 1 && !!myTeam && !!opponentTeam && (mode !== "auto" || (!!fixture && !dealing))) ||
-    (step === 2 && (mode !== "finals" || myGoals !== opponentGoals)) ||
-    step === 3;
+  const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
+  // "Your team" defaults to the one you used last — most people stick with a club.
+  const defaultMyTeam = history.myTeamIds.map((id) => teamById.get(id)).find(Boolean) ?? null;
+  const opponentHistory = opponent ? history.opponents.get(opponent.id) : undefined;
 
-  function goBack() {
-    // Finals mode enters directly at the score step; back exits to the mode chooser.
-    if (step === 0 || (mode === "finals" && step === 2)) setMode("choose");
-    else setStep((current) => current - 1);
-  }
-
-  function selectOpponent(player: LeaguePlayer) {
-    if (player.id === opponent?.id) return;
-    setOpponent(player);
-    if (mode === "auto") {
-      // A fixture is per-pair: switching opponent invalidates the dealt teams.
-      setFixture(null);
-      setMyTeam(null);
-      setOpponentTeam(null);
-    }
-  }
+  const teamsReady =
+    !!myTeam && !!opponentTeam && (mode !== "auto" || (!!fixture && !dealing && !dealError));
+  const scoreValid = mode !== "finals" || myGoals !== opponentGoals;
+  const canContinue = step === 0 ? !!opponent : step === 1 ? teamsReady : scoreValid;
 
   /** Resolve a dealt fixture side to a Team for the preview/review UI. Falls back to a
    *  minimal Team built from the fixture snapshot if the catalogue read is missing it. */
   function fixtureTeam(dealt: Fixture, wantSideA: boolean): Team {
     const id = wantSideA ? dealt.aTeamId : dealt.bTeamId;
-    const known = teams.find((team) => team.id === id);
+    const known = teamById.get(id);
     if (known) return known;
     return {
       id,
@@ -207,32 +321,11 @@ export default function LogMatch() {
     };
   }
 
-  async function dealFixture(reroll = false) {
-    if (!opponent || !user) return;
-    setDealing(true);
-    setError(null);
-    try {
-      const dealt = await createFixture(opponent.id, reroll);
-      const mineIsA = dealt.aId === user.uid;
-      setFixture(dealt);
-      setMyTeam(fixtureTeam(dealt, mineIsA));
-      setOpponentTeam(fixtureTeam(dealt, !mineIsA));
-    } catch (dealError) {
-      setError(
-        dealError instanceof Error && dealError.message
-          ? dealError.message
-          : "Couldn't deal a matchup. Try again.",
-      );
-    } finally {
-      setDealing(false);
-    }
-  }
-
   /** Resolve a bracket-slot side to a Team for the UI, mirroring fixtureTeam. */
   function slotTeam(slot: FinalsSlot, wantHome: boolean): Team | null {
     const id = wantHome ? slot.homeTeamId : slot.awayTeamId;
     if (!id) return null;
-    const known = teams.find((team) => team.id === id);
+    const known = teamById.get(id);
     if (known) return known;
     return {
       id,
@@ -250,7 +343,57 @@ export default function LogMatch() {
     };
   }
 
-  /** Enter finals mode: opponent and teams come from the open tie, straight to the score. */
+  async function dealFixture(against: LeaguePlayer, reroll = false) {
+    if (!user) return;
+    setDealing(true);
+    setDealError(null);
+    try {
+      const dealt = await createFixture(against.id, reroll);
+      const mineIsA = dealt.aId === user.uid;
+      setFixture(dealt);
+      setMyTeam(fixtureTeam(dealt, mineIsA));
+      setOpponentTeam(fixtureTeam(dealt, !mineIsA));
+    } catch (err) {
+      setDealError(friendlyError(err, "Couldn't deal a matchup. Try again."));
+    } finally {
+      setDealing(false);
+    }
+  }
+
+  const fixtureIsFor = (player: LeaguePlayer) =>
+    !!fixture && (fixture.aId === player.id || fixture.bId === player.id);
+
+  function goTo(target: number, against: LeaguePlayer | null = opponent) {
+    setDirection(target >= step ? "forward" : "back");
+    setStep(target);
+    setActionError(null);
+    if (mode === "auto" && target === 1 && against && !fixtureIsFor(against) && !dealing) {
+      void dealFixture(against);
+    }
+  }
+
+  /** Switch flow. `jumpToTeams` is for a preselected opponent (deep link / snap fallback). */
+  function enterMode(next: FlowMode, preset: LeaguePlayer | null, jumpToTeams: boolean) {
+    rememberMode(next);
+    setActionError(null);
+    setDealError(null);
+    setFixture(null);
+    setMyGoals(0);
+    setOpponentGoals(0);
+    setScoreTouched(false);
+    setOpponentTeam(null);
+    setMyTeam(next === "manual" ? defaultMyTeam : null);
+    setDirection("forward");
+    setMode(next);
+    if (next === "snap") return;
+    if (preset && jumpToTeams) {
+      setStep(1);
+      if (next === "auto") void dealFixture(preset);
+    } else {
+      setStep(0);
+    }
+  }
+
   function enterFinals() {
     if (!myOpenSlot || !user) return;
     const iAmHome = myOpenSlot.homeId === user.uid;
@@ -260,29 +403,80 @@ export default function LogMatch() {
     setOpponentTeam(slotTeam(myOpenSlot, !iAmHome));
     setMyGoals(0);
     setOpponentGoals(0);
+    setScoreTouched(false);
     setDecidedBy("regulation");
-    setError(null);
-    setStep(2);
+    setActionError(null);
+    setDirection("forward");
+    setStep(LAST_STEP);
     setMode("finals");
   }
 
-  async function next() {
-    if (!canContinue) return;
-    if (step < 3) {
-      const enteringMatchup = mode === "auto" && step === 0 && !fixture;
-      setStep((current) => current + 1);
-      if (enteringMatchup) void dealFixture();
+  // First load: apply the deep-linked opponent and drop regulars straight into their flow.
+  // An open finals tie keeps the chooser up so the bracket match isn't missed.
+  useEffect(() => {
+    if (!data || initialised.current) return;
+    initialised.current = true;
+    const preset = params.opponent
+      ? (data.players.find((player) => player.id === params.opponent) ?? null)
+      : null;
+    if (preset) setOpponent(preset);
+    if (!myOpenSlot && data.lastMode) enterMode(data.lastMode, preset, true);
+    // Runs once per load; everything it reads is derived from `data` in this render.
+  }, [data]);
+
+  // Every step starts at the top (the shared scroll view would keep the old offset).
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [step, mode]);
+
+  function pickOpponent(player: LeaguePlayer) {
+    setActionError(null);
+    if (player.id !== opponent?.id) {
+      setOpponent(player);
+      // Teams belong to the pairing: a new opponent means a new deal / their own team.
+      setOpponentTeam(null);
+      if (mode === "auto") {
+        setFixture(null);
+        setMyTeam(null);
+      }
+    }
+    // Let the check pop before moving on so the tap visibly lands.
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(() => goTo(1, player), 180);
+  }
+
+  function goBack() {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    setActionError(null);
+    // Finals enter directly at the score step; back returns to the chooser.
+    if (mode === "finals") {
+      setMode("choose");
       return;
     }
-    if (!user || !season || !opponent || !myTeam || !opponentTeam) return;
+    if (step === 0) {
+      safeBack();
+      return;
+    }
+    goTo(step - 1);
+  }
 
+  function editScore(side: "mine" | "theirs", value: number) {
+    setActionError(null);
+    setScoreTouched(true);
+    if (side === "mine") setMyGoals(value);
+    else setOpponentGoals(value);
+  }
+
+  async function submit() {
+    if (!user || !season || !opponent || !myTeam || !opponentTeam) return;
     setSubmitting(true);
-    setError(null);
+    setActionError(null);
     try {
+      let matchId: string;
       if (mode === "finals") {
         if (!myOpenSlot) return;
         const iAmHome = myOpenSlot.homeId === user.uid;
-        await submitFinalsMatch({
+        matchId = await submitFinalsMatch({
           seasonId: season.id,
           submittedBy: user.uid,
           slot: myOpenSlot,
@@ -293,14 +487,14 @@ export default function LogMatch() {
       } else if (mode === "auto") {
         if (!fixture) return;
         const mineIsA = fixture.aId === user.uid;
-        await submitFixtureMatch({
+        matchId = await submitFixtureMatch({
           fixture,
           submittedBy: user.uid,
           aGoals: mineIsA ? myGoals : opponentGoals,
           bGoals: mineIsA ? opponentGoals : myGoals,
         });
       } else {
-        await submitManualMatch({
+        matchId = await submitManualMatch({
           seasonId: season.id,
           submittedBy: user.uid,
           opponentId: opponent.id,
@@ -310,234 +504,98 @@ export default function LogMatch() {
           opponentGoals,
         });
       }
-      setSubmitted(true);
-    } catch {
-      setError("The match couldn't be submitted. Check the emulators and try again.");
+      setSubmitted({ matchId, myGoals, opponentGoals, myDelta, opponentDelta });
+    } catch (err) {
+      setActionError(
+        friendlyError(err, "The match couldn't be submitted. Check your connection and try again."),
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </SafeAreaView>
-    );
+  function next() {
+    if (!canContinue || submitting) return;
+    if (step === 0 && opponent) goTo(1, opponent);
+    else if (step === 1) goTo(2);
+    else void submit();
   }
 
-  if (mode === "snap" && user && season && profile) {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <SnapFlow
-          uid={user.uid}
-          profile={profile}
-          season={season}
-          players={players}
-          teams={teams}
-          standings={standings}
-          onCancel={() => setMode("choose")}
-          onManualFallback={() => {
-            setStep(0);
-            setMode("manual");
-          }}
-          onDone={() => router.replace("/(app)/(tabs)")}
-        />
-      </SafeAreaView>
-    );
+  function rematch() {
+    setSubmitted(null);
+    setMyGoals(0);
+    setOpponentGoals(0);
+    setScoreTouched(false);
+    setActionError(null);
+    setDirection("forward");
+    if (mode === "auto") {
+      // A fixture is single-use: the rematch gets a freshly dealt pair of teams.
+      setFixture(null);
+      setMyTeam(null);
+      setOpponentTeam(null);
+      setStep(1);
+      if (opponent) void dealFixture(opponent);
+    } else {
+      setStep(LAST_STEP);
+    }
   }
 
-  if (mode === "choose") {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.iconButton}>
-            <Icon name="x" size={20} stroke={2.5} />
-          </Pressable>
-          <Txt variant="head" size={18}>
-            Log a match
-          </Txt>
-        </View>
-        <ScrollView contentContainerStyle={[styles.content, { flex: 1, justifyContent: "center" }]}>
-          <Txt variant="head" size={24}>
-            How would you like to log this match?
-          </Txt>
-          <Txt
-            color={colors.textDim}
-            size={13}
-            style={{ marginTop: spacing.sm, lineHeight: 19, marginBottom: spacing.x2 }}
-          >
-            Snap the result screen, let the system deal a balanced matchup, or enter everything
-            manually.
-          </Txt>
-          <View style={{ gap: spacing.md }}>
-            {myOpenSlot ? (
-              <Pressable onPress={enterFinals} style={[styles.modeCard, styles.finalsCard]}>
-                <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.win, 0.12) }]}>
-                  <Icon name="trophy" size={28} color={colors.win} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Txt variant="head" size={16}>
-                    Record your {myOpenSlot.label}
-                  </Txt>
-                  <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                    Bracket tie with equal dealt teams. No ELO — the winner advances.
-                  </Txt>
-                </View>
-                <Icon name="chevron" size={16} color={colors.textDim} />
-              </Pressable>
-            ) : null}
-            <Pressable onPress={() => setMode("snap")} style={styles.modeCard}>
-              <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.accent, 0.12) }]}>
-                <Icon name="camera" size={28} color={colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Txt variant="head" size={16}>
-                  Upload match photo
-                </Txt>
-                <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                  Upload the end-of-match screen. AI Beta suggests the score and stats for you to
-                  verify.
-                </Txt>
-              </View>
-              <Icon name="chevron" size={16} color={colors.textDim} />
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                setStep(0);
-                setMode("auto");
-              }}
-              style={styles.modeCard}
-            >
-              <View style={[styles.modeIcon, { backgroundColor: withAlpha(colors.accent, 0.12) }]}>
-                <Icon name="swords" size={28} color={colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Txt variant="head" size={16}>
-                  Auto matchup
-                </Txt>
-                <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                  Pick an opponent and the system deals both teams, balanced to your ELOs. Play the
-                  fixture, then record the score.
-                </Txt>
-              </View>
-              <Icon name="chevron" size={16} color={colors.textDim} />
-            </Pressable>
-            <Pressable onPress={() => setMode("manual")} style={styles.modeCard}>
-              <View style={[styles.modeIcon, { backgroundColor: colors.surface2 }]}>
-                <Icon name="edit" size={28} color={colors.textDim} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Txt variant="head" size={16}>
-                  Enter manually
-                </Txt>
-                <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 17 }}>
-                  Pick opponent, teams, and score step-by-step the classic way.
-                </Txt>
-              </View>
-              <Icon name="chevron" size={16} color={colors.textDim} />
-            </Pressable>
-          </View>
-          {error ? (
-            <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, lineHeight: 19 }}>
-              {error}
-            </Txt>
-          ) : null}
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
+  // Web keyboard: Enter = next (when valid), Esc = back. Inputs handle their own Enter
+  // (RN-web stops their key events), focused buttons keep native activation, and nothing
+  // fires while a dialog or the team picker is open.
+  const keys = useRef({ next, goBack });
+  keys.current = { next, goBack };
+  const wizardActive =
+    !loading && !!data && !submitted && (mode === "manual" || mode === "auto" || mode === "finals");
+  useEffect(() => {
+    if (Platform.OS !== "web" || !wizardActive) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      const target = event.target as HTMLElement | null;
+      const interactive = target?.closest?.(
+        'input,textarea,select,button,a,[role="button"],[role="link"],[role="radio"],[role="tab"]',
+      );
+      const action =
+        event.key === "Escape"
+          ? keys.current.goBack
+          : event.key === "Enter" && !interactive
+            ? keys.current.next
+            : null;
+      if (!action) return;
+      // Decide after every other window listener has run: the web dialog host and the
+      // command palette claim Enter/Escape with preventDefault, and they register later.
+      setTimeout(() => {
+        if (!event.defaultPrevented) action();
+      }, 0);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [wizardActive]);
 
-  if (submitted && opponent) {
-    const result = myGoals > opponentGoals ? "win" : myGoals < opponentGoals ? "loss" : "draw";
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <View style={styles.success}>
-          <View
-            style={[
-              styles.resultBurst,
-              {
-                backgroundColor: withAlpha(
-                  result === "win" ? colors.win : result === "loss" ? colors.loss : colors.draw,
-                  0.12,
-                ),
-              },
-            ]}
-          >
-            <Icon
-              name={result === "win" ? "trophy" : result === "loss" ? "flame" : "ball"}
-              size={38}
-              color={result === "win" ? colors.win : result === "loss" ? colors.loss : colors.draw}
-            />
-          </View>
-          <Txt variant="head" size={26} style={{ textAlign: "center", marginTop: spacing.lg }}>
-            Result sent for confirmation.
-          </Txt>
-          <Txt variant="monoBold" size={56} style={{ marginVertical: spacing.sm }}>
-            {myGoals}
-            <Txt variant="monoBold" size={56} color={colors.textFaint}>
-              :
-            </Txt>
-            {opponentGoals}
-          </Txt>
-          <Txt color={colors.textDim} style={{ textAlign: "center", lineHeight: 20 }}>
-            {mode === "finals"
-              ? `${opponent.name.split(" ")[0]} needs to confirm before the bracket advances.`
-              : `${opponent.name.split(" ")[0]} needs to confirm before this affects the table.`}
-          </Txt>
-          <Card style={styles.previewCard}>
-            {mode === "finals" ? (
-              <>
-                <View>
-                  <Txt variant="head" size={10.5} color={colors.textDim}>
-                    FINALS RESULT
-                  </Txt>
-                  <Txt variant="bodyMedium" size={14} style={{ marginTop: 4 }}>
-                    No ELO change — bracket only
-                  </Txt>
-                </View>
-                <Txt size={12} color={colors.textFaint}>
-                  pending
-                </Txt>
-              </>
-            ) : (
-              <>
-                <View>
-                  <Txt variant="head" size={10.5} color={colors.textDim}>
-                    ELO PREVIEW
-                  </Txt>
-                  <Txt variant="monoBold" size={19} style={{ marginTop: 4 }}>
-                    {myElo + myDelta} <EloDelta delta={myDelta} />
-                  </Txt>
-                </View>
-                <Txt size={12} color={colors.textFaint}>
-                  pending
-                </Txt>
-              </>
-            )}
-          </Card>
-        </View>
-        <View style={styles.footer}>
-          <Button full size="lg" onPress={() => router.replace("/(app)/(tabs)")}>
-            Back to dashboard
-          </Button>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable onPress={goBack} style={styles.iconButton}>
-          <Icon name={step === 0 ? "x" : "back"} size={20} stroke={2.5} />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Txt variant="head" size={18}>
-            Log a match
-          </Txt>
-          <Txt size={11.5} color={colors.textDim} style={{ marginTop: 2 }}>
-            Step {step + 1} of 4 ·{" "}
+  // The header button leaves the screen from the chooser / first step, else steps back.
+  const closes = mode === "choose" || (step === 0 && mode !== "finals");
+  const header = (
+    <View style={[styles.header, isDesktop && styles.headerDesktop]}>
+      <IconButton
+        icon={closes ? "x" : "back"}
+        accessibilityLabel={closes ? "Close" : "Back"}
+        onPress={mode === "choose" ? safeBack : goBack}
+        iconSize={20}
+      />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt
+          variant="head"
+          size={isDesktop ? 26 : 21}
+          accessibilityRole="header"
+          numberOfLines={1}
+          style={isDesktop ? { letterSpacing: -0.3 } : undefined}
+        >
+          Log a match
+        </Txt>
+        {mode === "manual" || mode === "auto" || mode === "finals" ? (
+          <Txt size={12} color={colors.textDim} style={{ marginTop: 2 }}>
+            Step {step + 1} of 3 ·{" "}
             {
               (mode === "auto"
                 ? AUTO_STEP_NAMES
@@ -546,345 +604,698 @@ export default function LogMatch() {
                   : STEP_NAMES)[step]
             }
           </Txt>
+        ) : null}
+      </View>
+    </View>
+  );
+
+  if (loading || (!data && !loadError)) {
+    return (
+      <Page header={header} width="default">
+        <View style={{ gap: spacing.lg, maxWidth: 640 }}>
+          <Skeleton width={220} height={24} />
+          <SkeletonRows count={5} height={68} />
         </View>
-      </View>
-      <View style={styles.track}>
-        {(mode === "auto"
-          ? AUTO_STEP_NAMES
-          : mode === "finals"
-            ? FINALS_STEP_NAMES
-            : STEP_NAMES
-        ).map((name, index) => (
-          <View key={name} style={[styles.trackSegment, index <= step && styles.trackSegmentOn]} />
-        ))}
-      </View>
+      </Page>
+    );
+  }
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {step === 0 ? (
-          <>
-            <StepTitle>Who did you play?</StepTitle>
-            <View style={{ gap: spacing.sm }}>
-              {players.map((player) => (
-                <Pressable
-                  key={player.id}
-                  onPress={() => selectOpponent(player)}
-                  style={[styles.pickRow, opponent?.id === player.id && styles.pickRowActive]}
-                >
-                  <Avatar player={player} size={42} jersey />
-                  <View style={{ flex: 1 }}>
-                    <Txt variant="bodyMedium" size={14.5}>
-                      {player.name}
-                    </Txt>
-                    <Txt variant="mono" size={11.5} color={colors.textDim} style={{ marginTop: 3 }}>
-                      ELO {ratingByUid.get(player.id) ?? 1500} · @{player.handle}
-                    </Txt>
-                  </View>
-                  {opponent?.id === player.id ? (
-                    <View style={styles.check}>
-                      <Icon name="check" size={13} color={colors.onAccent} stroke={3} />
-                    </View>
-                  ) : null}
-                </Pressable>
-              ))}
-              {players.length === 0 ? (
-                <Txt color={colors.textDim}>Invite another player before logging a match.</Txt>
-              ) : null}
-            </View>
-          </>
-        ) : null}
+  if (loadError || !data) {
+    return (
+      <Page header={header} width="narrow">
+        <ErrorCard
+          message={loadError ?? "Couldn't load the league."}
+          onRetry={() => void load()}
+          retrying={loading}
+        />
+      </Page>
+    );
+  }
 
-        {step === 1 && opponent && mode !== "auto" ? (
-          <>
-            <StepTitle>Which teams did you use?</StepTitle>
-            <TeamPicker
-              label="Your team"
-              player={me}
-              teams={teams}
-              value={myTeam}
-              onChange={setMyTeam}
-            />
-            <View style={{ height: spacing.lg }} />
-            <TeamPicker
-              label={`${opponent.name.split(" ")[0]}'s team`}
-              player={opponent}
-              teams={teams}
-              value={opponentTeam}
-              onChange={setOpponentTeam}
-            />
-          </>
-        ) : null}
+  if (!season || teams.length === 0) {
+    return (
+      <Page header={header} width="narrow">
+        <EmptyState
+          icon={!season ? "calendar" : "shield"}
+          title={!season ? "No active season" : "No teams available yet"}
+          body={
+            !season
+              ? "Ask an admin to start a season, then come back to log your result."
+              : "An admin needs to sync the team catalogue before results can be logged."
+          }
+          action={{ label: "Back", onPress: safeBack, icon: "back" }}
+        />
+      </Page>
+    );
+  }
 
-        {step === 1 && opponent && mode === "auto" ? (
-          <>
-            <StepTitle>Your matchup</StepTitle>
-            {dealing ? (
-              <View style={styles.dealLoading}>
-                <ActivityIndicator color={colors.accent} />
-                <Txt color={colors.textDim} size={13}>
-                  Dealing teams…
-                </Txt>
-              </View>
-            ) : fixture && myTeam && opponentTeam ? (
-              <>
-                <FixtureTeamCard player={me} label="You" team={myTeam} />
-                <View style={styles.vsRow}>
-                  <Icon name="swords" size={16} color={colors.textDim} />
-                  <Txt variant="head" size={12} color={colors.textDim}>
-                    VS
+  const modeSwitch = (
+    <Segmented
+      options={MODE_OPTIONS}
+      value={mode === "snap" || mode === "auto" ? mode : "manual"}
+      onChange={(next) => {
+        if (next !== mode) enterMode(next, opponent, false);
+      }}
+      size="sm"
+      full={!isTablet}
+    />
+  );
+
+  if (mode === "snap" && user && profile) {
+    return (
+      <SnapFlow
+        uid={user.uid}
+        profile={profile}
+        season={season}
+        players={players}
+        teams={teams}
+        standings={standings}
+        opponentHistory={history.opponents}
+        myRecentTeamIds={history.myTeamIds}
+        initialOpponentId={opponent?.id ?? null}
+        modeSwitch={modeSwitch}
+        onCancel={safeBack}
+        onManualFallback={(opponentId) => {
+          const preset = players.find((player) => player.id === opponentId) ?? opponent;
+          if (preset) setOpponent(preset);
+          enterMode("manual", preset ?? null, !!preset);
+        }}
+        onViewMatch={(matchId) =>
+          router.replace({ pathname: "/(app)/match/[id]", params: { id: matchId } } as Href)
+        }
+        onDone={safeBack}
+      />
+    );
+  }
+
+  if (submitted && opponent) {
+    return (
+      <MatchSubmitted
+        me={me}
+        opponent={opponent}
+        myGoals={submitted.myGoals}
+        opponentGoals={submitted.opponentGoals}
+        myTeam={myTeam?.name}
+        opponentTeam={opponentTeam?.name}
+        myElo={myElo}
+        myDelta={submitted.myDelta}
+        opponentElo={opponentElo}
+        opponentDelta={submitted.opponentDelta}
+        finalsLabel={mode === "finals" ? (myOpenSlot?.label ?? "Finals tie") : null}
+        onRematch={mode === "finals" ? undefined : rematch}
+        onView={() =>
+          router.replace({
+            pathname: "/(app)/match/[id]",
+            params: { id: submitted.matchId },
+          } as Href)
+        }
+        onDone={safeBack}
+      />
+    );
+  }
+
+  if (mode === "choose") {
+    const cards: Array<{
+      key: string;
+      icon: IconName;
+      tint: string;
+      title: string;
+      body: string;
+      onPress: () => void;
+      finals?: boolean;
+    }> = [
+      ...(myOpenSlot
+        ? [
+            {
+              key: "finals",
+              icon: "trophy" as IconName,
+              tint: colors.win,
+              title: `Record your ${myOpenSlot.label}`,
+              body: "Bracket tie with equal dealt teams. No ELO — the winner advances.",
+              onPress: enterFinals,
+              finals: true,
+            },
+          ]
+        : []),
+      {
+        key: "snap",
+        icon: "camera",
+        tint: colors.accent,
+        title: "Upload match photo",
+        body: "Snap the full-time stats screen. AI Beta suggests the score and stats for you to verify.",
+        onPress: () => enterMode("snap", opponent, true),
+      },
+      {
+        key: "auto",
+        icon: "swords",
+        tint: colors.accent,
+        title: "Auto matchup",
+        body: "Pick an opponent and the system deals both teams, balanced to your ELOs.",
+        onPress: () => enterMode("auto", opponent, true),
+      },
+      {
+        key: "manual",
+        icon: "edit",
+        tint: colors.textDim,
+        title: "Enter manually",
+        body: "Pick opponent, teams and score step by step.",
+        onPress: () => enterMode("manual", opponent, true),
+      },
+    ];
+    return (
+      <Page header={header} width="default">
+        <Reveal>
+          <Txt variant="head" size={isDesktop ? 28 : 24} style={{ marginTop: spacing.sm }}>
+            How would you like to log this match?
+          </Txt>
+          <Txt
+            color={colors.textDim}
+            size={13.5}
+            style={{ marginTop: spacing.sm, lineHeight: 20, marginBottom: spacing.x2 }}
+          >
+            We'll remember your choice — next time you land straight in it.
+          </Txt>
+        </Reveal>
+        <Grid min={isDesktop ? 260 : 600} maxColumns={4} gap={spacing.md}>
+          {cards.map((card, index) => (
+            <Reveal key={card.key} index={index} style={{ flex: 1 }}>
+              <Interactive
+                onPress={card.onPress}
+                lift
+                accessibilityLabel={card.title}
+                style={[
+                  styles.modeCard,
+                  isDesktop && styles.modeCardTile,
+                  card.finals && styles.finalsCard,
+                ]}
+                hoverStyle={{ borderColor: card.finals ? colors.win : colors.lineStrong }}
+              >
+                <View style={[styles.modeIcon, { backgroundColor: withAlpha(card.tint, 0.12) }]}>
+                  <Icon name={card.icon} size={26} color={card.tint} />
+                </View>
+                <View style={{ flex: isDesktop ? undefined : 1 }}>
+                  <Txt variant="head" size={16}>
+                    {card.title}
+                  </Txt>
+                  <Txt size={12.5} color={colors.textDim} style={{ marginTop: 4, lineHeight: 18 }}>
+                    {card.body}
                   </Txt>
                 </View>
-                <FixtureTeamCard
-                  player={opponent}
-                  label={opponent.name.split(" ")[0]}
-                  team={opponentTeam}
-                />
-                <View style={styles.eloPreview}>
-                  <Icon name="bolt" size={15} color={colors.accent} />
-                  <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
-                    Dealt to level this matchup at your current ELOs. Play with these exact teams —
-                    the result won't record otherwise.
-                  </Txt>
-                </View>
-                {fixture.rerollCount < 1 ? (
-                  <Pressable
-                    onPress={() => dealFixture(true)}
-                    disabled={dealing}
-                    style={styles.rerollButton}
-                  >
-                    <Icon name="bolt" size={15} color={colors.textDim} />
-                    <Txt size={13} color={colors.textDim}>
-                      Reroll teams (once)
-                    </Txt>
-                  </Pressable>
-                ) : (
-                  <Txt
-                    size={11.5}
-                    color={colors.textFaint}
-                    style={{ marginTop: spacing.md, textAlign: "center" }}
-                  >
-                    Reroll used — these teams are locked in.
-                  </Txt>
-                )}
-              </>
-            ) : null}
-          </>
-        ) : null}
+                {isDesktop ? null : <Icon name="chevron" size={16} color={colors.textDim} />}
+              </Interactive>
+            </Reveal>
+          ))}
+        </Grid>
+      </Page>
+    );
+  }
 
-        {step === 2 && opponent ? (
-          <>
-            <StepTitle>Final score</StepTitle>
-            {mode === "finals" && myOpenSlot ? (
-              <View style={styles.finalsBanner}>
-                <Icon name="trophy" size={15} color={colors.win} />
-                <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
-                  {myOpenSlot.label} — equal dealt teams, winner advances. Score after extra time
-                  counts; pick how it was decided below.
-                </Txt>
-              </View>
-            ) : null}
-            <View style={styles.scoreRow}>
-              <ScoreStepper
-                player={me}
-                team={myTeam?.name ?? ""}
-                value={myGoals}
-                onChange={setMyGoals}
-              />
-              <Txt variant="monoBold" size={28} color={colors.textFaint}>
-                :
+  const stepNames =
+    mode === "auto" ? AUTO_STEP_NAMES : mode === "finals" ? FINALS_STEP_NAMES : STEP_NAMES;
+  const oppFirst = opponent ? firstName(opponent.name) : "Opponent";
+  const showModeSwitch = step === 0;
+
+  let stepBody: ReactNode = null;
+  if (step === 0) {
+    stepBody = (
+      <>
+        <StepTitle>Who did you play?</StepTitle>
+        <OpponentPicker
+          players={players}
+          ratingByUid={ratingByUid}
+          history={history.opponents}
+          selectedId={opponent?.id ?? null}
+          onSelect={pickOpponent}
+        />
+      </>
+    );
+  } else if (step === 1 && opponent && mode !== "auto") {
+    const quickPicks =
+      opponentTeam || !opponentHistory
+        ? undefined
+        : opponentHistory.teamIds
+            .map((id) => teamById.get(id))
+            .filter((team): team is Team => !!team)
+            .slice(0, 2)
+            .map((team, index) => ({
+              label: index === 0 ? `Last time: ${team.name}` : team.name,
+              team,
+            }));
+    stepBody = (
+      <>
+        <StepTitle>Which teams did you use?</StepTitle>
+        <Columns at="tablet" gap={spacing.lg}>
+          <TeamPicker
+            label="Your team"
+            player={me}
+            teams={teams}
+            value={myTeam}
+            onChange={(team) => {
+              setActionError(null);
+              setMyTeam(team);
+            }}
+            recentTeamIds={history.myTeamIds}
+            hint={myTeam && myTeam.id === defaultMyTeam?.id ? "Your last team" : undefined}
+          />
+          <TeamPicker
+            label={`${oppFirst}'s team`}
+            player={opponent}
+            teams={teams}
+            value={opponentTeam}
+            onChange={(team) => {
+              setActionError(null);
+              setOpponentTeam(team);
+            }}
+            recentTeamIds={opponentHistory?.teamIds}
+            quickPicks={quickPicks}
+          />
+        </Columns>
+      </>
+    );
+  } else if (step === 1 && opponent && mode === "auto") {
+    stepBody = (
+      <>
+        <StepTitle>Your matchup</StepTitle>
+        {dealError && !dealing ? (
+          <ErrorCard message={dealError} onRetry={() => void dealFixture(opponent)} />
+        ) : dealing && !fixture ? (
+          <View style={{ gap: spacing.md }} accessibilityLabel="Dealing teams">
+            <FixtureSkeleton />
+            <View style={styles.vsRow}>
+              <Txt variant="head" size={12} color={colors.textDim}>
+                Dealing balanced teams…
               </Txt>
-              <ScoreStepper
-                player={opponent}
-                team={opponentTeam?.name ?? ""}
-                value={opponentGoals}
-                onChange={setOpponentGoals}
-              />
             </View>
-            {mode === "finals" ? (
-              <>
-                <View style={styles.decidedByRow}>
-                  {DECIDED_BY_OPTIONS.map((option) => (
-                    <Pressable
-                      key={option.value}
-                      onPress={() => setDecidedBy(option.value)}
-                      style={[
-                        styles.decidedByChip,
-                        decidedBy === option.value && styles.decidedByChipActive,
-                      ]}
-                    >
-                      <Txt
-                        size={12}
-                        color={decidedBy === option.value ? colors.accent : colors.textDim}
-                      >
-                        {option.label}
-                      </Txt>
-                    </Pressable>
-                  ))}
-                </View>
-                {myGoals === opponentGoals ? (
-                  <Txt
-                    size={12}
-                    color={colors.loss}
-                    style={{ marginTop: spacing.md, textAlign: "center" }}
-                  >
-                    Finals can't end level — play extra time and penalties, then enter the decisive
-                    score.
-                  </Txt>
-                ) : null}
-              </>
+            <FixtureSkeleton />
+          </View>
+        ) : fixture && myTeam && opponentTeam ? (
+          <View style={dealing ? { opacity: 0.5 } : undefined}>
+            <Reveal key={`${fixture.id}-${fixture.rerollCount}-a`} from="scale">
+              <FixtureTeamCard player={me} label="You" team={myTeam} />
+            </Reveal>
+            <View style={styles.vsRow}>
+              <Icon name="swords" size={16} color={colors.textDim} />
+              <Txt variant="head" size={12} color={colors.textDim}>
+                VS
+              </Txt>
+            </View>
+            <Reveal key={`${fixture.id}-${fixture.rerollCount}-b`} from="scale" delay={90}>
+              <FixtureTeamCard player={opponent} label={oppFirst} team={opponentTeam} />
+            </Reveal>
+            <View style={styles.note}>
+              <Icon name="bolt" size={15} color={colors.accent} />
+              <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
+                Dealt to level this matchup at your current ELOs. Play with these exact teams — the
+                result won't record otherwise.
+              </Txt>
+            </View>
+            {fixture.rerollCount < 1 ? (
+              <Button
+                variant="ghost"
+                icon="dice"
+                loading={dealing}
+                onPress={() => void dealFixture(opponent, true)}
+                style={{ marginTop: spacing.lg, alignSelf: "center" }}
+              >
+                Reroll teams (once)
+              </Button>
             ) : (
-              <View style={styles.eloPreview}>
-                <Icon name="bolt" size={15} color={colors.accent} />
-                <Txt size={12.5} color={colors.textDim}>
-                  ELO swing preview
-                </Txt>
-                <View style={{ marginLeft: "auto" }}>
-                  <EloDelta delta={myDelta} />
-                </View>
-              </View>
+              <Txt size={11.5} color={colors.textFaint} style={styles.lockedNote}>
+                Reroll used — these teams are locked in.
+              </Txt>
             )}
-          </>
+          </View>
         ) : null}
-
-        {step === 3 && opponent ? (
+      </>
+    );
+  } else if (step === 2 && opponent) {
+    stepBody = (
+      <>
+        <StepTitle>Final score</StepTitle>
+        {mode === "finals" && myOpenSlot ? (
+          <View style={styles.finalsBanner}>
+            <Icon name="trophy" size={15} color={colors.win} />
+            <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
+              {myOpenSlot.label} — equal dealt teams, winner advances. Score after extra time
+              counts; pick how it was decided below.
+            </Txt>
+          </View>
+        ) : null}
+        <Card style={styles.scoreCard}>
+          <View style={styles.scoreRow}>
+            <ScoreSide player={me} name="You" team={myTeam?.name}>
+              <ScoreStepper
+                value={myGoals}
+                onChange={(value) => editScore("mine", value)}
+                label="your goals"
+                size={isTablet ? "lg" : "md"}
+                autoFocus={isWeb && isDesktop}
+                onSubmitEditing={() => opponentScoreRef.current?.focus()}
+              />
+            </ScoreSide>
+            <Txt variant="monoBold" size={30} color={colors.textFaint} style={styles.colon}>
+              :
+            </Txt>
+            <ScoreSide player={opponent} name={oppFirst} team={opponentTeam?.name}>
+              <ScoreStepper
+                inputRef={opponentScoreRef}
+                value={opponentGoals}
+                onChange={(value) => editScore("theirs", value)}
+                label={`${oppFirst}'s goals`}
+                size={isTablet ? "lg" : "md"}
+                returnKeyType="done"
+                onSubmitEditing={next}
+              />
+            </ScoreSide>
+          </View>
+        </Card>
+        {mode === "finals" ? (
           <>
-            <StepTitle>Look right?</StepTitle>
-            <Card style={styles.reviewCard}>
-              <View style={styles.reviewScore}>
-                <ReviewPlayer player={me} label="You" team={myTeam?.name ?? ""} />
-                <Txt variant="monoBold" size={38}>
-                  {myGoals}
-                  <Txt variant="monoBold" size={38} color={colors.textFaint}>
-                    :
-                  </Txt>
-                  {opponentGoals}
-                </Txt>
-                <ReviewPlayer
-                  player={opponent}
-                  label={opponent.name.split(" ")[0]}
-                  team={opponentTeam?.name ?? ""}
-                />
-              </View>
-              <View style={styles.divider} />
-              {mode === "finals" && myOpenSlot ? (
-                <View style={styles.reviewBottom}>
-                  <View>
-                    <Txt variant="head" size={10.5} color={colors.textDim}>
-                      {myOpenSlot.label.toUpperCase()}
-                    </Txt>
-                    <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 3 }}>
-                      Bracket advances after opponent confirmation
-                    </Txt>
-                  </View>
-                  <Txt variant="bodyMedium" size={12} color={colors.textDim}>
-                    {DECIDED_BY_OPTIONS.find((option) => option.value === decidedBy)?.label}
-                  </Txt>
-                </View>
-              ) : (
-                <View style={styles.reviewBottom}>
-                  <View>
-                    <Txt variant="head" size={10.5} color={colors.textDim}>
-                      ELO CHANGE PREVIEW
-                    </Txt>
-                    <Txt size={11.5} color={colors.textFaint} style={{ marginTop: 3 }}>
-                      Applies after opponent confirmation
-                    </Txt>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <EloDelta delta={myDelta} />
-                    <Txt variant="mono" size={11} color={colors.textDim} style={{ marginTop: 3 }}>
-                      opponent {opponentDelta >= 0 ? "+" : ""}
-                      {opponentDelta}
-                    </Txt>
-                  </View>
-                </View>
-              )}
-            </Card>
+            <Txt variant="head" size={11} color={colors.textDim} style={styles.subLabel}>
+              DECIDED BY
+            </Txt>
+            <Segmented options={DECIDED_BY_OPTIONS} value={decidedBy} onChange={setDecidedBy} />
+            {scoreTouched && myGoals === opponentGoals ? (
+              <Txt
+                size={12}
+                color={colors.loss}
+                style={{ marginTop: spacing.md, textAlign: "center" }}
+                accessibilityLiveRegion="polite"
+              >
+                Finals can't end level — play extra time and penalties, then enter the decisive
+                score.
+              </Txt>
+            ) : null}
           </>
+        ) : !isDesktop ? (
+          // Desktop shows this in the live match card beside the form.
+          <Card style={styles.eloCard}>
+            <Txt variant="head" size={10.5} color={colors.textDim} style={styles.kicker}>
+              ELO AFTER CONFIRMATION
+            </Txt>
+            <EloLine label="You" before={myElo} delta={myDelta} strong />
+            <EloLine label={oppFirst} before={opponentElo} delta={opponentDelta} />
+          </Card>
         ) : null}
+      </>
+    );
+  }
 
-        {error ? (
-          <Txt color={colors.loss} size={13} style={{ marginTop: spacing.lg, lineHeight: 19 }}>
-            {error}
+  const isLast = step === LAST_STEP;
+  const footer = (
+    <View style={[styles.footer, isDesktop && styles.footerDesktop]}>
+      {actionError ? (
+        <ErrorCard
+          message={actionError}
+          onRetry={isLast ? () => void submit() : undefined}
+          retrying={submitting}
+          style={{ marginBottom: spacing.md }}
+        />
+      ) : null}
+      <View style={styles.footerRow}>
+        {isDesktop ? (
+          <Txt size={12} color={colors.textFaint} style={{ flex: 1 }}>
+            {isWeb ? `Enter ↵ ${isLast ? "submit" : "continue"} · Esc back` : ""}
           </Txt>
         ) : null}
-      </ScrollView>
-
-      <View style={styles.footer}>
+        {isDesktop && (step > 0 || mode === "finals") ? (
+          <Button variant="ghost" size="lg" icon="back" onPress={goBack}>
+            Back
+          </Button>
+        ) : null}
         <Button
-          full
           size="lg"
-          icon={step === 3 ? "check" : undefined}
-          disabled={!canContinue || submitting || !!error}
+          full={!isDesktop}
+          icon={isLast ? "check" : "arrowRight"}
+          disabled={!canContinue}
+          loading={submitting}
           onPress={next}
+          style={isDesktop ? { minWidth: 200 } : undefined}
         >
-          {submitting ? "Submitting…" : step === 3 ? "Submit match" : "Continue"}
+          {isLast ? "Submit match" : "Continue"}
         </Button>
       </View>
-    </SafeAreaView>
+    </View>
+  );
+
+  return (
+    <Page
+      header={
+        <>
+          {header}
+          <ProgressTrack total={stepNames.length} current={step} />
+          {showModeSwitch ? <View style={styles.modeSwitch}>{modeSwitch}</View> : null}
+        </>
+      }
+      footer={footer}
+      width="default"
+      scrollRef={scrollRef}
+    >
+      <StickySplit
+        main={
+          <Reveal
+            key={`${mode}-${step}`}
+            from={direction === "forward" ? "left" : "right"}
+            duration={280}
+          >
+            {stepBody}
+          </Reveal>
+        }
+        aside={
+          isDesktop ? (
+            <MatchPreview
+              me={me}
+              opponent={opponent}
+              myTeam={myTeam}
+              opponentTeam={opponentTeam}
+              myGoals={myGoals}
+              opponentGoals={opponentGoals}
+              myElo={myElo}
+              opponentElo={opponentElo}
+              myDelta={myDelta}
+              opponentDelta={opponentDelta}
+              finalsLabel={mode === "finals" ? (myOpenSlot?.label ?? "Finals") : null}
+              decidedBy={
+                mode === "finals"
+                  ? DECIDED_BY_OPTIONS.find((option) => option.value === decidedBy)?.label
+                  : undefined
+              }
+              dealing={mode === "auto" && dealing}
+            />
+          ) : null
+        }
+      />
+    </Page>
   );
 }
 
 function StepTitle({ children }: { children: string }) {
   return (
-    <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }}>
+    <Txt variant="head" size={22} style={{ marginBottom: spacing.lg }} accessibilityRole="header">
       {children}
     </Txt>
   );
 }
 
-function ScoreStepper({
+/** Segmented progress with each segment filling as the wizard advances. */
+function ProgressTrack({ total, current }: { total: number; current: number }) {
+  return (
+    <View
+      style={styles.track}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 1, max: total, now: current + 1 }}
+    >
+      {Array.from({ length: total }, (_, index) => (
+        <View key={index} style={styles.trackSegment}>
+          <Animated.View
+            style={{
+              ...styles.trackFill,
+              width: index <= current ? "100%" : "0%",
+              transitionProperty: "width",
+              transitionDuration: 360,
+              transitionTimingFunction: EASE_OUT,
+            }}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ScoreSide({
   player,
+  name,
   team,
-  value,
-  onChange,
+  children,
 }: {
   player: Player | null;
-  team: string;
-  value: number;
-  onChange: (value: number) => void;
+  name: string;
+  team?: string;
+  children: ReactNode;
 }) {
   return (
-    <View style={{ flex: 1, alignItems: "center", minWidth: 0 }}>
-      <Avatar player={player} size={44} jersey />
+    <View style={styles.scoreSide}>
+      <Avatar player={player} size={48} jersey />
+      <Txt variant="bodyMedium" size={14} style={{ marginTop: spacing.sm }} numberOfLines={1}>
+        {name}
+      </Txt>
       <Txt
         size={11}
         color={colors.textDim}
         numberOfLines={1}
-        style={{ marginVertical: spacing.sm }}
+        style={{ marginTop: 2, marginBottom: spacing.md }}
       >
-        {team}
+        {team ?? "—"}
       </Txt>
-      <View style={styles.stepper}>
-        <Pressable
-          onPress={() => onChange(Math.max(0, value - 1))}
-          disabled={value === 0}
-          style={[styles.stepButton, value === 0 && { opacity: 0.35 }]}
-        >
-          <Txt variant="monoBold" size={22}>
-            -
-          </Txt>
-        </Pressable>
-        <TextInput
-          value={String(value)}
-          onChangeText={(t) => {
-            const n = Number.parseInt(t.replace(/[^0-9]/g, ""), 10);
-            onChange(Number.isFinite(n) ? Math.min(99, n) : 0);
-          }}
-          keyboardType="number-pad"
-          selectTextOnFocus
-          style={styles.scoreInput}
-        />
-        <Pressable onPress={() => onChange(Math.min(99, value + 1))} style={styles.stepButton}>
-          <Txt variant="monoBold" size={22}>
-            +
-          </Txt>
-        </Pressable>
+      {children}
+    </View>
+  );
+}
+
+/** Sticky desktop card: the match as it will be sent, updating live with every edit. */
+function MatchPreview({
+  me,
+  opponent,
+  myTeam,
+  opponentTeam,
+  myGoals,
+  opponentGoals,
+  myElo,
+  opponentElo,
+  myDelta,
+  opponentDelta,
+  finalsLabel,
+  decidedBy,
+  dealing,
+}: {
+  me: Player | null;
+  opponent: LeaguePlayer | null;
+  myTeam: Team | null;
+  opponentTeam: Team | null;
+  myGoals: number;
+  opponentGoals: number;
+  myElo: number;
+  opponentElo: number;
+  myDelta: number;
+  opponentDelta: number;
+  finalsLabel: string | null;
+  decidedBy?: string;
+  dealing: boolean;
+}) {
+  const oppFirst = opponent ? firstName(opponent.name) : "Opponent";
+  return (
+    <Card style={styles.preview}>
+      <View style={styles.previewHead}>
+        <Txt variant="head" size={10.5} color={colors.textDim} style={styles.kicker}>
+          {finalsLabel ? finalsLabel.toUpperCase() : "MATCH CARD"}
+        </Txt>
+        <Tag tone="neutral">Draft</Tag>
       </View>
+      <View style={styles.previewScore}>
+        <PreviewSide player={me} name="You" team={myTeam?.name} dealing={dealing} />
+        <View style={styles.previewDigits}>
+          <Digit value={myGoals} />
+          <Txt variant="monoBold" size={36} color={colors.textFaint}>
+            :
+          </Txt>
+          <Digit value={opponentGoals} />
+        </View>
+        <PreviewSide
+          player={opponent}
+          name={opponent ? oppFirst : "Opponent"}
+          team={opponentTeam?.name}
+          dealing={dealing}
+        />
+      </View>
+      <View style={styles.divider} />
+      {finalsLabel ? (
+        <View style={styles.previewNote}>
+          <Icon name="trophy" size={15} color={colors.gold} />
+          <Txt size={12.5} color={colors.textDim} style={{ flex: 1, lineHeight: 18 }}>
+            No ELO change — the winner advances{decidedBy ? ` · ${decidedBy}` : ""}.
+          </Txt>
+        </View>
+      ) : opponent ? (
+        <View style={{ gap: spacing.sm }}>
+          <Txt variant="head" size={10.5} color={colors.textDim} style={styles.kicker}>
+            ELO AFTER CONFIRMATION
+          </Txt>
+          <EloLine label="You" before={myElo} delta={myDelta} strong />
+          <EloLine label={oppFirst} before={opponentElo} delta={opponentDelta} />
+        </View>
+      ) : (
+        <Txt size={12.5} color={colors.textDim}>
+          Pick an opponent to see how the result moves both ratings.
+        </Txt>
+      )}
+      <Txt size={11.5} color={colors.textFaint} style={{ marginTop: spacing.md, lineHeight: 16 }}>
+        {opponent
+          ? `${oppFirst} confirms before it counts — they'll get a notification.`
+          : "Results only count once your opponent confirms them."}
+      </Txt>
+    </Card>
+  );
+}
+
+function PreviewSide({
+  player,
+  name,
+  team,
+  dealing,
+}: {
+  player: Player | null;
+  name: string;
+  team?: string;
+  dealing: boolean;
+}) {
+  return (
+    <View style={styles.previewSide}>
+      {player ? (
+        <Avatar player={player} size={52} jersey />
+      ) : (
+        <View style={styles.placeholderAvatar}>
+          <Icon name="users" size={20} color={colors.textFaint} />
+        </View>
+      )}
+      <Txt variant="bodyMedium" size={13.5} style={{ marginTop: spacing.sm }} numberOfLines={1}>
+        {name}
+      </Txt>
+      {dealing ? (
+        <Skeleton width={70} height={10} style={{ marginTop: 5 }} />
+      ) : (
+        <Txt
+          size={11}
+          color={team ? colors.textDim : colors.textFaint}
+          numberOfLines={1}
+          style={{ marginTop: 3 }}
+        >
+          {team ?? "Team TBD"}
+        </Txt>
+      )}
+    </View>
+  );
+}
+
+/** A score digit that rolls in when it changes. */
+function Digit({ value }: { value: number }) {
+  return (
+    <Reveal key={value} from="up" duration={220}>
+      <Txt variant="monoBold" size={44}>
+        {value}
+      </Txt>
+    </Reveal>
+  );
+}
+
+function FixtureSkeleton() {
+  return (
+    <View style={[styles.fixtureCard, { borderColor: colors.line }]}>
+      <Skeleton width={42} height={42} round={21} />
+      <View style={{ flex: 1, gap: 7 }}>
+        <Skeleton width="25%" height={10} />
+        <Skeleton width="55%" height={14} />
+      </View>
+      <Skeleton width={52} height={52} round={radius.sm} />
     </View>
   );
 }
@@ -926,152 +1337,34 @@ function FixtureTeamCard({
   );
 }
 
-function ReviewPlayer({
-  player,
-  label,
-  team,
-}: {
-  player: Player | null;
-  label: string;
-  team: string;
-}) {
-  return (
-    <View style={{ flex: 1, alignItems: "center" }}>
-      <Avatar player={player} size={48} jersey />
-      <Txt variant="bodyMedium" size={13} style={{ marginTop: spacing.sm }}>
-        {label}
-      </Txt>
-      <Txt size={10.5} color={colors.textDim} numberOfLines={1} style={{ marginTop: 2 }}>
-        {team}
-      </Txt>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  center: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   header: {
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.sm,
+    paddingVertical: spacing.sm,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
+  headerDesktop: { minHeight: 64, paddingTop: spacing.x2, paddingBottom: spacing.md },
+  modeSwitch: { marginTop: spacing.md, alignItems: "flex-start" },
+  track: { flexDirection: "row", gap: 5, marginTop: spacing.xs },
+  trackSegment: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.surface2,
+    overflow: "hidden",
   },
-  track: { flexDirection: "row", gap: 5, paddingHorizontal: spacing.lg },
-  trackSegment: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.surface2 },
-  trackSegmentOn: { backgroundColor: colors.accent },
-  content: { padding: spacing.lg, paddingBottom: spacing.x3 },
+  trackFill: { height: "100%", borderRadius: 2, backgroundColor: colors.accent },
   footer: {
-    paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.line,
     backgroundColor: colors.bg,
   },
-  pickRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-  },
-  pickRowActive: {
-    borderColor: withAlpha(colors.accent, 0.55),
-    backgroundColor: withAlpha(colors.accent, 0.07),
-  },
-  check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scoreRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    maxWidth: "100%",
-  },
-  scoreInput: {
-    flex: 1,
-    minWidth: 0,
-    maxWidth: 72,
-    textAlign: "center",
-    color: colors.text,
-    fontFamily: "JetBrainsMono_700Bold",
-    fontSize: 34,
-    paddingVertical: 2,
-  },
-  stepButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface2,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  eloPreview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.x2,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: withAlpha(colors.accent, 0.07),
-    borderWidth: 1,
-    borderColor: withAlpha(colors.accent, 0.2),
-  },
-  reviewCard: { padding: spacing.lg },
-  reviewScore: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  divider: { height: 1, backgroundColor: colors.line, marginVertical: spacing.lg },
-  reviewBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  success: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.x2,
-  },
-  resultBurst: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  previewCard: {
-    width: "100%",
-    marginTop: spacing.x2,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+  footerDesktop: { paddingBottom: spacing.lg },
+  footerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   modeCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -1082,18 +1375,21 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
   },
+  modeCardTile: {
+    flex: 1,
+    flexDirection: "column",
+    alignItems: "flex-start",
+    minHeight: 200,
+    padding: spacing.x2,
+  },
   modeIcon: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  dealLoading: {
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.x3,
-  },
+  finalsCard: { borderColor: withAlpha(colors.win, 0.45) },
   vsRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1101,6 +1397,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginVertical: spacing.md,
   },
+  note: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.x2,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: withAlpha(colors.accent, 0.07),
+    borderWidth: 1,
+    borderColor: withAlpha(colors.accent, 0.2),
+  },
+  lockedNote: { marginTop: spacing.md, textAlign: "center" },
   fixtureCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -1119,19 +1427,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.surface2,
   },
-  rerollButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-  },
-  finalsCard: { borderColor: withAlpha(colors.win, 0.45) },
   finalsBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1143,22 +1438,37 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: withAlpha(colors.win, 0.07),
   },
-  decidedByRow: {
+  scoreCard: { paddingVertical: spacing.x2 },
+  scoreRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.xs },
+  scoreSide: { flex: 1, alignItems: "center", minWidth: 0 },
+  colon: { marginBottom: 8 },
+  subLabel: { letterSpacing: 1.2, marginTop: spacing.x2, marginBottom: spacing.sm },
+  eloCard: { marginTop: spacing.lg, gap: spacing.sm },
+  kicker: { letterSpacing: 1.2 },
+  preview: { padding: spacing.xl, gap: spacing.xs },
+  previewHead: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: spacing.sm,
-    marginTop: spacing.x2,
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  decidedByChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
+  previewScore: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginVertical: spacing.x2,
+  },
+  previewDigits: { flexDirection: "row", alignItems: "center", gap: 4 },
+  previewSide: { flex: 1, alignItems: "center", minWidth: 0 },
+  placeholderAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
+    borderStyle: "dashed",
+    borderColor: colors.lineStrong,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  decidedByChipActive: {
-    borderColor: withAlpha(colors.accent, 0.45),
-    backgroundColor: withAlpha(colors.accent, 0.08),
-  },
+  previewNote: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  divider: { height: 1, backgroundColor: colors.line, marginBottom: spacing.lg },
 });

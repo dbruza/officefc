@@ -4,13 +4,17 @@
  * behaviour (and one look) on both without another native module in the build.
  */
 import { useEffect, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button } from "./Button";
+import { Button, IconButton } from "./Button";
 import { Icon } from "./Icon";
+import { Interactive } from "./Interactive";
+import { Reveal } from "./motion";
 import { Txt } from "./Txt";
-import { colors, radius, spacing } from "@/theme";
+import { colors, elevation, radius, spacing } from "@/theme";
 import { withAlpha } from "@/lib/color";
+import { useBreakpoint } from "@/lib/responsive";
+import { webStyle } from "@/lib/web";
 import {
   MINUTE_STEP,
   WEEKDAY_INITIALS,
@@ -54,6 +58,8 @@ export function DateTimeField({
   helper,
   invalid,
 }: DateTimeFieldProps) {
+  // Tablet and up: a centred dialog — a bottom sheet across a desktop monitor reads as broken.
+  const { isTablet } = useBreakpoint();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
   const [month, setMonth] = useState(() => startOfMonth(value));
@@ -87,23 +93,139 @@ export function DateTimeField({
   const minimum = minimumDate ? startOfDay(minimumDate) : null;
   const days = monthGrid(month);
 
+  const sheet = (
+    <SafeAreaView edges={["bottom"]}>
+      {isTablet ? null : <View style={styles.handle} />}
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Txt variant="head" size={17}>
+            {label}
+          </Txt>
+          <Txt variant="mono" size={11.5} color={colors.accent} style={{ marginTop: 2 }}>
+            {formatDateTime(draft)}
+          </Txt>
+        </View>
+        <IconButton icon="x" accessibilityLabel="Close" onPress={() => setOpen(false)} size={38} />
+      </View>
+
+      <View style={styles.monthBar}>
+        <Interactive
+          accessibilityLabel="Previous month"
+          onPress={() => setMonth(addMonths(month, -1))}
+          style={styles.monthArrow}
+          hoverStyle={{ backgroundColor: colors.surface3 }}
+        >
+          <Icon name="back" size={16} color={colors.textDim} />
+        </Interactive>
+        <Txt variant="head" size={14}>
+          {monthLabel(month)}
+        </Txt>
+        <Interactive
+          accessibilityLabel="Next month"
+          onPress={() => setMonth(addMonths(month, 1))}
+          style={styles.monthArrow}
+          hoverStyle={{ backgroundColor: colors.surface3 }}
+        >
+          <Icon name="chevron" size={16} color={colors.textDim} />
+        </Interactive>
+      </View>
+
+      <View style={styles.weekRow}>
+        {WEEKDAY_INITIALS.map((initial, index) => (
+          <Txt
+            key={index}
+            variant="mono"
+            size={10.5}
+            color={colors.textFaint}
+            style={styles.weekCell}
+          >
+            {initial}
+          </Txt>
+        ))}
+      </View>
+
+      <View style={styles.grid}>
+        {days.map((day) => {
+          const selected = isSameDay(day, draft);
+          const outside = !isSameMonth(day, month);
+          const disabled = !!minimum && day < minimum;
+          return (
+            <Interactive
+              key={day.toISOString()}
+              accessibilityLabel={day.toDateString()}
+              accessibilityState={{ selected, disabled }}
+              disabled={disabled}
+              pressScale={0.92}
+              hoverStyle={selected ? undefined : { backgroundColor: colors.surface2 }}
+              onPress={() => {
+                setDraft(withDay(draft, day));
+                // Tapping a leading/trailing cell follows that month, so the
+                // selection never sits outside the grid on screen.
+                if (outside) setMonth(startOfMonth(day));
+              }}
+              style={[styles.dayCell, selected && styles.daySelected]}
+            >
+              <Txt
+                variant={selected ? "monoBold" : "mono"}
+                size={13}
+                color={
+                  selected
+                    ? colors.onAccent
+                    : disabled
+                      ? colors.textFaint
+                      : outside
+                        ? colors.textDim
+                        : colors.text
+                }
+              >
+                {day.getDate()}
+              </Txt>
+            </Interactive>
+          );
+        })}
+      </View>
+
+      <View style={styles.timeBlock}>
+        <TimeRow
+          ref={hourScroll}
+          label="HOUR"
+          values={HOURS}
+          selected={draft.getHours()}
+          onSelect={(hour) => setDraft(withTime(draft, hour, draft.getMinutes()))}
+        />
+        <TimeRow
+          ref={minuteScroll}
+          label="MINUTE"
+          values={MINUTES}
+          selected={Math.floor(draft.getMinutes() / MINUTE_STEP) * MINUTE_STEP}
+          onSelect={(minute) => setDraft(withTime(draft, draft.getHours(), minute))}
+        />
+      </View>
+
+      <Button full onPress={commit} style={styles.done}>
+        Done
+      </Button>
+    </SafeAreaView>
+  );
+
   return (
     <View style={styles.wrap}>
       <Txt variant="head" size={11} color={colors.textDim} style={styles.label}>
         {label.toUpperCase()}
       </Txt>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${label}: ${formatDateTime(value)}`}
+      <Interactive
+        accessibilityLabel={`${label}: ${formatDateTime(value)}. Change`}
         onPress={openPicker}
+        pressScale={0.99}
         style={[styles.field, invalid && styles.fieldInvalid]}
+        hoverStyle={invalid ? undefined : { borderColor: colors.lineStrong }}
       >
         <Icon name="calendar" size={17} color={invalid ? colors.loss : colors.accent} />
         <Txt size={14} style={{ flex: 1 }} numberOfLines={1}>
           {formatDateTime(value)}
         </Txt>
         <Icon name="chevron" size={15} color={colors.textDim} />
-      </Pressable>
+      </Interactive>
       {helper ? (
         <Txt size={11} color={invalid ? colors.loss : colors.textDim} style={styles.helper}>
           {helper}
@@ -112,137 +234,30 @@ export function DateTimeField({
 
       <Modal
         visible={open}
-        animationType="slide"
+        animationType={isTablet ? "fade" : "slide"}
         transparent
         statusBarTranslucent
         onRequestClose={() => setOpen(false)}
       >
-        <View style={styles.overlay}>
-          <Pressable
-            accessibilityRole="button"
+        <View style={[styles.overlay, isTablet && styles.overlayCentered]}>
+          <Interactive
             accessibilityLabel={`Close ${label} picker`}
             onPress={() => setOpen(false)}
-            style={StyleSheet.absoluteFill}
+            pressScale={1}
+            focusable={false}
+            style={[StyleSheet.absoluteFill, webStyle({ cursor: "default" })]}
           />
-          <View style={styles.sheet}>
-            <SafeAreaView edges={["bottom"]}>
-              <View style={styles.handle} />
-              <View style={styles.header}>
-                <View style={{ flex: 1 }}>
-                  <Txt variant="head" size={17}>
-                    {label}
-                  </Txt>
-                  <Txt variant="mono" size={11.5} color={colors.accent} style={{ marginTop: 2 }}>
-                    {formatDateTime(draft)}
-                  </Txt>
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  onPress={() => setOpen(false)}
-                  style={styles.iconButton}
-                >
-                  <Icon name="x" size={19} stroke={2.5} />
-                </Pressable>
-              </View>
-
-              <View style={styles.monthBar}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Previous month"
-                  onPress={() => setMonth(addMonths(month, -1))}
-                  style={styles.monthArrow}
-                >
-                  <Icon name="back" size={16} color={colors.textDim} />
-                </Pressable>
-                <Txt variant="head" size={14}>
-                  {monthLabel(month)}
-                </Txt>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Next month"
-                  onPress={() => setMonth(addMonths(month, 1))}
-                  style={styles.monthArrow}
-                >
-                  <Icon name="chevron" size={16} color={colors.textDim} />
-                </Pressable>
-              </View>
-
-              <View style={styles.weekRow}>
-                {WEEKDAY_INITIALS.map((initial, index) => (
-                  <Txt
-                    key={index}
-                    variant="mono"
-                    size={10.5}
-                    color={colors.textFaint}
-                    style={styles.weekCell}
-                  >
-                    {initial}
-                  </Txt>
-                ))}
-              </View>
-
-              <View style={styles.grid}>
-                {days.map((day) => {
-                  const selected = isSameDay(day, draft);
-                  const outside = !isSameMonth(day, month);
-                  const disabled = !!minimum && day < minimum;
-                  return (
-                    <Pressable
-                      key={day.toISOString()}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected, disabled }}
-                      disabled={disabled}
-                      onPress={() => {
-                        setDraft(withDay(draft, day));
-                        // Tapping a leading/trailing cell follows that month, so the
-                        // selection never sits outside the grid on screen.
-                        if (outside) setMonth(startOfMonth(day));
-                      }}
-                      style={[styles.dayCell, selected && styles.daySelected]}
-                    >
-                      <Txt
-                        variant={selected ? "monoBold" : "mono"}
-                        size={13}
-                        color={
-                          selected
-                            ? colors.onAccent
-                            : disabled
-                              ? colors.textFaint
-                              : outside
-                                ? colors.textDim
-                                : colors.text
-                        }
-                      >
-                        {day.getDate()}
-                      </Txt>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <View style={styles.timeBlock}>
-                <TimeRow
-                  ref={hourScroll}
-                  label="HOUR"
-                  values={HOURS}
-                  selected={draft.getHours()}
-                  onSelect={(hour) => setDraft(withTime(draft, hour, draft.getMinutes()))}
-                />
-                <TimeRow
-                  ref={minuteScroll}
-                  label="MINUTE"
-                  values={MINUTES}
-                  selected={Math.floor(draft.getMinutes() / MINUTE_STEP) * MINUTE_STEP}
-                  onSelect={(minute) => setDraft(withTime(draft, draft.getHours(), minute))}
-                />
-              </View>
-
-              <Button full onPress={commit} style={styles.done}>
-                Done
-              </Button>
-            </SafeAreaView>
-          </View>
+          {isTablet ? (
+            <Reveal
+              from="scale"
+              duration={200}
+              style={[styles.sheet, styles.dialog, webStyle({ boxShadow: elevation.overlay })]}
+            >
+              {sheet}
+            </Reveal>
+          ) : (
+            <View style={styles.sheet}>{sheet}</View>
+          )}
         </View>
       </Modal>
     </View>
@@ -276,12 +291,14 @@ function TimeRow({
         {values.map((entry) => {
           const active = entry === selected;
           return (
-            <Pressable
+            <Interactive
               key={entry}
-              accessibilityRole="button"
+              accessibilityLabel={`${label.toLowerCase()} ${pad2(entry)}`}
               accessibilityState={{ selected: active }}
               onPress={() => onSelect(entry)}
+              pressScale={0.95}
               style={[styles.timeChip, active && styles.timeChipActive]}
+              hoverStyle={active ? undefined : { borderColor: colors.lineStrong }}
             >
               <Txt
                 variant={active ? "monoBold" : "mono"}
@@ -290,7 +307,7 @@ function TimeRow({
               >
                 {pad2(entry)}
               </Txt>
-            </Pressable>
+            </Interactive>
           );
         })}
       </ScrollView>
@@ -316,6 +333,7 @@ const styles = StyleSheet.create({
   fieldInvalid: { borderColor: withAlpha(colors.loss, 0.55) },
   helper: { marginTop: 5 },
   overlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.58)" },
+  overlayCentered: { justifyContent: "center", alignItems: "center", padding: spacing.x2 },
   sheet: {
     backgroundColor: colors.bg,
     borderTopLeftRadius: radius.xl,
@@ -325,6 +343,14 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  dialog: {
+    width: "100%",
+    maxWidth: 420,
+    borderRadius: radius.xl,
+    borderBottomWidth: 1,
+    borderColor: colors.lineStrong,
+    paddingTop: spacing.sm,
   },
   handle: {
     alignSelf: "center",
@@ -340,16 +366,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
-  },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
   },
   monthBar: {
     flexDirection: "row",

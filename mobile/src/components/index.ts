@@ -8,7 +8,7 @@ export type { AvatarProps } from "./Avatar";
 export { FormChips, EloDelta, Movement } from "./chips";
 export { StatCard } from "./StatCard";
 export type { StatCardProps } from "./StatCard";
-export { Button } from "./Button";
+export { Button, IconButton } from "./Button";
 export type { ButtonProps } from "./Button";
 export { SectionLabel } from "./SectionLabel";
 export { RankBadge } from "./RankBadge";
@@ -30,7 +30,29 @@ export { DateTimeField } from "./DateTimeField";
 export type { DateTimeFieldProps } from "./DateTimeField";
 export { FormScreen, BrandMark } from "./FormScreen";
 export type { FormScreenProps } from "./FormScreen";
-export { ScreenHeader } from "./ScreenHeader";
+export { ScreenHeader, useSafeBack } from "./ScreenHeader";
+export { Interactive } from "./Interactive";
+export type { InteractiveProps, InteractionState } from "./Interactive";
+export { Page, Columns, Grid, sticky, useGutter, usePageContext } from "./Page";
+export type { PageProps, ColumnsProps, GridProps } from "./Page";
+export {
+  Reveal,
+  CountUp,
+  useCountUp,
+  Skeleton,
+  SkeletonRows,
+  SkeletonCard,
+  Confetti,
+  PulseRing,
+  staggerDelay,
+  EASE_OUT,
+  EASE_SPRING,
+} from "./motion";
+export type { RevealProps } from "./motion";
+export { EmptyState, ErrorCard, Tag } from "./feedback";
+export { Segmented } from "./Segmented";
+export type { SegmentOption } from "./Segmented";
+export { RefreshButton } from "./RefreshButton";
 export { AppTabBar } from "./AppTabBar";
 export type { AppTab } from "./AppTabBar";
 export { TeamPicker } from "./TeamPicker";
