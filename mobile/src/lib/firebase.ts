@@ -63,7 +63,10 @@ export const db =
     ? getFirestore(app)
     : initializeFirestore(app, { experimentalForceLongPolling: true });
 export const storage = getStorage(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(
+  app,
+  process.env.EXPO_PUBLIC_FUNCTIONS_REGION ?? "australia-southeast1",
+);
 
 const useEmulators =
   process.env.EXPO_PUBLIC_USE_EMULATORS === "1" || process.env.EXPO_PUBLIC_USE_EMULATORS === "true";

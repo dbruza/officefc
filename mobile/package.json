@@ -11,7 +11,8 @@
     "export:web": "expo export --platform web",
     "typecheck": "tsc --noEmit",
     "pretest": "npm --prefix ../functions run build",
-    "test": "node --import tsx --test \"src/lib/**/*.test.ts\""
+    "test": "node --import tsx --test \"src/lib/**/*.test.ts\"",
+    "test:compiled": "node --import tsx --test \"src/lib/**/*.test.ts\""
   },
   "dependencies": {
     "@expo-google-fonts/archivo": "^0.2.3",

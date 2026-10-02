@@ -1,3 +1,8 @@
+import { createHash, randomUUID } from "node:crypto";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { FieldValue, Timestamp, type Transaction } from "firebase-admin/firestore";
+import { instrumentBackground } from "./sentry";
 import * as logger from "firebase-functions/logger";
 import { getFirestore } from "firebase-admin/firestore";
 
@@ -38,12 +43,15 @@ export async function deliverPushMessages(
 ): Promise<boolean> {
   if (messages.length === 0) return false;
   try {
-    await fetchImpl(EXPO_PUSH_ENDPOINT, {
+    const response = await fetchImpl(EXPO_PUSH_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(messages),
+      signal: AbortSignal.timeout(8000),
     });
-    return true;
+    // Drain the body so the connection can be reused; the same abort signal covers it.
+    await response.arrayBuffer?.();
+    return response.ok;
   } catch (error) {
     logger.warn("expo_push_failed", {
       error: error instanceof Error ? error.message : String(error),
@@ -100,7 +108,7 @@ export function isMuted(muted: unknown, type: string | undefined): boolean {
   return muted.some((entry) => typeof entry === "string" && entry === category);
 }
 
-export async function sendPush(
+async function sendPushNow(
   uid: string,
   title: string,
   body: string,
@@ -128,5 +136,137 @@ export async function sendPush(
     body,
     data,
   );
-  await deliverPushMessages(messages);
+  if (messages.length && !(await deliverPushMessages(messages)))
+    throw new Error("Push delivery failed");
+}
+
+/** Enqueue before returning. Deterministic ids make confirmation retries idempotent. */
+export async function sendPush(
+  uid: string,
+  title: string,
+  body: string,
+  data: Record<string, string>,
+): Promise<void> {
+  const id = createHash("sha256")
+    .update(JSON.stringify([uid, title, body, Object.entries(data).sort()]))
+    .digest("hex");
+  try {
+    await getFirestore()
+      .doc(`notificationOutbox/${id}`)
+      .create({
+        uid,
+        title,
+        body,
+        data,
+        status: "pending",
+        attempts: 0,
+        nextAttemptAt: Timestamp.now(),
+        createdAt: FieldValue.serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+      });
+  } catch (error) {
+    if ((error as { code?: number }).code !== 6) throw error;
+  }
+}
+async function deliverQueuedPush(id: string): Promise<void> {
+  const db = getFirestore(),
+    ref = db.doc(`notificationOutbox/${id}`),
+    token = randomUUID();
+  const work = await db.runTransaction(async (tx) => {
+    const row = await tx.get(ref),
+      data = row.data();
+    if (
+      !data ||
+      data.status === "sent" ||
+      data.status === "failed" ||
+      (data.nextAttemptAt as Timestamp).toMillis() > Date.now()
+    )
+      return null;
+    tx.update(ref, {
+      status: "sending",
+      token,
+      attempts: FieldValue.increment(1),
+      nextAttemptAt: Timestamp.fromMillis(Date.now() + 60000),
+    });
+    return data;
+  });
+  if (!work) return;
+  let delivered = false;
+  try {
+    await sendPushNow(work.uid, work.title, work.body, work.data);
+    delivered = true;
+  } catch (error) {
+    logger.warn("push_retry", { id, error: String(error) });
+  }
+  await db.runTransaction(async (tx) => {
+    const row = await tx.get(ref);
+    if (row.get("token") !== token) return;
+    const attempts = Number(row.get("attempts"));
+    tx.update(ref, {
+      status: delivered ? "sent" : attempts >= 5 ? "failed" : "pending",
+      nextAttemptAt: Timestamp.fromMillis(Date.now() + Math.min(3600000, 60000 * 2 ** attempts)),
+      ...(delivered ? { sentAt: FieldValue.serverTimestamp() } : {}),
+    });
+  });
+}
+export const deliverNotification = onDocumentCreated(
+  {
+    region: "australia-southeast1",
+    document: "notificationOutbox/{id}",
+    timeoutSeconds: 60,
+    retry: true,
+  },
+  instrumentBackground("deliverNotification", async (event) => {
+    await deliverQueuedPush(event.params.id);
+  }),
+);
+export const retryNotifications = onSchedule(
+  {
+    region: "australia-southeast1",
+    schedule: "* * * * *",
+    timeoutSeconds: 120,
+    maxInstances: 1,
+    concurrency: 1,
+  },
+  instrumentBackground("retryNotifications", async () => {
+    const due = await getFirestore()
+      .collection("notificationOutbox")
+      .where("status", "in", ["pending", "sending"])
+      .where("nextAttemptAt", "<=", Timestamp.now())
+      .orderBy("nextAttemptAt")
+      .limit(50)
+      .get();
+    for (let i = 0; i < due.docs.length; i += 5)
+      await Promise.all(due.docs.slice(i, i + 5).map((row) => deliverQueuedPush(row.id)));
+  }),
+);
+
+export async function enqueuePushesTx(
+  tx: Transaction,
+  messages: Array<{
+    uid: string;
+    title: string;
+    body: string;
+    data: Record<string, string>;
+  }>,
+): Promise<void> {
+  const rows = messages.map((message) => {
+    const { uid, title, body, data } = message;
+    const id = createHash("sha256")
+      .update(JSON.stringify([uid, title, body, Object.entries(data).sort()]))
+      .digest("hex");
+    return { ref: getFirestore().doc(`notificationOutbox/${id}`), message };
+  });
+  const existing = rows.length ? await tx.getAll(...rows.map((row) => row.ref)) : [];
+  rows.forEach((row, index) => {
+    if (!existing[index].exists)
+      tx.create(row.ref, {
+        ...row.message,
+        status: "pending",
+        attempts: 0,
+        nextAttemptAt: Timestamp.now(),
+        createdAt: FieldValue.serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+      });
+  });
 }

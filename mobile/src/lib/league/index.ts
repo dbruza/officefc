@@ -13,3 +13,5 @@ export * from "./recap";
 export * from "./predictions";
 export * from "./activity";
 export * from "./setup";
+
+export * from "./summaries";

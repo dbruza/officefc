@@ -39,7 +39,6 @@ import {
 } from "@/screens/HomeSections";
 import { useAuth } from "@/lib/auth";
 import {
-  ensureLeagueSetup,
   getActiveSeason,
   getCup,
   getHeadToHeadsForPlayer,
@@ -47,7 +46,6 @@ import {
   getPlayerStats,
   getRecentActivity,
   getStandings,
-  rebuildLeagueReadModels,
   type ActivityEvent,
   type CupState,
   type HeadToHead,
@@ -109,9 +107,6 @@ export default function Home() {
           headToHeads: [],
         };
       }
-      if (isAdmin) {
-        await ensureLeagueSetup();
-      }
       const activeSeason = await getActiveSeason();
       const [roster, table, allTime, feed, cup, pairs] = await Promise.all([
         getLeaguePlayers(),
@@ -122,16 +117,11 @@ export default function Home() {
         // Decorative (Play next only) — a failed read must not blank the dashboard.
         getHeadToHeadsForPlayer(uid).catch(() => [] as HeadToHead[]),
       ]);
-      let resolvedStats = allTime;
-      if (!resolvedStats && isAdmin && table.length) {
-        await rebuildLeagueReadModels();
-        resolvedStats = await getPlayerStats(uid);
-      }
       return {
         season: activeSeason,
         standings: table,
         players: new Map(roster.map((player) => [player.id, player])),
-        playerStats: resolvedStats,
+        playerStats: allTime,
         activity: feed,
         cup,
         headToHeads: pairs,

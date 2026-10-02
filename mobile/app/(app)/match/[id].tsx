@@ -1,3 +1,5 @@
+import { MatchAnalysisCard, AnalysisLoading } from "@/components/MatchAnalysisCard";
+import { getCachedAnalysis, requestAnalysis } from "@/lib/league/matchAnalysis";
 /**
  * Match detail. Where a `match_pending` push lands, so when the viewer is the named
  * opponent of a result awaiting confirmation it carries a pinned Confirm / Dispute bar
@@ -84,47 +86,69 @@ export default function MatchDetailRoute() {
     `match:${id}`,
     useCallback(async () => {
       const [result, roster] = await Promise.all([getMatch(id), getLeaguePlayers()]);
-      const season = result ? await getSeason(result.seasonId) : null;
-      let photoUrl: string | null = null;
-      let photoExpires = 0;
-      if (result?.source === "ai_assisted" && result.photoPath) {
-        try {
-          const photo = await getMatchPhotoUrl(id);
-          photoUrl = photo.url;
-          photoExpires = photo.expiresAt;
-        } catch {
-          photoUrl = null;
-        }
-      }
-      // Votes are a nice-to-have beside the result itself: a failed read must not take
-      // down the whole screen, so degrade to "no MVP card" instead of surfacing an error.
-      const votes: MatchVotes | null =
-        result && result.status === "confirmed"
-          ? await getMatchVotes(id, viewerId).catch(() => null)
-          : null;
-      const preview =
-        result && result.status === "pending_confirmation"
-          ? ((await getPendingImpacts([result]).catch(() => null))?.get(result.id) ?? null)
-          : null;
+
       return {
         match: result,
-        season,
+        season: null,
         players: new Map(roster.map((player) => [player.id, player])),
-        photoUrl,
-        photoExpires,
-        votes,
-        preview,
+        photoUrl: null,
+        photoExpires: 0,
+        votes: null,
+        preview: null,
       };
     }, [id, viewerId]),
   );
-  const match = data?.match ?? null;
-  const season = data?.season ?? null;
+  const match = data?.match?.id === id ? data.match : null;
+  const { data: extras } = useFocusData(
+    `match-extras:${id}:${match?.status ?? "loading"}:${viewerId}`,
+    useCallback(async () => {
+      if (!match) return { id, season: null, photo: null, votes: null, preview: null };
+      const [season, photo, votes, previews] = await Promise.all([
+        getSeason(match.seasonId).catch(() => null),
+        match.source === "ai_assisted" && match.photoPath
+          ? getMatchPhotoUrl(id).catch(() => null)
+          : Promise.resolve(null),
+        match.status === "confirmed"
+          ? getMatchVotes(id, viewerId).catch(() => null)
+          : Promise.resolve(null),
+        match.status === "pending_confirmation"
+          ? getPendingImpacts([match]).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+      return { id, season, photo, votes, preview: previews?.get(id) ?? null };
+    }, [match, id, viewerId]),
+  );
+  const currentExtras = extras?.id === id ? extras : null;
+  const season = currentExtras?.season ?? null;
   const players = data?.players ?? new Map<string, LeaguePlayer>();
-  const votes = data?.votes ?? null;
-  const preview = data?.preview ?? null;
-  const photoUrl = photoHidden ? null : (data?.photoUrl ?? null);
-  const photoExpires = data?.photoExpires ?? 0;
+  const votes = currentExtras?.votes ?? null;
+  const preview = currentExtras?.preview ?? null;
+  const photoUrl = photoHidden ? null : (currentExtras?.photo?.url ?? null);
+  const photoExpires = currentExtras?.photo?.expiresAt ?? 0;
 
+  const { data: cachedAnalysis, reload: reloadAnalysis } = useFocusData(
+    `analysis:${id}:${match?.status ?? "loading"}`,
+    useCallback(
+      async () => ({
+        id,
+        value: match?.status === "confirmed" ? await getCachedAnalysis(id) : null,
+      }),
+      [id, match?.status],
+    ),
+  );
+  const [analysing, setAnalysing] = useState(false);
+  const generateAnalysis = async () => {
+    setAnalysing(true);
+    try {
+      await requestAnalysis(id);
+      await reloadAnalysis();
+    } catch (error) {
+      toast.error(friendlyError(error, "Couldn't prepare the analysis. Please retry."));
+    } finally {
+      setAnalysing(false);
+    }
+  };
+  const visibleAnalysis = cachedAnalysis?.id === id ? cachedAnalysis.value : null;
   const a = match ? players.get(match.aId) : null;
   const b = match ? players.get(match.bId) : null;
   const pending = match?.status === "pending_confirmation";
@@ -363,6 +387,19 @@ export default function MatchDetailRoute() {
         {ratings}
         {details}
       </Columns>
+      {match.status === "confirmed" ? (
+        <View style={{ marginTop: spacing.lg }}>
+          {analysing ? (
+            <AnalysisLoading />
+          ) : visibleAnalysis ? (
+            <MatchAnalysisCard analysis={visibleAnalysis} />
+          ) : (
+            <Button variant="dark" onPress={() => void generateAnalysis()}>
+              Analyse this match
+            </Button>
+          )}
+        </View>
+      ) : null}
     </Page>
   );
 }

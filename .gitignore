@@ -1,5 +1,5 @@
 # Dependencies (matches node_modules at any depth: root + mobile/ + functions/)
-node_modules/
+node_modules
 
 # Build outputs
 dist/
@@ -29,3 +29,5 @@ mobile/android/
 
 # Claude: share launch.json, keep local settings out
 .claude/settings.local.json
+
+.claude/worktrees/

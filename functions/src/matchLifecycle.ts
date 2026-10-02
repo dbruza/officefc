@@ -1,3 +1,4 @@
+import { schedulePendingMatch } from "./scheduling";
 import * as logger from "firebase-functions/logger";
 import { HttpsError } from "firebase-functions/v2/https";
 import { loggedOnCall } from "./logging";
@@ -6,8 +7,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "./auth";
-import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
-import { emitMatchActivity, topRankedLeaderId } from "./activityFeed";
+import { requestRebuild, enqueueRebuild } from "./rebuildQueue";
 import { applyFinalsResult } from "./finals";
 import type { FinalsDecidedBy, FinalsSlotKey } from "./finalsRules";
 import { maybeConsumeCupResult } from "./cup";
@@ -88,7 +88,7 @@ async function applyFinalsConfirmation(result: ConfirmResult, matchId: string): 
     winnerGoals: Math.max(result.aGoals, result.bGoals),
     loserGoals: Math.min(result.aGoals, result.bGoals),
   });
-  return outcome === "applied";
+  return outcome !== "superseded";
 }
 
 /**
@@ -97,7 +97,7 @@ async function applyFinalsConfirmation(result: ConfirmResult, matchId: string): 
  * confirmMatch callable. The scheduler deliberately does NOT use this: it confirms a batch and
  * rebuilds the read models once for the whole batch (see finalizeAutoConfirmedBatch).
  */
-async function finalizeConfirmation(
+export async function finalizeConfirmation(
   result: ConfirmResult,
   matchId: string,
   pushTitle: string,
@@ -122,6 +122,7 @@ async function finalizeConfirmation(
       error: error instanceof Error ? error.message : String(error),
     });
     await captureServerFault(error, { fn: "maybeConsumeCupResult" });
+    // Cup state writes have their own replayable announcement trigger.
   }
 
   if (result.finals && result.finalsSlot) {
@@ -146,12 +147,6 @@ async function finalizeConfirmation(
     return;
   }
 
-  // Capture the season leader BEFORE recalc so a lead change can be detected after.
-  const db = getFirestore();
-  const previousLeaderId = await topRankedLeaderId(db, result.seasonId);
-  await recalcSeasonElo(result.seasonId);
-  await recalcLeagueStats();
-  await emitMatchActivity({ db, matchId, seasonId: result.seasonId, previousLeaderId });
   await sendPush(result.submittedBy, pushTitle, pushBody, { type: "match_confirmed", matchId });
 }
 
@@ -196,6 +191,11 @@ export async function autoConfirmMatch(
       confirmedBy: AUTO_CONFIRMER,
       autoConfirmedAt: FieldValue.serverTimestamp(),
       confirmedAt: FieldValue.serverTimestamp(),
+    });
+    requestRebuild(tx, String(data.seasonId), {
+      matchId,
+      result: toConfirmResult(data),
+      mode: "auto",
     });
     return toConfirmResult(data);
   });
@@ -281,7 +281,7 @@ export interface FinalizeOutcome {
  * someone a result was locked in without their consent, and nothing replays them.
  */
 export async function finalizeAutoConfirmedBatch(
-  batch: AutoConfirmed[],
+  _batch: AutoConfirmed[],
   healSeasonIds: string[] = [],
 ): Promise<FinalizeOutcome> {
   const db = getFirestore();
@@ -293,165 +293,16 @@ export async function finalizeAutoConfirmedBatch(
     pushFailed: 0,
     cupFailed: 0,
   };
-  const marked = [...new Set([...batch.map((entry) => entry.result.seasonId), ...healSeasonIds])];
-  if (batch.length === 0 && marked.length === 0) return outcome;
-
-  // Callers mark the season before they flip any match; repeating it here is idempotent and
-  // covers callers that didn't, so no path reaches a rebuild without a recovery marker.
-  await markSeasonRecalcPending(marked);
-
-  // A marked season that has since been finalized must NOT be rebuilt: finalizeSeason has
-  // already published its champion and premier from the standings as they were, and
-  // recalcSeasonElo would rewrite them. Same for a season that no longer exists. Both are
-  // dropped from the list rather than retried, or they would wedge every future run.
-  const seasonIds: string[] = [];
-  for (const seasonId of marked) {
-    const snap = await db.doc(`seasons/${seasonId}`).get();
-    if (!snap.exists) {
-      logger.error("auto_confirm_heal_season_missing", { seasonId });
-      outcome.discarded.push(seasonId);
-    } else if (snap.get("finalized") === true) {
-      logger.warn("auto_confirm_heal_skipped_finalized", { seasonId });
-      outcome.discarded.push(seasonId);
-    } else {
-      seasonIds.push(seasonId);
-    }
+  for (const id of new Set(healSeasonIds)) {
+    const season = await db.doc(`seasons/${id}`).get();
+    if (!season.exists || season.get("finalized")) outcome.discarded.push(id);
+    else await enqueueRebuild(id);
   }
-
-  // Capture each season's leader BEFORE its recalc so a lead change can be detected after.
-  const leadersBefore = new Map<string, string | null>();
-  for (const seasonId of seasonIds) {
-    leadersBefore.set(seasonId, await topRankedLeaderId(db, seasonId));
-  }
-  for (const seasonId of seasonIds) {
-    try {
-      await recalcSeasonElo(seasonId);
-      outcome.rebuilt.push(seasonId);
-    } catch (error) {
-      outcome.recalcFailed++;
-      logger.error("auto_confirm_recalc_failed", {
-        seasonId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-  // League-wide read models depend on every confirmed match, so one rebuild covers the batch.
-  if (outcome.rebuilt.length > 0) await recalcLeagueStats();
-
-  // Every match in the batch shares one post-recalc table, so the lead can only have changed
-  // once no matter how many matches landed. Credit that change to a single match — the event id
-  // is keyed on matchId, so emitting per match would file N copies of one lead change. The rest
-  // are handed the post-batch leader, which reads as "no change" and emits nothing.
-  const attributed = new Map<string, string>();
-  for (const { matchId, result } of batch) {
-    if (outcome.rebuilt.includes(result.seasonId)) attributed.set(result.seasonId, matchId);
-  }
-  const leadersAfter = new Map<string, string | null>();
-  for (const seasonId of attributed.keys()) {
-    leadersAfter.set(seasonId, await topRankedLeaderId(db, seasonId));
-  }
-
-  // Streaks are read from the post-batch playerStats, so a player who won twice in one batch
-  // would file the same milestone twice. Credit each player once.
-  const streakCredited = new Set<string>();
-  for (const { matchId, result } of batch) {
-    if (!outcome.rebuilt.includes(result.seasonId)) continue;
-    const winnerId =
-      result.aGoals > result.bGoals
-        ? result.aId
-        : result.bGoals > result.aGoals
-          ? result.bId
-          : null;
-    const suppressStreak = winnerId !== null && streakCredited.has(winnerId);
-    if (winnerId !== null) streakCredited.add(winnerId);
-    try {
-      await emitMatchActivity({
-        db,
-        matchId,
-        seasonId: result.seasonId,
-        previousLeaderId:
-          attributed.get(result.seasonId) === matchId
-            ? (leadersBefore.get(result.seasonId) ?? null)
-            : (leadersAfter.get(result.seasonId) ?? null),
-        suppressStreak,
-      });
-    } catch (error) {
-      outcome.activityFailed++;
-      logger.error("auto_confirm_activity_failed", {
-        matchId,
-        seasonId: result.seasonId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-    // Cup ties advance on auto-confirmation too — a pair whose result aged into confirmed
-    // status has still played their tie. Same never-fails-the-batch isolation as above.
-    // VOID LIMITATION (v1): voiding a match that already advanced a tie does not rewind the
-    // cup, and forceAdvanceCup only decides OPEN ties — a consumed-then-voided tie needs
-    // direct bracket surgery in the Firebase console (edit winnerId + downstream slots).
-    if (winnerId !== null && !result.finals) {
-      try {
-        await maybeConsumeCupResult({
-          seasonId: result.seasonId,
-          aId: result.aId,
-          bId: result.bId,
-          aGoals: result.aGoals,
-          bGoals: result.bGoals,
-        });
-      } catch (error) {
-        outcome.cupFailed++;
-        logger.error("auto_confirm_cup_failed", {
-          matchId,
-          seasonId: result.seasonId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-  }
-
-  // Clear only what actually rebuilt, plus what can never rebuild. A season whose recalc failed
-  // stays marked so the next run retries it. This runs AFTER the activity loop so an interrupted
-  // emit still leaves the marker set.
-  const resolved = [...outcome.rebuilt, ...outcome.discarded];
-  if (resolved.length > 0) {
-    await db.doc(AUTO_CONFIRM_STATE_DOC).set(
-      {
-        pendingSeasonIds: FieldValue.arrayRemove(...resolved),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-  }
-
-  for (const { matchId, result } of batch) {
-    const scoreline = `${result.aGoals}-${result.bGoals}`;
-    const opponentId = result.submittedBy === result.aId ? result.bId : result.aId;
-    // Each recipient is independent: a failed token read for one must not cost the other, or
-    // anyone later in the batch, the notification that their result is now locked in.
-    for (const [uid, title, body] of [
-      [
-        result.submittedBy,
-        "Match auto-confirmed",
-        `No dispute in time, so your ${scoreline} result is locked into the table.`,
-      ],
-      [
-        opponentId,
-        "Result confirmed automatically",
-        `The ${scoreline} result you didn't respond to is now locked into the table.`,
-      ],
-    ] as const) {
-      try {
-        await sendPush(uid, title, body, { type: "match_confirmed", matchId });
-      } catch (error) {
-        outcome.pushFailed++;
-        logger.error("auto_confirm_push_failed", {
-          matchId,
-          uid,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-  }
-
+  // The atomic queue now owns recovery, so the previous scheduler's markers can be retired.
+  if (healSeasonIds.length)
+    await db
+      .doc(AUTO_CONFIRM_STATE_DOC)
+      .set({ pendingSeasonIds: FieldValue.arrayRemove(...healSeasonIds) }, { merge: true });
   return outcome;
 }
 
@@ -484,18 +335,15 @@ export const confirmMatch = loggedOnCall("confirmMatch", { cors: true }, async (
       confirmedBy: uid,
       confirmedAt: FieldValue.serverTimestamp(),
     });
+    requestRebuild(tx, String(data.seasonId), {
+      matchId,
+      result: toConfirmResult(data),
+      mode: "manual",
+    });
     return toConfirmResult(data);
   });
 
-  await finalizeConfirmation(
-    result,
-    matchId,
-    result.finals ? "Finals result confirmed" : "Match confirmed",
-    result.finals
-      ? `Your ${result.aGoals}-${result.bGoals} finals result is locked into the bracket.`
-      : `Your ${result.aGoals}-${result.bGoals} result is now in the table.`,
-  );
-  return { ok: true };
+  return { ok: true, updating: true, seasonId: result.seasonId };
 });
 
 /** The named opponent may dispute a pending match; disputed matches never affect ELO. */
@@ -539,8 +387,9 @@ export const disputeMatch = loggedOnCall("disputeMatch", { cors: true }, async (
 
 /** Notify the opponent when any valid client creates a pending match. */
 export const notifyMatchSubmitted = onDocumentCreated(
-  "matches/{matchId}",
+  { document: "matches/{matchId}", retry: true },
   instrumentBackground("notifyMatchSubmitted", async (event) => {
+    if (event.data) await schedulePendingMatch(event.data.ref);
     const data = event.data?.data();
     if (!data || data.status !== "pending_confirmation") return;
     const opponentId = data.submittedBy === data.aId ? data.bId : data.aId;

@@ -100,5 +100,9 @@ export function loggedOnCall<R = unknown>(
   options: CallableOptions,
   handler: (req: CallableRequest) => R | Promise<R>,
 ) {
-  return onCall(options, instrumentCallable(name, handler));
+  // Keep the existing region during the client migration; older installed apps still call it.
+  return onCall(
+    { region: ["australia-southeast1", "us-central1"], ...options },
+    instrumentCallable(name, handler),
+  );
 }

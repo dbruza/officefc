@@ -1,6 +1,10 @@
-import { useEffect } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { invalidateData } from "@/lib/dataCache";
+import { useEffect, useState } from "react";
 import { Platform, View } from "react-native";
 import { Stack } from "expo-router";
+import { Txt } from "@/components/Txt";
 import { colors } from "@/theme";
 import { useAuth } from "@/lib/auth";
 import { requestAndRegisterToken, unregisterPushToken } from "@/lib/notifications";
@@ -13,9 +17,24 @@ import { PendingCountContext } from "@/lib/pendingCount";
 
 export default function AppLayout() {
   const { user } = useAuth();
+  const [updating, setUpdating] = useState(false);
   const { isTablet } = useBreakpoint();
   const { matches: pending } = usePendingConfirmations(user?.uid);
 
+  useEffect(() => {
+    if (!user) return;
+    let previous: number | undefined;
+    return onSnapshot(
+      doc(db, "readModelQueue", "office"),
+      (snap) => {
+        const revision = Number(snap.get("completedRevision") ?? 0);
+        setUpdating(Number(snap.get("requestedRevision") ?? 0) > revision);
+        if (previous !== undefined && previous !== revision) invalidateData();
+        previous = revision;
+      },
+      () => {},
+    );
+  }, [user?.uid]);
   useEffect(() => {
     setTitleBadge(pending.length);
   }, [pending.length]);
@@ -46,6 +65,16 @@ export default function AppLayout() {
       <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.bg }}>
         {isTablet ? <SideNav pendingCount={pending.length} /> : null}
         <View style={{ flex: 1, minWidth: 0 }}>
+          {updating ? (
+            <Txt
+              size={11}
+              color={colors.textDim}
+              style={{ paddingHorizontal: 16, paddingVertical: 6 }}
+              accessibilityLiveRegion="polite"
+            >
+              Updating league standings…
+            </Txt>
+          ) : null}
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}
           />

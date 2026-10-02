@@ -18,7 +18,12 @@ import {
 
 /** The season's current rank-1 ranked player, or null if nobody has qualified yet. */
 export async function topRankedLeaderId(db: Firestore, seasonId: string): Promise<string | null> {
-  const snap = await db.collection(`seasons/${seasonId}/standings`).get();
+  const snap = await db
+    .collection(`seasons/${seasonId}/standings`)
+    .where("rank", "==", 1)
+    .where("ranked", "==", true)
+    .limit(1)
+    .get();
   for (const doc of snap.docs) {
     if (doc.get("rank") === 1 && doc.get("ranked") === true) return doc.id;
   }
@@ -38,16 +43,18 @@ async function writeActivityEvents(
   await Promise.all(
     events.map(async (event) => {
       const ref = db.doc(`activity/${event.id}`);
-      const existing = await ref.get();
-      if (existing.exists) return;
-      await ref.set({
-        type: event.type,
-        leagueId: LEAGUE_ID,
-        seasonId: event.seasonId,
-        actorIds: event.actorIds,
-        payload: event.payload,
-        createdAt,
-      });
+      try {
+        await ref.create({
+          type: event.type,
+          leagueId: LEAGUE_ID,
+          seasonId: event.seasonId,
+          actorIds: event.actorIds,
+          payload: event.payload,
+          createdAt,
+        });
+      } catch (error) {
+        if ((error as { code?: number }).code !== 6) throw error;
+      }
     }),
   );
 }
@@ -81,7 +88,10 @@ export async function emitMatchActivity(args: {
 
   let winnerStreak: number | null = null;
   let winnerStreakType: "W" | "D" | "L" | null = null;
-  if (winnerId && !args.suppressStreak) {
+  if (winnerId && typeof data.winnerStreakAfter === "number") {
+    winnerStreak = data.winnerStreakAfter;
+    winnerStreakType = "W";
+  } else if (winnerId && !args.suppressStreak) {
     const statsSnap = await db.doc(`playerStats/${winnerId}`).get();
     if (statsSnap.exists) {
       const streak = statsSnap.get("currentStreak");
@@ -92,7 +102,11 @@ export async function emitMatchActivity(args: {
     }
   }
 
-  const newLeaderId = await topRankedLeaderId(db, args.seasonId);
+  const hasTransition = "leaderBeforeId" in data && "leaderAfterId" in data;
+  const previousLeaderId = hasTransition ? data.leaderBeforeId : args.previousLeaderId;
+  const newLeaderId = hasTransition
+    ? data.leaderAfterId
+    : await topRankedLeaderId(db, args.seasonId);
 
   const events = deriveMatchActivity({
     matchId: args.matchId,
@@ -107,7 +121,7 @@ export async function emitMatchActivity(args: {
     bDelta: Number(data.bDelta ?? 0),
     winnerStreak,
     winnerStreakType,
-    previousLeaderId: args.previousLeaderId,
+    previousLeaderId,
     newLeaderId,
   });
   await writeActivityEvents(db, events);

@@ -1,3 +1,4 @@
+import { invalidateData } from "./dataCache";
 /** leagues/{LEAGUE_ID}/members/{uid} — league membership + role. Writes are server-only. */
 import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
@@ -30,6 +31,7 @@ export interface RedeemResult {
 export async function redeemInvite(code: string): Promise<RedeemResult> {
   const callable = httpsCallable<{ code: string }, RedeemResult>(functions, "redeemInvite");
   const res = await callable({ code: code.trim() });
+  invalidateData();
   return res.data;
 }
 

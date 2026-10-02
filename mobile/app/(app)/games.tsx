@@ -4,11 +4,12 @@
  * player's side (date · opponent · teams · score · result · ELO change) with a W-D-L
  * summary per season.
  */
-import { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import {
   Avatar,
+  Button,
   Card,
   EloDelta,
   EmptyState,
@@ -17,7 +18,6 @@ import {
   IconButton,
   Interactive,
   Page,
-  Reveal,
   ScreenHeader,
   SeasonMatchRow,
   SectionLabel,
@@ -28,7 +28,10 @@ import {
 import { useAuth } from "@/lib/auth";
 import {
   getLeaguePlayers,
-  getPlayerMatches,
+  getPlayerMatchPage,
+  getProfileSummary,
+  type MatchPage,
+  type ProfileSummary,
   getSeasons,
   type LeagueMatch,
   type LeaguePlayer,
@@ -40,8 +43,10 @@ import { colors, fonts, resultColor, spacing } from "@/theme";
 import type { MatchResult } from "@/types";
 
 interface GamesData {
+  uid: string;
   players: Map<string, LeaguePlayer>;
-  matches: LeagueMatch[];
+  page: MatchPage;
+  summary: ProfileSummary | null;
   seasonNames: Map<string, string>;
 }
 
@@ -89,32 +94,91 @@ export default function GamesRoute() {
   const params = useLocalSearchParams<{ uid?: string }>();
   const uid = params.uid ?? user?.uid ?? "";
 
-  const { data, refreshing, error, stale, reload } = useFocusData<GamesData>(
+  const {
+    data: cachedData,
+    refreshing,
+    error,
+    stale,
+    reload,
+  } = useFocusData<GamesData>(
     `games:${uid}`,
     useCallback(async () => {
       if (!uid)
         return {
+          uid,
           players: new Map<string, LeaguePlayer>(),
-          matches: [],
+          page: { matches: [], cursor: null, hasMore: false },
+          summary: null,
           seasonNames: new Map<string, string>(),
         };
-      const [roster, played, seasons] = await Promise.all([
+      const summary = await getProfileSummary(uid);
+      const [roster, page, seasons] = await Promise.all([
         getLeaguePlayers(),
-        getPlayerMatches(uid),
+        getPlayerMatchPage(uid),
         getSeasons(),
       ]);
       return {
+        uid,
         players: new Map(roster.map((player) => [player.id, player])),
-        matches: played.slice().reverse(),
+        page,
+        summary,
         seasonNames: new Map(seasons.map((season) => [season.id, season.name])),
       };
     }, [uid]),
   );
+  const data = cachedData?.uid === uid ? cachedData : undefined;
   const players = data?.players ?? new Map<string, LeaguePlayer>();
-  const matches = (data?.matches ?? []).filter(
-    (match) => players.has(match.aId) && players.has(match.bId),
+  const [more, setMore] = useState<{
+    base: MatchPage | undefined;
+    page: MatchPage;
+    rows: LeagueMatch[];
+  } | null>(null);
+  const [paging, setPaging] = useState(false),
+    [pageError, setPageError] = useState(false);
+  const pagingRef = useRef(false),
+    generation = useRef(0),
+    baseRef = useRef(data?.page);
+  if (baseRef.current !== data?.page) {
+    baseRef.current = data?.page;
+    generation.current++;
+  }
+  const extra = more?.base === data?.page ? more : null;
+  const page = extra?.page ?? data?.page;
+  const matches = useMemo(() => {
+    const byId = new Map(
+      [...(data?.page.matches ?? []), ...(extra?.rows ?? [])].map((m) => [m.id, m]),
+    );
+    return [...byId.values()].filter((m) => players.has(m.aId) && players.has(m.bId));
+  }, [data?.page, extra, players]);
+  const groups = useMemo(
+    () => groupBySeason(matches, data?.seasonNames ?? new Map(), uid),
+    [matches, data?.seasonNames, uid],
   );
-  const groups = groupBySeason(matches, data?.seasonNames ?? new Map(), uid);
+  const rows = useMemo(
+    () =>
+      groups.flatMap((group) =>
+        group.matches.map((match, index) => ({ match, group, first: index === 0 })),
+      ),
+    [groups],
+  );
+  const loadMore = async () => {
+    if (!page?.hasMore || pagingRef.current || !data) return;
+    const gen = generation.current,
+      base = data.page;
+    pagingRef.current = true;
+    setPaging(true);
+    setPageError(false);
+    try {
+      const next = await getPlayerMatchPage(uid, page.cursor);
+      if (generation.current === gen)
+        setMore({ base, page: next, rows: [...(extra?.rows ?? []), ...next.matches] });
+    } catch {
+      if (generation.current === gen) setPageError(true);
+    } finally {
+      pagingRef.current = false;
+      setPaging(false);
+    }
+  };
 
   const isYou = uid === user?.uid;
   const player = players.get(uid);
@@ -165,44 +229,19 @@ export default function GamesRoute() {
             retrying={refreshing}
           />
         ) : null}
-        {groups.map((group, groupIndex) => (
-          <Reveal key={`${group.seasonId}-${groupIndex}`} index={groupIndex}>
-            <SectionLabel
-              action={
-                <Txt variant="mono" size={11.5} color={colors.textDim}>
-                  {group.record.W}W {group.record.D}D {group.record.L}L
-                </Txt>
-              }
-            >
-              {group.name}
-            </SectionLabel>
-            {isDesktop ? (
-              <GamesTable matches={group.matches} uid={uid} players={players} onOpen={openMatch} />
-            ) : (
-              <View style={{ gap: 7 }}>
-                {group.matches.map((match) => (
-                  <SeasonMatchRow
-                    key={match.id}
-                    match={match}
-                    playerA={players.get(match.aId)!}
-                    playerB={players.get(match.bId)!}
-                    onPress={() => openMatch(match.id)}
-                  />
-                ))}
-              </View>
-            )}
-          </Reveal>
-        ))}
       </View>
     );
   }
 
   return (
     <Page
+      scroll={false}
       header={
         <ScreenHeader
           title={title}
-          subtitle={matches.length ? `${matches.length} confirmed · newest first` : undefined}
+          subtitle={
+            data?.summary ? `${data.summary.matchCount} confirmed · newest first` : undefined
+          }
           onRefresh={() => void reload()}
           refreshing={refreshing}
           right={
@@ -218,7 +257,65 @@ export default function GamesRoute() {
       onRefresh={() => void reload()}
       refreshing={refreshing}
     >
-      {body}
+      <FlatList
+        style={{ flex: 1 }}
+        data={rows}
+        keyExtractor={({ match }) => match.id}
+        initialNumToRender={12}
+        windowSize={7}
+        maxToRenderPerBatch={12}
+        refreshing={refreshing}
+        onRefresh={() => void reload()}
+        ListHeaderComponent={body}
+        renderItem={({ item: { match, group, first } }) => {
+          const record = data?.summary?.seasons[group.seasonId];
+          return (
+            <View style={{ marginBottom: 7 }}>
+              {first ? (
+                <SectionLabel
+                  style={{ marginTop: spacing.lg }}
+                  action={
+                    record ? (
+                      <Txt variant="mono" size={11.5}>
+                        {record.w}W {record.d}D {record.l}L
+                      </Txt>
+                    ) : undefined
+                  }
+                >
+                  {group.name}
+                </SectionLabel>
+              ) : null}
+              {isDesktop ? (
+                <GamesTable
+                  matches={[match]}
+                  uid={uid}
+                  players={players}
+                  onOpen={openMatch}
+                  showHeader={first}
+                />
+              ) : (
+                <SeasonMatchRow
+                  match={match}
+                  playerA={players.get(match.aId)!}
+                  playerB={players.get(match.bId)!}
+                  onPress={() => openMatch(match.id)}
+                />
+              )}
+            </View>
+          );
+        }}
+        ListFooterComponent={
+          <View style={{ paddingVertical: spacing.lg }}>
+            {pageError ? (
+              <ErrorCard message="Couldn't load more games." onRetry={() => void loadMore()} />
+            ) : page?.hasMore ? (
+              <Button onPress={() => void loadMore()} disabled={paging}>
+                {paging ? "Loading…" : "Load more games"}
+              </Button>
+            ) : null}
+          </View>
+        }
+      />
     </Page>
   );
 }
@@ -229,7 +326,9 @@ function GamesTable({
   uid,
   players,
   onOpen,
+  showHeader = true,
 }: {
+  showHeader?: boolean;
   matches: LeagueMatch[];
   uid: string;
   players: Map<string, LeaguePlayer>;
@@ -237,14 +336,16 @@ function GamesTable({
 }) {
   return (
     <Card padded={false} style={styles.table}>
-      <View style={[styles.tr, styles.thead]} accessibilityRole="none">
-        <Txt style={[styles.th, styles.colDate]}>DATE</Txt>
-        <Txt style={[styles.th, styles.colOpp]}>OPPONENT</Txt>
-        <Txt style={[styles.th, styles.colTeams]}>TEAMS</Txt>
-        <Txt style={[styles.th, styles.colScore, styles.center]}>SCORE</Txt>
-        <Txt style={[styles.th, styles.colDelta, styles.right]}>ELO</Txt>
-        <View style={styles.colChevron} />
-      </View>
+      {showHeader ? (
+        <View style={[styles.tr, styles.thead]} accessibilityRole="none">
+          <Txt style={[styles.th, styles.colDate]}>DATE</Txt>
+          <Txt style={[styles.th, styles.colOpp]}>OPPONENT</Txt>
+          <Txt style={[styles.th, styles.colTeams]}>TEAMS</Txt>
+          <Txt style={[styles.th, styles.colScore, styles.center]}>SCORE</Txt>
+          <Txt style={[styles.th, styles.colDelta, styles.right]}>ELO</Txt>
+          <View style={styles.colChevron} />
+        </View>
+      ) : null}
       {matches.map((match, index) => {
         const iAmA = match.aId === uid;
         const opponent = players.get(iAmA ? match.bId : match.aId);

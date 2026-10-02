@@ -16,6 +16,9 @@ export interface Season {
 }
 
 export interface SeasonResult {
+  thirdId?: string | null;
+  awards?: import("../awards").SeasonAward[];
+  potm?: PotmResult[];
   seasonId: string;
   championId: string;
   runnerUpId: string;
@@ -109,6 +112,10 @@ export interface Standing {
 }
 
 export interface PendingMatch {
+  finals?: boolean;
+  source?: string;
+  aStats?: MatchSideStats;
+  bStats?: MatchSideStats;
   id: string;
   seasonId: string;
   submittedBy: string;
@@ -125,6 +132,7 @@ export interface PendingMatch {
 }
 
 export interface LeagueMatch {
+  finals?: boolean;
   id: string;
   seasonId: string;
   submittedBy: string;
@@ -190,6 +198,7 @@ export interface BiggestWin {
 }
 
 export interface PlayerStats {
+  summary?: import("../../../../functions/src/models/summaries").PlayerSummary;
   uid: string;
   w: number;
   d: number;

@@ -1,3 +1,4 @@
+import { mutate, invalidateData } from "../dataCache";
 import {
   addDoc,
   collection,
@@ -6,6 +7,13 @@ import {
   getDocs,
   onSnapshot,
   query,
+  or,
+  and,
+  orderBy,
+  limit,
+  startAfter,
+  documentId,
+  type QueryDocumentSnapshot,
   serverTimestamp,
   Timestamp,
   where,
@@ -71,6 +79,7 @@ function mapMatch(id: string, data: Record<string, unknown>): LeagueMatch {
   return {
     id,
     seasonId: String(data.seasonId),
+    finals: data.finals === true,
     submittedBy: String(data.submittedBy),
     aId: String(data.aId),
     bId: String(data.bId),
@@ -131,6 +140,7 @@ export async function getPlayerMatches(uid: string): Promise<LeagueMatch[]> {
 
 function mapPendingMatch(id: string, data: Record<string, unknown>): PendingMatch {
   return {
+    ...mapMatch(id, data),
     id,
     seasonId: String(data.seasonId),
     submittedBy: String(data.submittedBy),
@@ -163,7 +173,13 @@ function pendingSubmittedBy(matches: PendingMatch[], uid: string): PendingMatch[
 
 export async function getPendingConfirmations(uid: string): Promise<PendingMatch[]> {
   const snap = await getDocs(
-    query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
+    query(
+      collection(db, "matches"),
+      and(
+        where("status", "==", "pending_confirmation"),
+        or(where("aId", "==", uid), where("bId", "==", uid)),
+      ),
+    ),
   );
   return pendingForUser(
     snap.docs.map((doc) => mapPendingMatch(doc.id, doc.data())),
@@ -178,19 +194,63 @@ export interface PendingBuckets {
   outgoing: PendingMatch[];
 }
 
+type PendingSubscriber = {
+  next: (buckets: PendingBuckets) => void;
+  error?: (error: Error) => void;
+};
+const pendingStreams = new Map<
+  string,
+  {
+    subscribers: Set<PendingSubscriber>;
+    latest?: PendingBuckets;
+    stop: () => void;
+  }
+>();
+
 export function subscribePendingConfirmations(
   uid: string,
   onMatches: (buckets: PendingBuckets) => void,
   onError?: (error: Error) => void,
 ): () => void {
-  return onSnapshot(
-    query(collection(db, "matches"), where("status", "==", "pending_confirmation")),
-    (snapshot) => {
-      const all = snapshot.docs.map((matchDoc) => mapPendingMatch(matchDoc.id, matchDoc.data()));
-      onMatches({ incoming: pendingForUser(all, uid), outgoing: pendingSubmittedBy(all, uid) });
-    },
-    (error) => onError?.(error),
-  );
+  let stream = pendingStreams.get(uid);
+  if (!stream) {
+    stream = { subscribers: new Set(), stop: () => {} };
+    pendingStreams.set(uid, stream);
+    const shared = stream;
+    shared.stop = onSnapshot(
+      query(
+        collection(db, "matches"),
+        and(
+          where("status", "==", "pending_confirmation"),
+          or(where("aId", "==", uid), where("bId", "==", uid)),
+        ),
+      ),
+      (snapshot) => {
+        if (shared.latest) invalidateData();
+        const all = snapshot.docs.map((row) => mapPendingMatch(row.id, row.data()));
+        shared.latest = {
+          incoming: pendingForUser(all, uid),
+          outgoing: pendingSubmittedBy(all, uid),
+        };
+        for (const subscriber of shared.subscribers) subscriber.next(shared.latest);
+      },
+      (error) => {
+        if (pendingStreams.get(uid) === shared) pendingStreams.delete(uid);
+        for (const subscriber of shared.subscribers) subscriber.error?.(error);
+      },
+    );
+  }
+  const shared = stream;
+  const subscriber = { next: onMatches, error: onError };
+  shared.subscribers.add(subscriber);
+  if (shared.latest) onMatches(shared.latest);
+  return () => {
+    shared.subscribers.delete(subscriber);
+    if (shared.subscribers.size === 0) {
+      shared.stop();
+      if (pendingStreams.get(uid) === shared) pendingStreams.delete(uid);
+    }
+  };
 }
 
 export async function submitManualMatch(input: SubmitMatchInput): Promise<string> {
@@ -210,12 +270,13 @@ export async function submitManualMatch(input: SubmitMatchInput): Promise<string
     date: serverTimestamp(),
     createdAt: serverTimestamp(),
   });
+  invalidateData();
   return ref.id;
 }
 
 export async function confirmMatch(matchId: string): Promise<void> {
   const callable = httpsCallable<{ matchId: string }, { ok: boolean }>(functions, "confirmMatch");
-  await callable({ matchId });
+  await mutate(() => callable({ matchId }));
 }
 
 export async function disputeMatch(matchId: string, reason = ""): Promise<void> {
@@ -223,7 +284,7 @@ export async function disputeMatch(matchId: string, reason = ""): Promise<void> 
     functions,
     "disputeMatch",
   );
-  await callable({ matchId, reason });
+  await mutate(() => callable({ matchId, reason }));
 }
 
 // --- M4 / AI-assisted match logging ---
@@ -235,7 +296,7 @@ export async function submitAiAssistedMatch(
     functions,
     "submitAiAssistedMatch",
   );
-  const result = await callable(input);
+  const result = await mutate(() => callable(input));
   return result.data;
 }
 
@@ -248,7 +309,7 @@ export async function callExtractMatchStats(
     { draftId: string; storagePath: string; force?: boolean },
     Record<string, unknown>
   >(functions, "extractMatchStats");
-  const result = await callable({ draftId, storagePath, force });
+  const result = await mutate(() => callable({ draftId, storagePath, force }));
   return result.data;
 }
 
@@ -268,12 +329,12 @@ export async function deleteMatchPhoto(matchId: string): Promise<void> {
     functions,
     "deleteMatchPhoto",
   );
-  await callable({ matchId });
+  await mutate(() => callable({ matchId }));
 }
 
 export async function abandonMatchDraft(draftId: string): Promise<{ ok: true }> {
   const callable = httpsCallable<{ draftId: string }, { ok: true }>(functions, "abandonMatchDraft");
-  const result = await callable({ draftId });
+  const result = await mutate(() => callable({ draftId }));
   return result.data;
 }
 
@@ -290,7 +351,7 @@ export async function resolveMatch(
   const data: Record<string, unknown> = { matchId, action };
   if (reason) data.reason = reason;
   if (correctedScore) data.correctedScore = correctedScore;
-  const result = await callable(data);
+  const result = await mutate(() => callable(data));
   return result.data;
 }
 
@@ -327,4 +388,45 @@ export async function getAdminPendingMatches(): Promise<AdminPendingMatch[]> {
       if (a.status !== b.status) return a.status === "disputed" ? -1 : 1;
       return (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0);
     });
+}
+
+export interface MatchPage {
+  matches: LeagueMatch[];
+  cursor: QueryDocumentSnapshot | null;
+  hasMore: boolean;
+}
+export async function getPlayerMatchPage(
+  uid: string,
+  cursor: QueryDocumentSnapshot | null = null,
+  pageSize = 30,
+): Promise<MatchPage> {
+  const size = Math.max(1, Math.min(100, pageSize));
+  const snapshot = await getDocs(
+    query(
+      collection(db, "matches"),
+      and(where("status", "==", "confirmed"), or(where("aId", "==", uid), where("bId", "==", uid))),
+      orderBy("sortDate", "desc"),
+      orderBy(documentId(), "desc"),
+      ...(cursor ? [startAfter(cursor)] : []),
+      limit(size),
+    ),
+  );
+  return {
+    matches: snapshot.docs.map((row) => mapMatch(row.id, row.data())),
+    cursor: snapshot.docs.at(-1) ?? null,
+    hasMore: snapshot.size === size,
+  };
+}
+export async function getRecentSeasonMatches(seasonId: string, count = 12): Promise<LeagueMatch[]> {
+  const snapshot = await getDocs(
+    query(
+      collection(db, "matches"),
+      where("seasonId", "==", seasonId),
+      where("status", "==", "confirmed"),
+      orderBy("sortDate", "desc"),
+      orderBy(documentId(), "desc"),
+      limit(count),
+    ),
+  );
+  return snapshot.docs.map((row) => mapMatch(row.id, row.data())).reverse();
 }

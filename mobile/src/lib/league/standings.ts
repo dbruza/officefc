@@ -1,3 +1,4 @@
+import { dataCache } from "../dataCache";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import { timed } from "../logger";
@@ -31,34 +32,52 @@ function mapStanding(uid: string, data: Record<string, unknown>): Standing {
 }
 
 export async function getStandings(seasonId: string): Promise<Standing[]> {
-  return timed("getStandings", async () => {
-    const snap = await getDocs(collection(db, "seasons", seasonId, "standings"));
-    return (
-      snap.docs
-        .map((doc) => mapStanding(doc.id, doc.data()))
-        // Ranked players first (by rank), then provisional players (by ELO).
-        .sort((a, b) => Number(b.ranked) - Number(a.ranked) || a.rank - b.rank || b.elo - a.elo)
-    );
-  });
+  return dataCache.read(
+    `standings:${seasonId}`,
+    async () => {
+      return timed("getStandings", async () => {
+        const snap = await getDocs(collection(db, "seasons", seasonId, "standings"));
+        return (
+          snap.docs
+            .map((doc) => mapStanding(doc.id, doc.data()))
+            // Ranked players first (by rank), then provisional players (by ELO).
+            .sort((a, b) => Number(b.ranked) - Number(a.ranked) || a.rank - b.rank || b.elo - a.elo)
+        );
+      });
+    },
+    5000,
+  );
 }
 
 export async function getEloHistory(seasonId: string, uid: string): Promise<EloHistoryPoint[]> {
-  const snap = await getDoc(doc(db, "seasons", seasonId, "eloHistory", uid));
-  if (!snap.exists()) return [];
-  const points = snap.get("points");
-  if (!Array.isArray(points)) return [];
-  return points.map((point) => ({
-    matchId: typeof point.matchId === "string" ? point.matchId : null,
-    date: asDate(point.date),
-    rating: Number(point.rating),
-  }));
+  return dataCache.read(
+    `history:${seasonId}:${uid}`,
+    async () => {
+      const snap = await getDoc(doc(db, "seasons", seasonId, "eloHistory", uid));
+      if (!snap.exists()) return [];
+      const points = snap.get("points");
+      if (!Array.isArray(points)) return [];
+      return points.map((point) => ({
+        matchId: typeof point.matchId === "string" ? point.matchId : null,
+        date: asDate(point.date),
+        rating: Number(point.rating),
+      }));
+    },
+    10000,
+  );
 }
 
 export async function getPlayerStats(uid: string): Promise<PlayerStats | null> {
-  return timed("getPlayerStats", async () => {
-    const snap = await getDoc(doc(db, "playerStats", uid));
-    return snap.exists() ? (snap.data() as PlayerStats) : null;
-  });
+  return dataCache.read(
+    `playerStats:${uid}`,
+    async () => {
+      return timed("getPlayerStats", async () => {
+        const snap = await getDoc(doc(db, "playerStats", uid));
+        return snap.exists() ? (snap.data() as PlayerStats) : null;
+      });
+    },
+    10000,
+  );
 }
 
 // The ELO preview math lives in ./eloMath (a dependency-free port of the server's

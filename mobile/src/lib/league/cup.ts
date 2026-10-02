@@ -1,3 +1,4 @@
+import { mutate } from "../dataCache";
 import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
@@ -68,7 +69,7 @@ export function openTieForPair(bracket: CupBracket, uidA: string, uidB: string):
 /** Admin: draw the bracket from the current roster and open the cup. */
 export async function startCup(seasonId: string): Promise<void> {
   const callable = httpsCallable<{ seasonId: string }, { ok: boolean }>(functions, "startCup");
-  await callable({ seasonId });
+  await mutate(() => callable({ seasonId }));
 }
 
 /** Admin: decide a specific stuck tie without a match (absence, void repair). */
@@ -82,5 +83,5 @@ export async function forceAdvanceCup(
     { seasonId: string; roundIndex: number; tieIndex: number; winnerId: string },
     { ok: boolean }
   >(functions, "forceAdvanceCup");
-  await callable({ seasonId, roundIndex, tieIndex, winnerId });
+  await mutate(() => callable({ seasonId, roundIndex, tieIndex, winnerId }));
 }

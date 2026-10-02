@@ -1,3 +1,4 @@
+import { modelVersion, assertQueueIdleTx } from "./rebuildQueue";
 /**
  * IO layer for the finals series. Bracket state lives at `seasons/{id}/finals/bracket`
  * (member-readable via the seasons subtree rules; all writes happen here via the Admin
@@ -88,6 +89,7 @@ export const startFinals = loggedOnCall("startFinals", { cors: true }, async (re
   const seasonId = String(req.data?.seasonId ?? "").trim();
   if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
 
+  const generation = await modelVersion();
   const seasonSnap = await db.doc(`seasons/${seasonId}`).get();
   if (!seasonSnap.exists) throw new HttpsError("not-found", "Season not found.");
   if (seasonSnap.get("finalized"))
@@ -120,14 +122,17 @@ export const startFinals = loggedOnCall("startFinals", { cors: true }, async (re
     .map((slot) => slot.key);
   await dealTeamsForSlots(bracket, openSlots, await loadDealingContext(seasonId));
 
-  await bracketRef(seasonId).set({
-    ...bracket,
-    createdAt: FieldValue.serverTimestamp(),
-    createdBy: uid,
-  });
-  await db.doc(`seasons/${seasonId}`).update({
-    phase: "finals",
-    finalsStartedAt: FieldValue.serverTimestamp(),
+  await db.runTransaction(async (tx) => {
+    await assertQueueIdleTx(tx, generation);
+    const current = await tx.get(seasonSnap.ref);
+    if (current.get("finalized") || current.get("phase") === "finals" || !current.get("active"))
+      throw new HttpsError("failed-precondition", "Season state changed. Reload and retry.");
+    tx.set(bracketRef(seasonId), {
+      ...bracket,
+      createdAt: FieldValue.serverTimestamp(),
+      createdBy: uid,
+    });
+    tx.update(seasonSnap.ref, { phase: "finals", finalsStartedAt: FieldValue.serverTimestamp() });
   });
 
   const seasonName = String(seasonSnap.get("name") ?? seasonId);
@@ -179,8 +184,10 @@ export async function applyFinalsResult(args: {
   const dealing = await loadDealingContext(args.seasonId);
 
   // Split literal members rather than a nested union — TS narrows per-literal reliably.
+  const effectsRef = db.doc(`seasons/${args.seasonId}/finalsEffects/${args.slotKey}`);
+  type Effects = { preAdvanceSlot: FinalsSlot; advanced: ReturnType<typeof advanceBracket> };
   type Decided =
-    | { outcome: "replay" }
+    | { outcome: "replay"; effects?: Effects }
     | { outcome: "superseded" }
     | {
         outcome: "applied";
@@ -190,6 +197,7 @@ export async function applyFinalsResult(args: {
 
   const decided = await db.runTransaction(async (tx): Promise<Decided> => {
     const snap = await tx.get(bracketRef(args.seasonId));
+    const effects = await tx.get(effectsRef);
     if (!snap.exists) {
       throw new HttpsError("not-found", "No finals bracket exists for this season.");
     }
@@ -200,8 +208,18 @@ export async function applyFinalsResult(args: {
     if (slot.status === "decided") {
       // Another caller's result won this slot, or this exact match was replayed. Logged by
       // the caller after commit so retries don't re-emit the warning.
+      const same =
+        args.matchId !== null
+          ? slot.matchId === args.matchId
+          : slot.matchId === null &&
+            slot.decidedBy === "walkover" &&
+            slot.winnerId === args.winnerId;
+      if (!same) return { outcome: "superseded" };
       return {
-        outcome: slot.matchId && slot.matchId === args.matchId ? "replay" : "superseded",
+        outcome: "replay",
+        ...(effects.exists && !effects.get("completedAt")
+          ? { effects: effects.get("effects") as Effects }
+          : {}),
       };
     }
 
@@ -213,26 +231,31 @@ export async function applyFinalsResult(args: {
     }
     // Deal before the write so no client ever observes an open slot without teams
     // (same ordering as startFinals). The context was preloaded above — no queries here.
-    dealTeamsForSlots(advanced.bracket, advanced.opened, dealing);
+    await dealTeamsForSlots(advanced.bracket, advanced.opened, dealing);
 
     tx.set(bracketRef(args.seasonId), {
       ...raw,
       ...advanced.bracket,
       updatedAt: FieldValue.serverTimestamp(),
     });
+    tx.set(effectsRef, {
+      matchId: args.matchId,
+      effects: { preAdvanceSlot: slot, advanced },
+      createdAt: FieldValue.serverTimestamp(),
+    });
     return { outcome: "applied", preAdvanceSlot: slot, advanced };
   });
 
-  // Nothing else to do for a replay of an already-applied result or a lost slot race —
-  // side effects below must not run, and superseded is logged once here (not inside the
-  // transaction, so retries don't re-emit it).
+  // Superseded results never publish effects. A matching replay resumes its durable
+  // receipt, preserving the already-dealt teams and idempotent notification/event ids.
   if (decided.outcome === "superseded") {
     logger.warn("finals_slot_already_decided", { ...args });
     return "superseded";
   }
-  if (decided.outcome === "replay") return "replay";
+  if (decided.outcome === "replay" && !decided.effects) return "replay";
 
-  const { preAdvanceSlot: slot, advanced } = decided;
+  const { preAdvanceSlot: slot, advanced } =
+    decided.outcome === "replay" ? decided.effects! : decided;
 
   const loserId = args.winnerId === slot.homeId ? slot.awayId! : slot.homeId!;
   // Prediction-game settlement for every resolved tie. Runs after the bracket commit and
@@ -265,8 +288,9 @@ export async function applyFinalsResult(args: {
       ),
     );
   }
-  logger.info("applyFinalsResult", { ...args, opened: advanced.opened, outcome: "applied" });
-  return "applied";
+  await effectsRef.update({ completedAt: FieldValue.serverTimestamp() });
+  logger.info("applyFinalsResult", { ...args, opened: advanced.opened, outcome: decided.outcome });
+  return decided.outcome;
 }
 
 /**

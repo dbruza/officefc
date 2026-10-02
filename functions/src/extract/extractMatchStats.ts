@@ -94,7 +94,7 @@ function isImageType(contentType: string | undefined): boolean {
 
 export const extractMatchStats = loggedOnCall(
   "extractMatchStats",
-  { cors: true, secrets: [OPENROUTER_API_KEY] },
+  { cors: true, secrets: [OPENROUTER_API_KEY], timeoutSeconds: 120 },
   async (req) => {
     const { uid } = requireAuth(req);
     await assertMember(uid);

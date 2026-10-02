@@ -1,6 +1,6 @@
 {
   "name": "officefc",
-  "version": "1.12.1.0",
+  "version": "1.13.0.0",
   "description": "OfficeFC — an Expo and Firebase app for office EA Sports FC leagues, ELO ratings, and confirmed match tracking.",
   "private": true,
   "type": "commonjs",
@@ -11,7 +11,7 @@
     "test": "npm --prefix functions run build && node --test test/*.test.mjs",
     "test:functions": "npm --prefix functions test",
     "test:mobile": "npm --prefix mobile test",
-    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore,storage \"npm --prefix test/rules test\"",
+    "test:rules": "npm --prefix functions run build && node scripts/test-rules.mjs",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -20,13 +20,17 @@
     "changelog:generate": "node scripts/generate-changelog.mjs",
     "version:sync": "node scripts/sync-version.mjs && node scripts/generate-changelog.mjs",
     "version:check": "node scripts/sync-version.mjs --check && node scripts/generate-changelog.mjs --check",
-    "check": "npm run format:check && npm run lint && npm run version:check && npm run typecheck:mobile && npm run build:web && npm run test:functions && npm run test:mobile && npm test && npm run test:rules",
+    "check": "npm run format:check && npm run lint && npm run version:check && npm run typecheck:mobile && npm run build:web && npm run test:all && npm run test:rules:compiled",
     "eval": "node eval/run-eval.mjs",
     "validate:web-env": "node scripts/validate-web-env.mjs",
     "build:web": "npm run validate:web-env && node scripts/build-web.mjs",
     "deploy:web": "npm run build:web && firebase deploy --project office-fc --only hosting",
     "deploy:backend": "npm run validate:web-env && firebase deploy --project office-fc --only firestore,storage,functions",
-    "deploy:mvp": "npm run build:web && firebase deploy --project office-fc --only firestore,storage,functions,hosting"
+    "deploy:mvp": "npm run build:web && firebase deploy --project office-fc --only firestore,storage,functions,hosting",
+    "test:compiled": "node --test test/*.test.mjs",
+    "test:all": "npm --prefix functions run build && npm --prefix functions run test:compiled && npm --prefix mobile run test:compiled && npm run test:compiled",
+    "performance:check": "npm --prefix functions run build && node scripts/benchmark-performance.mjs",
+    "test:rules:compiled": "node scripts/test-rules.mjs"
   },
   "devDependencies": {
     "@babel/standalone": "7.29.0",

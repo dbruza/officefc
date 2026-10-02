@@ -29,8 +29,16 @@ before(async () => {
     // Match the emulator CLI project so Storage's firestore.exists() cross-service
     // lookup reads the same Firestore namespace seeded below.
     projectId: "office-fc",
-    firestore: { rules, host: "127.0.0.1", port: 8080 },
-    storage: { rules: storageRules, host: "127.0.0.1", port: 12199 },
+    firestore: {
+      rules,
+      host: "127.0.0.1",
+      port: Number(process.env.FIRESTORE_EMULATOR_HOST?.split(":").at(-1) ?? 8080),
+    },
+    storage: {
+      rules: storageRules,
+      host: "127.0.0.1",
+      port: Number(process.env.FIREBASE_STORAGE_EMULATOR_HOST?.split(":").at(-1) ?? 12199),
+    },
   });
 });
 
@@ -717,4 +725,25 @@ test("a user manages only their own pushPrefs with exactly muted+updatedAt", asy
   await assertFails(updateDoc(doc(member(), "pushPrefs/bob"), { muted: ["finals"] }));
   await assertSucceeds(getDoc(own));
   await assertFails(getDoc(doc(member(), "pushPrefs/bob"))); // even members can't peek others'
+});
+
+test("performance projections are member-readable and function-only", async () => {
+  for (const path of ["seasonSummaries/s1", "readModelQueue/office", "matchAnalysis/m1"]) {
+    await testEnv.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), path), { version: 1 }),
+    );
+    await assertSucceeds(getDoc(doc(testEnv.authenticatedContext("alice").firestore(), path)));
+    await assertFails(getDoc(doc(testEnv.unauthenticatedContext().firestore(), path)));
+    await assertFails(
+      setDoc(doc(testEnv.authenticatedContext("dave").firestore(), path), { version: 999 }),
+    );
+  }
+});
+test("notification and rebuild outboxes remain private to functions", async () => {
+  for (const path of ["notificationOutbox/n1", "readModelEvents/m1"]) {
+    await assertFails(getDoc(doc(testEnv.authenticatedContext("dave").firestore(), path)));
+    await assertFails(
+      setDoc(doc(testEnv.authenticatedContext("alice").firestore(), path), { status: "pending" }),
+    );
+  }
 });

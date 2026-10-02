@@ -1,3 +1,4 @@
+import { dataCache } from "../dataCache";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { timed } from "../logger";
@@ -41,17 +42,23 @@ export async function getHeadToHead(aId: string, bId: string): Promise<HeadToHea
  *  downloading the entire league's h2h collection and filtering client-side — the old
  *  scan grew linearly with the square of league membership on every profile view. */
 export async function getHeadToHeadsForPlayer(uid: string): Promise<HeadToHead[]> {
-  return timed("getHeadToHeadsForPlayer", async () => {
-    const h2hCol = collection(db, "h2h");
-    const [aSnap, bSnap] = await Promise.all([
-      getDocs(query(h2hCol, where("aId", "==", uid))),
-      getDocs(query(h2hCol, where("bId", "==", uid))),
-    ]);
-    // A doc can't be both, but dedupe by id anyway in case of future schema overlap.
-    const byId = new Map<string, HeadToHead>();
-    for (const h2hDoc of [...aSnap.docs, ...bSnap.docs]) {
-      byId.set(h2hDoc.id, mapHeadToHead(h2hDoc.id, h2hDoc.data()));
-    }
-    return [...byId.values()];
-  });
+  return dataCache.read(
+    `h2hs:${uid}`,
+    async () => {
+      return timed("getHeadToHeadsForPlayer", async () => {
+        const h2hCol = collection(db, "h2h");
+        const [aSnap, bSnap] = await Promise.all([
+          getDocs(query(h2hCol, where("aId", "==", uid))),
+          getDocs(query(h2hCol, where("bId", "==", uid))),
+        ]);
+        // A doc can't be both, but dedupe by id anyway in case of future schema overlap.
+        const byId = new Map<string, HeadToHead>();
+        for (const h2hDoc of [...aSnap.docs, ...bSnap.docs]) {
+          byId.set(h2hDoc.id, mapHeadToHead(h2hDoc.id, h2hDoc.data()));
+        }
+        return [...byId.values()];
+      });
+    },
+    10000,
+  );
 }

@@ -1,3 +1,4 @@
+import { invalidateData } from "./dataCache";
 /** profiles/{uid} — the player's public identity. */
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
@@ -36,4 +37,5 @@ export async function saveProfile(uid: string, input: ProfileInput): Promise<voi
     },
     { merge: true },
   );
+  invalidateData();
 }

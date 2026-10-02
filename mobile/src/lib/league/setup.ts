@@ -1,3 +1,4 @@
+import { mutate } from "../dataCache";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
 
@@ -6,17 +7,18 @@ export async function ensureLeagueSetup(): Promise<void> {
     functions,
     "ensureLeagueSetup",
   );
-  await callable({});
+  await mutate(() => callable({}));
 }
 
 export async function rebuildLeagueReadModels(): Promise<{
+  queued?: boolean;
   seasonCount: number;
   matchCount: number;
 }> {
   const callable = httpsCallable<
     Record<string, never>,
-    { ok: boolean; seasonCount: number; matchCount: number }
-  >(functions, "rebuildLeagueReadModels");
-  const result = await callable({});
+    { ok: boolean; queued?: boolean; seasonCount: number; matchCount: number }
+  >(functions, "rebuildLeagueReadModels", { timeout: 550000 });
+  const result = await mutate(() => callable({}));
   return result.data;
 }

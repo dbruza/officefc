@@ -31,23 +31,15 @@ import { GrowBar } from "@/components/GrowBar";
 import {
   getActiveSeason,
   getLeaguePlayers,
-  getTeams,
+  getSeasonSummary,
+  type SeasonSummary,
   type LeaguePlayer,
   type Season,
-  type Team,
 } from "@/lib/league";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { asNullableDate } from "@/lib/league/firestoreMap";
 import {
-  biggestResults,
   fairnessBySource,
-  isRegularMatch,
-  mostPickedTeams,
-  winRateByBand,
   type BigResult,
   type FairnessBySource,
-  type MetaMatch,
   type OvrBandStats,
   type TeamUsage,
 } from "@/lib/stats/teamMeta";
@@ -58,40 +50,8 @@ import { firstName } from "@/lib/format";
 
 interface AnalyticsData {
   season: Season | null;
-  matches: MetaMatch[];
-  teamsById: Map<string, Team>;
+  summary: SeasonSummary | null;
   players: Map<string, LeaguePlayer>;
-}
-
-/** Raw match-doc read for analytics: the client mapper collapses `source` to
- *  manual/ai_assisted and drops the finals flag, both load-bearing here. */
-async function getRawSeasonMatches(seasonId: string): Promise<MetaMatch[]> {
-  const snap = await getDocs(
-    query(
-      collection(db, "matches"),
-      where("seasonId", "==", seasonId),
-      where("status", "==", "confirmed"),
-    ),
-  );
-  return snap.docs
-    .map((matchDoc) => {
-      const data = matchDoc.data();
-      return {
-        id: matchDoc.id,
-        aId: String(data.aId),
-        bId: String(data.bId),
-        aTeamId: String(data.aTeamId),
-        bTeamId: String(data.bTeamId),
-        aTeam: String(data.aTeam ?? ""),
-        bTeam: String(data.bTeam ?? ""),
-        aGoals: Number(data.aGoals),
-        bGoals: Number(data.bGoals),
-        source: typeof data.source === "string" ? data.source : null,
-        finals: data.finals === true,
-        date: asNullableDate(data.date),
-      };
-    })
-    .sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0));
 }
 
 export default function AnalyticsRoute() {
@@ -100,33 +60,29 @@ export default function AnalyticsRoute() {
     "analytics",
     useCallback(async () => {
       const season = await getActiveSeason();
-      const [rawMatches, catalogue, roster] = await Promise.all([
-        season ? getRawSeasonMatches(season.id) : Promise.resolve([] as MetaMatch[]),
-        getTeams(),
+      const [summary, roster] = await Promise.all([
+        season ? getSeasonSummary(season.id) : Promise.resolve(null),
         getLeaguePlayers(),
       ]);
       return {
         season,
-        matches: rawMatches,
-        teamsById: new Map(catalogue.map((team) => [team.id, team])),
+        summary,
         players: new Map(roster.map((player) => [player.id, player])),
       };
     }, []),
   );
 
   const season = data?.season ?? null;
-  const matches = data?.matches ?? [];
-  const teamsById = data?.teamsById ?? new Map<string, Team>();
+  const summary = data?.summary;
   const players = data?.players ?? new Map<string, LeaguePlayer>();
-
-  const regular = matches.filter(isRegularMatch);
-  const usage = mostPickedTeams(matches, teamsById);
-  const bands = winRateByBand(matches, teamsById);
-  const fairness = fairnessBySource(matches, teamsById);
-  const bigResults = biggestResults(matches);
-  const goals = regular.reduce((sum, match) => sum + match.aGoals + match.bGoals, 0);
-  // Tenths so the count-up can tween a one-decimal average as an integer.
-  const goalsPerGameTenths = regular.length ? Math.round((goals / regular.length) * 10) : 0;
+  const regularCount = summary?.regularCount ?? 0;
+  const usage = summary?.usage ?? [];
+  const bands = summary?.bands ?? [];
+  const fairness = summary?.fairness ?? fairnessBySource([]);
+  const bigResults = summary?.bigResults ?? [];
+  const goalsPerGameTenths = regularCount
+    ? Math.round(((summary?.goals ?? 0) / regularCount) * 10)
+    : 0;
 
   const openMatch = (matchId: string) =>
     router.push({ pathname: "/(app)/match/[id]", params: { id: matchId } } as Href);
@@ -178,7 +134,7 @@ export default function AnalyticsRoute() {
         />
       ) : null}
 
-      {data && season && regular.length === 0 && !error ? (
+      {data && season && regularCount === 0 && !error ? (
         <EmptyState
           icon="grid"
           title="Nothing to analyse yet"
@@ -187,11 +143,11 @@ export default function AnalyticsRoute() {
         />
       ) : null}
 
-      {data && season && regular.length > 0 ? (
+      {data && season && regularCount > 0 ? (
         <View style={{ gap: spacing.x2 }}>
           <Grid min={180} maxColumns={3}>
             <KpiTile label="Matches analysed" index={0}>
-              <CountUp value={regular.length} from={0} variant="monoBold" size={30} />
+              <CountUp value={regularCount} from={0} variant="monoBold" size={30} />
             </KpiTile>
             <KpiTile label="Teams used" index={1}>
               <CountUp value={usage.length} from={0} variant="monoBold" size={30} />

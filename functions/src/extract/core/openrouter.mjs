@@ -76,6 +76,7 @@ export async function callModel({
   fetchImpl = fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
+  deadlineMs = Date.now() + 45000,
   sleepImpl = defaultSleep,
 }) {
   if (!apiKey) throw new Error("callModel: missing OpenRouter API key");
@@ -88,9 +89,15 @@ export async function callModel({
   const body = JSON.stringify(request);
 
   let lastError;
+  const waitBeforeRetry = async (ms) => {
+    if (ms >= deadlineMs - Date.now()) throw lastError ?? new Error("Model deadline exceeded");
+    await sleepImpl(ms);
+  };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const remaining = deadlineMs - Date.now();
+    if (remaining <= 0) throw lastError ?? new Error("Model deadline exceeded");
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const timer = setTimeout(() => controller.abort(), Math.min(timeoutMs, remaining));
     let res;
     try {
       res = await fetchImpl(url, { method: "POST", headers, body, signal: controller.signal });
@@ -99,7 +106,7 @@ export async function callModel({
       clearTimeout(timer);
       lastError = new Error(`OpenRouter API request failed: ${err?.message ?? err}`);
       if (attempt < maxAttempts) {
-        await sleepImpl(backoffMs(attempt));
+        await waitBeforeRetry(backoffMs(attempt));
         continue;
       }
       throw lastError;
@@ -119,7 +126,7 @@ export async function callModel({
     const message = `OpenRouter API ${res.status}: ${detail.slice(0, 500)}`;
     if (RETRYABLE_STATUS.has(res.status) && attempt < maxAttempts) {
       lastError = new Error(message);
-      await sleepImpl(retryAfterMs(res) ?? backoffMs(attempt));
+      await waitBeforeRetry(retryAfterMs(res) ?? backoffMs(attempt));
       continue;
     }
     throw new Error(message);

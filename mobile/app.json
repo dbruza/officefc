@@ -2,7 +2,7 @@
   "expo": {
     "name": "OfficeFC",
     "slug": "officefc",
-    "version": "1.12.1",
+    "version": "1.13.0",
     "scheme": "officefc",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -36,7 +36,14 @@
       "backgroundColor": "#070a0e"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": true
+          }
+        }
+      ],
       "expo-font",
       [
         "expo-splash-screen",
@@ -77,7 +84,8 @@
       "expo-sharing"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "onDemandFilesystem": false
     },
     "extra": {
       "router": {},

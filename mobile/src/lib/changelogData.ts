@@ -4,6 +4,29 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.13.0.0",
+    date: "2026-10-02",
+    sections: [
+      {
+        kind: "Changed",
+        items: [
+          "Match confirmation persists a recoverable rebuild request and returns promptly. A serialized worker batches updates, avoids unchanged writes, and refreshes open screens when standings are ready.",
+          "Profiles, season archives, analytics and logging use stored summaries. Game history loads in pages with virtualized rows; shared caches reuse league data and invalidate after writes.",
+          "New clients call Sydney functions beside the Sydney database; existing Iowa callable endpoints remain available during migration.",
+          "Web routes load separately, authentication starts alongside fonts, and optional photo/voting content no longer delays match results.",
+          "Photo uploads use the extraction resolution with one client encode. Push delivery runs through a durable outbox, and model requests have a shared deadline.",
+          "Full checks compile Functions once. Performance samples, write counts and queue recovery tests guard the new paths.",
+        ],
+      },
+      {
+        kind: "Added",
+        items: [
+          "On-demand match analysis with a bounded model fallback, one generation per match at a time, and cached results tied to the rating revision.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.12.1.0",
     date: "2026-10-01",
     sections: [

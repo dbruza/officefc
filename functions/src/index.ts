@@ -37,7 +37,7 @@ export { startFinals, awardWalkover } from "./finals";
 export { castVote } from "./matchVotes";
 
 // Mid-season knockout cup
-export { startCup, forceAdvanceCup } from "./cup";
+export { startCup, forceAdvanceCup, announceCupChampion } from "./cup";
 
 // Read-model rebuild (ELO + stats materialization)
 export { rebuildLeagueReadModels } from "./readModels";
@@ -71,3 +71,11 @@ export { ingestLog } from "./clientLogs";
 
 // TEMPORARY one-off migration — remove after the join-code backfill has run (see #22).
 export { backfillSeasonCodes } from "./migrations/backfillSeasonCodes";
+
+export { rebuildQueuedModels, recoverQueuedModels } from "./rebuildQueue";
+
+export { deliverNotification, retryNotifications } from "./notify";
+
+export { ensurePerformanceSummary, refreshCatalogueModels } from "./performanceSummary";
+
+export { analyzeMatch } from "./matchAnalysis/analyzeMatch";

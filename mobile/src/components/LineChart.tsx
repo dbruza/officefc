@@ -8,7 +8,7 @@
  * then the end dot pings once. On web, hovering shows a crosshair and a tooltip for the
  * nearest game.
  */
-import { useId, useState } from "react";
+import { useId, useState, useMemo } from "react";
 import { Platform, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Animated, { useReducedMotion, type CSSAnimationKeyframes } from "react-native-reanimated";
 import Svg, { Defs, LinearGradient, Stop, Line, Path, Circle } from "react-native-svg";
@@ -57,24 +57,30 @@ export function LineChart({
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
 
-  if (!data || data.length < 2) return null;
+  const geometry = useMemo(() => {
+    if (!data || data.length < 2) return null;
 
-  const ys = data.map((d) => d.rating);
-  const minY = Math.min(...ys) - 12;
-  const maxY = Math.max(...ys) + 12;
-  const plotW = Math.max(1, width - PAD.l - PAD.r);
-  const X = (i: number) => PAD.l + (i / (data.length - 1)) * plotW;
-  const Y = (v: number) => PAD.t + (1 - (v - minY) / (maxY - minY)) * (height - PAD.t - PAD.b);
-  const line = data
-    .map((d, i) => `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(d.rating).toFixed(1)}`)
-    .join(" ");
-  const area = `${line} L${X(data.length - 1).toFixed(1)},${height - PAD.b} L${X(0).toFixed(1)},${
-    height - PAD.b
-  } Z`;
-  const last = data[data.length - 1];
-  const gridY = [minY, (minY + maxY) / 2, maxY];
-  const endX = X(data.length - 1);
-  const endY = Y(last.rating);
+    const ys = data.map((d) => d.rating);
+    const minY = Math.min(...ys) - 12;
+    const maxY = Math.max(...ys) + 12;
+    const plotW = Math.max(1, width - PAD.l - PAD.r);
+    const X = (i: number) => PAD.l + (i / (data.length - 1)) * plotW;
+    const Y = (v: number) => PAD.t + (1 - (v - minY) / (maxY - minY)) * (height - PAD.t - PAD.b);
+    const line = data
+      .map((d, i) => `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(d.rating).toFixed(1)}`)
+      .join(" ");
+    const area = `${line} L${X(data.length - 1).toFixed(1)},${height - PAD.b} L${X(0).toFixed(1)},${
+      height - PAD.b
+    } Z`;
+    const last = data[data.length - 1];
+    const gridY = [minY, (minY + maxY) / 2, maxY];
+    const endX = X(data.length - 1);
+    const endY = Y(last.rating);
+
+    return { minY, maxY, plotW, X, Y, line, area, last, gridY, endX, endY };
+  }, [data, width, height]);
+  if (!geometry) return null;
+  const { minY, maxY, plotW, X, Y, line, area, last, gridY, endX, endY } = geometry;
 
   // Web hover: map the pointer's x to the nearest game. currentTarget is the measured
   // container (react-native-web hands back the DOM node), so the maths is in our space.

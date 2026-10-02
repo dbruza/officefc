@@ -10,6 +10,8 @@ import globals from "globals";
 export default tseslint.config(
   {
     ignores: [
+      ".claude/worktrees/**",
+      ".codex/**",
       "**/node_modules/**",
       "**/lib/**", // functions build output
       "**/dist/**", // expo web export

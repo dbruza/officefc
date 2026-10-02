@@ -4,8 +4,8 @@ import { loggedOnCall } from "./logging";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { computePOTM, type Standing } from "./elo";
 import { requireAuth, assertAdmin, assertMember } from "./auth";
-import { recalcSeasonElo, recalcLeagueStats } from "./recalc";
-import { emitMatchActivity, emitSeasonActivity, topRankedLeaderId } from "./activityFeed";
+import { requestRebuild, modelVersion, assertQueueIdleTx } from "./rebuildQueue";
+import { emitSeasonActivity } from "./activityFeed";
 import {
   dateMillis,
   generateUniqueJoinCode,
@@ -15,18 +15,10 @@ import {
 } from "./utils";
 import { sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
-import { applyFinalsResult } from "./finals";
 import { assertSeasonAcceptsConfirmationsTx } from "./matchLifecycle";
-import { maybeConsumeCupResult } from "./cup";
 import { captureServerFault } from "./sentry";
 import { deriveRecap } from "./seasonRecap";
-import {
-  bracketComplete,
-  bracketRunnerUpId,
-  type FinalsBracket,
-  type FinalsDecidedBy,
-  type FinalsSlotKey,
-} from "./finalsRules";
+import { bracketComplete, bracketRunnerUpId, type FinalsBracket } from "./finalsRules";
 
 const db = getFirestore();
 
@@ -38,6 +30,7 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
   const force = Boolean(req.data?.force);
   if (!seasonId) throw new HttpsError("invalid-argument", "seasonId is required.");
 
+  const generation = await modelVersion();
   const ref = db.doc(`seasons/${seasonId}`);
   const snap = await ref.get();
   if (!snap.exists) throw new HttpsError("not-found", "Season not found.");
@@ -122,35 +115,44 @@ export const finalizeSeason = loggedOnCall("finalizeSeason", { cors: true }, asy
     }
   }
 
-  const writer = db.bulkWriter();
-  writer.set(
-    ref,
-    {
-      active: false,
-      finalized: true,
+  const summary = await db.doc(`seasonSummaries/${seasonId}`).get();
+  await db.runTransaction(async (writer) => {
+    await assertQueueIdleTx(writer, generation);
+    const current = await writer.get(ref);
+    if (current.get("finalized")) throw new HttpsError("failed-precondition", "Already finalized.");
+    writer.set(
+      ref,
+      {
+        active: false,
+        finalized: true,
+        finalizedAt: FieldValue.serverTimestamp(),
+        ...(format === "finals" ? { phase: "finalized" } : {}),
+      },
+      { merge: true },
+    );
+    writer.set(db.doc(`seasonResults/${seasonId}`), {
+      seasonId,
+      championId,
+      runnerUpId,
+      premierId,
+      format,
       finalizedAt: FieldValue.serverTimestamp(),
-      ...(format === "finals" ? { phase: "finalized" } : {}),
-    },
-    { merge: true },
-  );
-  writer.set(db.doc(`seasonResults/${seasonId}`), {
-    seasonId,
-    championId,
-    runnerUpId,
-    premierId,
-    format,
-    finalizedAt: FieldValue.serverTimestamp(),
-    recap,
-  });
-  for (const potm of potmResults) {
-    writer.set(db.doc(`seasonResults/${seasonId}/potm/${potm.month}`), {
-      month: potm.month,
-      playerId: potm.playerId,
-      gain: potm.gain,
-      games: potm.games,
+      recap,
+      thirdId:
+        finalStandings.find((row) => row.uid !== championId && row.uid !== runnerUpId)?.uid ?? null,
+      awards: summary.get("awards") ?? [],
+      summaryVersion: summary.get("version") ?? 0,
+      potm: potmResults.map((row) => ({ month: row.month, playerId: row.playerId })),
     });
-  }
-  await writer.close();
+    for (const potm of potmResults) {
+      writer.set(db.doc(`seasonResults/${seasonId}/potm/${potm.month}`), {
+        month: potm.month,
+        playerId: potm.playerId,
+        gain: potm.gain,
+        games: potm.games,
+      });
+    }
+  });
 
   await emitSeasonActivity({
     seasonId,
@@ -403,6 +405,17 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
           "Finals matches cannot end level — extra time and penalties decide a winner.",
         );
       }
+      requestRebuild(tx, String(data.seasonId), {
+        matchId,
+        mode: "admin",
+        result: {
+          ...prev,
+          seasonId: String(data.seasonId),
+          submittedBy: String(data.submittedBy),
+          aGoals,
+          bGoals,
+        },
+      });
       tx.update(ref, {
         aGoals,
         bGoals,
@@ -426,6 +439,11 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
     }
 
     // confirm (as-is)
+    requestRebuild(tx, String(data.seasonId), {
+      matchId,
+      mode: "admin",
+      result: { ...prev, seasonId: String(data.seasonId), submittedBy: String(data.submittedBy) },
+    });
     tx.update(ref, {
       status: "confirmed",
       confirmedBy: uid,
@@ -439,62 +457,14 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
     return { ...prev, seasonId: String(data.seasonId), submittedBy: String(data.submittedBy) };
   });
 
-  let finalsApplied: boolean | null = null;
-  if (action !== "void") {
-    if (previous.finals && previous.finalsSlot) {
-      // Admin-resolved finals matches advance the bracket; ELO/stats never see them.
-      // The draw guard above makes an equal confirmed score impossible.
-      const winnerId = previous.aGoals > previous.bGoals ? previous.aId : previous.bId;
-      finalsApplied =
-        (await applyFinalsResult({
-          seasonId: previous.seasonId,
-          slotKey: previous.finalsSlot as FinalsSlotKey,
-          winnerId,
-          matchId,
-          decidedBy: (previous.decidedBy ?? "regulation") as FinalsDecidedBy,
-          winnerGoals: Math.max(previous.aGoals, previous.bGoals),
-          loserGoals: Math.min(previous.aGoals, previous.bGoals),
-        })) === "applied";
-      if (!finalsApplied) {
-        logger.warn("finals_resolve_lost_slot_race", { matchId, seasonId: previous.seasonId });
-      }
-    } else {
-      const previousLeaderId = await topRankedLeaderId(db, previous.seasonId);
-      await recalcSeasonElo(previous.seasonId);
-      await recalcLeagueStats();
-      await emitMatchActivity({ db, matchId, seasonId: previous.seasonId, previousLeaderId });
-    }
-
-    // Cup ties consume any confirmed result between the paired members — including one an
-    // admin just resolved. Same contract as the confirm path: never fails the resolve.
-    try {
-      await maybeConsumeCupResult({
-        seasonId: previous.seasonId,
-        aId: previous.aId,
-        bId: previous.bId,
-        aGoals: previous.aGoals,
-        bGoals: previous.bGoals,
-      });
-    } catch (error) {
-      logger.warn("cup_consume_failed", {
-        matchId,
-        seasonId: previous.seasonId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      await captureServerFault(error, { fn: "maybeConsumeCupResult" });
-    }
-  }
-
   const opponentId = previous.submittedBy;
-  if (opponentId && opponentId !== uid) {
+  if (action === "void" && opponentId && opponentId !== uid) {
     // A finals resolve that lost the slot race still confirmed the match, but the bracket
     // took the other result — don't tell the player it was resolved into anything.
     const body =
       action === "void"
         ? "A disputed match was voided by admin."
-        : finalsApplied === false
-          ? "Your match was confirmed by admin, but that tie had already been decided."
-          : "An admin has resolved a pending match.";
+        : "An admin has resolved a pending match.";
     await sendPush(opponentId, "Match resolved", body, {
       type: action === "void" ? "match_disputed" : "match_confirmed",
       matchId,

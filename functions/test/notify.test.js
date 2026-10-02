@@ -69,3 +69,18 @@ test("deliverPushMessages swallows transport errors so the caller never fails", 
     console.warn = originalWarn;
   }
 });
+
+test("push responses are drained before returning the connection to the pool", async () => {
+  let drained = false;
+  assert.equal(
+    await deliverPushMessages([sample], async () => ({
+      ok: true,
+      arrayBuffer: async () => {
+        drained = true;
+        return new ArrayBuffer(0);
+      },
+    })),
+    true,
+  );
+  assert.equal(drained, true);
+});

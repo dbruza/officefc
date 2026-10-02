@@ -177,7 +177,7 @@ function RootNavigator() {
   );
 }
 
-function RootLayout() {
+function RootLayoutContent() {
   const [fontsLoaded, fontError] = useAppFonts();
   const router = useRouter();
   const navRef = useNavigationContainerRef();
@@ -225,9 +225,7 @@ function RootLayout() {
       <SafeAreaProvider>
         <StatusBar style="light" />
         <View style={styles.viewport}>
-          <AuthProvider>
-            <RootNavigator />
-          </AuthProvider>
+          <RootNavigator />
           <ToastHost />
           <DialogHost />
         </View>
@@ -236,6 +234,13 @@ function RootLayout() {
   );
 }
 
+function RootLayout() {
+  return (
+    <AuthProvider>
+      <RootLayoutContent />
+    </AuthProvider>
+  );
+}
 export default Sentry.wrap(RootLayout);
 
 const styles = StyleSheet.create({

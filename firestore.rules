@@ -168,6 +168,18 @@ service cloud.firestore {
 
     // Matches: members read. A member may CREATE a pending match they participate in;
     // all status/ELO mutations happen in Cloud Functions (confirm/recalc/dispute).
+    match /matchAnalysis/{matchId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+    match /seasonSummaries/{seasonId} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+    match /readModelQueue/{leagueId} {
+      allow read: if leagueId == "office" && isMember();
+      allow write: if false;
+    }
     match /matches/{matchId} {
       allow read: if isMember();
       allow create: if isMember()

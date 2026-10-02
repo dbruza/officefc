@@ -18,3 +18,8 @@ firestore-debug.log
 # Generated, marked "do not edit"
 mobile/expo-env.d.ts
 functions/src/data/teamCatalogue.ts
+
+.claude/worktrees
+.codex
+**/dist
+**/dist-*

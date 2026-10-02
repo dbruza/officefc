@@ -1,3 +1,4 @@
+import { mutate } from "../dataCache";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
@@ -50,7 +51,7 @@ export async function createFixture(opponentId: string, reroll = false): Promise
     { opponentId: string; reroll?: boolean },
     { ok: boolean; fixture: FixturePayload }
   >(functions, "createFixture");
-  const result = await callable({ opponentId, reroll });
+  const result = await mutate(() => callable({ opponentId, reroll }));
   return mapFixture(result.data.fixture);
 }
 

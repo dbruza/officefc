@@ -34,7 +34,8 @@ import {
 import { GrowBar } from "@/components/GrowBar";
 import {
   getLeaguePlayers,
-  getSeasonMatches,
+  getRecentSeasonMatches,
+  getSeasonSummary,
   getSeasonPotm,
   getSeasonResult,
   getSeasons,
@@ -45,7 +46,7 @@ import {
   type Season,
   type SeasonResult,
 } from "@/lib/league";
-import { AWARD_META, computeSeasonAwards, type SeasonAward } from "@/lib/awards";
+import { AWARD_META, type SeasonAward } from "@/lib/awards";
 import { useBreakpoint } from "@/lib/responsive";
 import { useFocusData } from "@/lib/useFocusData";
 import { useTabRetap } from "@/lib/tabRetap";
@@ -66,6 +67,8 @@ interface LiveData {
   seasons: Season[];
   players: Map<string, LeaguePlayer>;
   matches: LeagueMatch[];
+  awards: SeasonAward[];
+  matchCount: number;
 }
 
 const RESULTS_PREVIEW = 5;
@@ -87,10 +90,13 @@ export default function SeasonsRoute() {
     useCallback(async () => {
       const [seasonRows, roster] = await Promise.all([getSeasons(), getLeaguePlayers()]);
       const activeSeason = seasonRows.find((season) => season.active) ?? null;
+      const summary = activeSeason ? await getSeasonSummary(activeSeason.id) : null;
       return {
+        awards: summary?.awards ?? [],
+        matchCount: summary?.matchCount ?? 0,
         seasons: seasonRows,
         players: new Map(roster.map((player) => [player.id, player])),
-        matches: activeSeason ? await getSeasonMatches(activeSeason.id) : [],
+        matches: activeSeason ? await getRecentSeasonMatches(activeSeason.id) : [],
       };
     }, []),
   );
@@ -105,11 +111,13 @@ export default function SeasonsRoute() {
         seasonRows
           .filter((season) => !season.active)
           .map(async (season) => {
-            const [result, potm, frozen, seasonMatches] = await Promise.all([
-              getSeasonResult(season.id),
-              getSeasonPotm(season.id),
-              getStandings(season.id),
-              getSeasonMatches(season.id),
+            const result = await getSeasonResult(season.id);
+            const [potm, frozen, summary] = await Promise.all([
+              result?.potm ? Promise.resolve(result.potm) : getSeasonPotm(season.id),
+              result?.thirdId !== undefined ? Promise.resolve([]) : getStandings(season.id),
+              result?.awards
+                ? Promise.resolve({ awards: result.awards })
+                : getSeasonSummary(season.id),
             ]);
             return {
               season,
@@ -118,13 +126,15 @@ export default function SeasonsRoute() {
               // Third = best-placed finisher who isn't already champion or runner-up —
               // in a finals season the table's #3 can be the champion themselves.
               thirdId:
-                frozen.find(
-                  (standing) =>
-                    standing.ranked &&
-                    standing.uid !== result?.championId &&
-                    standing.uid !== result?.runnerUpId,
-                )?.uid ?? null,
-              awards: computeSeasonAwards(seasonMatches),
+                result?.thirdId !== undefined
+                  ? result.thirdId
+                  : (frozen.find(
+                      (standing) =>
+                        standing.ranked &&
+                        standing.uid !== result?.championId &&
+                        standing.uid !== result?.runnerUpId,
+                    )?.uid ?? null),
+              awards: summary.awards,
             };
           }),
       );
@@ -135,7 +145,7 @@ export default function SeasonsRoute() {
   const active = live.data?.seasons.find((season) => season.active) ?? null;
   const matches = useMemo(() => live.data?.matches ?? [], [live.data]);
   const recent = useMemo(() => matches.slice().reverse(), [matches]);
-  const awards = useMemo(() => computeSeasonAwards(matches), [matches]);
+  const awards = live.data?.awards ?? [];
   const shownResults = recent.slice(0, showAllResults ? RESULTS_MAX : RESULTS_PREVIEW);
   const moreCount = Math.min(RESULTS_MAX, recent.length) - RESULTS_PREVIEW;
 
@@ -172,7 +182,7 @@ export default function SeasonsRoute() {
       <Reveal>
         <LiveSeasonCard
           season={active}
-          played={matches.length}
+          played={live.data?.matchCount ?? 0}
           onPress={active.phase === "finals" ? () => router.push("/(app)/finals") : openLeaderboard}
         />
       </Reveal>

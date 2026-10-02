@@ -14,14 +14,7 @@ import {
 } from "react";
 import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { type Href, useRouter } from "expo-router";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-  type QueryDocumentSnapshot,
-} from "firebase/firestore";
+
 import {
   Avatar,
   Card,
@@ -49,7 +42,6 @@ import {
 import { GrowBar } from "@/components/GrowBar";
 import { LeagueTable, type LeagueTableGroup, type LeagueTableRow } from "@/components/LeagueTable";
 import { useAuth } from "@/lib/auth";
-import { db } from "@/lib/firebase";
 import { fmtXg } from "@/lib/format";
 import {
   MIN_RANKED_GAMES,
@@ -61,12 +53,9 @@ import {
   type Season,
   type Standing,
 } from "@/lib/league";
-import {
-  aggregateSeasonStats,
-  type SeasonLeaderboardStats,
-  type SeasonStatMatch,
-} from "@/lib/stats/seasonStats";
-import { currentWinStreak, currentWinlessRun } from "@/lib/stats/streaks";
+import { type SeasonLeaderboardStats } from "@/lib/stats/seasonStats";
+import type { StreakRow } from "../../../../functions/src/models/streakBoard";
+import { getSeasonSummary } from "@/lib/league/summaries";
 import { useFocusData } from "@/lib/useFocusData";
 import { useTabRetap } from "@/lib/tabRetap";
 import { useBreakpoint } from "@/lib/responsive";
@@ -669,96 +658,7 @@ function TableSkeleton({ desktop }: { desktop: boolean }) {
  * otherwise the flat columns — mirroring how league/matches.ts reads them. Every value
  * stays null when the screenshot didn't capture it.
  */
-function sideStats(data: Record<string, unknown>, side: "a" | "b") {
-  const num = (v: unknown): number | null =>
-    typeof v === "number" && Number.isFinite(v) ? v : null;
-  const nested = data[`${side}Stats`];
-  if (nested && typeof nested === "object") {
-    const stats = nested as Record<string, unknown>;
-    return {
-      possession: num(stats.possession),
-      shots: num(stats.shots),
-      shotsOnTarget: num(stats.shotsOnTarget ?? stats.shots_on_target),
-      xg: num(stats.xg),
-    };
-  }
-  return {
-    possession: num(data[`${side}Possession`]),
-    shots: num(data[`${side}Shots`]),
-    shotsOnTarget: num(data[`${side}ShotsOnTarget`]),
-    xg: num(data[`${side}Xg`]),
-  };
-}
-
-function mapStatMatch(snapshot: QueryDocumentSnapshot): SeasonStatMatch {
-  const data = snapshot.data();
-  const a = sideStats(data, "a");
-  const b = sideStats(data, "b");
-  return {
-    id: snapshot.id,
-    aId: String(data.aId ?? ""),
-    bId: String(data.bId ?? ""),
-    aGoals: Number(data.aGoals ?? 0),
-    bGoals: Number(data.bGoals ?? 0),
-    finals: data.finals === true,
-    // Streaks need true sequence — without this the streak helpers fall back to
-    // trusting array order, which is document-id order and meaningless in time.
-    date: data.date instanceof Timestamp ? data.date.toDate() : null,
-    aPossession: a.possession,
-    bPossession: b.possession,
-    aShots: a.shots,
-    bShots: b.shots,
-    aShotsOnTarget: a.shotsOnTarget,
-    bShotsOnTarget: b.shotsOnTarget,
-    aXg: a.xg,
-    bXg: b.xg,
-  };
-}
-
-/** Signed number with a typographic minus. */
-const signed = (value: number) =>
-  value > 0 ? `+${value}` : value < 0 ? `\u2212${-value}` : `${value}`;
-
-/** One row of the streaks board. Exactly one of the two runs is presented — a player
- *  whose latest game was a win is "hot", otherwise they are "winless"; a player can
- *  never wear both labels (and never a zero-length one). */
-interface StreakRow {
-  playerId: string;
-  /** Current consecutive wins — ≥2 to appear. */
-  winStreak: number;
-  /** Games since their last win — ≥2 to appear (their latest result wasn't a win). */
-  winlessRun: number;
-}
-
-/** Current-form rows over every confirmed non-finals match in the season: live win
- *  streaks first (longest hottest), then the longest winless miseries. Best-ever runs
- *  are deliberately not shown here — on a form board a past peak reads as current and
- *  says nothing about present heat. */
-function streakRows(matches: SeasonStatMatch[]): StreakRow[] {
-  const uids = new Set<string>();
-  for (const match of matches) {
-    if (match.finals) continue;
-    uids.add(match.aId);
-    uids.add(match.bId);
-  }
-  const hot: StreakRow[] = [];
-  const cold: StreakRow[] = [];
-  for (const playerId of uids) {
-    const winStreak = currentWinStreak(playerId, matches);
-    if (winStreak >= 2) {
-      hot.push({ playerId, winStreak, winlessRun: 0 });
-      continue;
-    }
-    const winlessRun = currentWinlessRun(playerId, matches);
-    if (winlessRun >= 2) cold.push({ playerId, winStreak: 0, winlessRun });
-  }
-  // Longest run first; ties break by uid for a stable board.
-  const byLengthDesc = (a: StreakRow, b: StreakRow) =>
-    b.winStreak - a.winStreak ||
-    b.winlessRun - a.winlessRun ||
-    a.playerId.localeCompare(b.playerId);
-  return [...hot.sort(byLengthDesc), ...cold.sort(byLengthDesc)];
-}
+const signed = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : `${value}`);
 
 /** Lazy-loaded stats view: mounts only while the Stats segment is active, caches after that. */
 function SeasonStatsBoard({
@@ -779,15 +679,8 @@ function SeasonStatsBoard({
   }>(
     `leaderboard-stats:${seasonId}`,
     useCallback(async () => {
-      const snap = await getDocs(
-        query(
-          collection(db, "matches"),
-          where("seasonId", "==", seasonId),
-          where("status", "==", "confirmed"),
-        ),
-      );
-      const matches = snap.docs.map(mapStatMatch);
-      return { stats: aggregateSeasonStats(matches), streaks: streakRows(matches) };
+      const summary = await getSeasonSummary(seasonId);
+      return { stats: summary.stats, streaks: summary.streaks };
     }, [seasonId]),
   );
   useEffect(() => {

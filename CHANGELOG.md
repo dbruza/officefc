@@ -3,6 +3,21 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.13.0.0] - 2026-10-02
+
+### Changed
+
+- Match confirmation persists a recoverable rebuild request and returns promptly. A serialized worker batches updates, avoids unchanged writes, and refreshes open screens when standings are ready.
+- Profiles, season archives, analytics and logging use stored summaries. Game history loads in pages with virtualized rows; shared caches reuse league data and invalidate after writes.
+- New clients call Sydney functions beside the Sydney database; existing Iowa callable endpoints remain available during migration.
+- Web routes load separately, authentication starts alongside fonts, and optional photo/voting content no longer delays match results.
+- Photo uploads use the extraction resolution with one client encode. Push delivery runs through a durable outbox, and model requests have a shared deadline.
+- Full checks compile Functions once. Performance samples, write counts and queue recovery tests guard the new paths.
+
+### Added
+
+- On-demand match analysis with a bounded model fallback, one generation per match at a time, and cached results tied to the rating revision.
+
 ## [1.12.1.0] - 2026-10-01
 
 ### Changed
@@ -480,5 +495,4 @@ existing entry was drawn from.
 - The integration ships dormant: reporting activates once the Sentry project DSNs are
   filled in (mobile `eas.json` / `.env`, functions `.env`). Until then a
   `sentry_disabled` warning is logged so the dormant state is visible.
-
 

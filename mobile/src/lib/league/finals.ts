@@ -1,3 +1,4 @@
+import { mutate, invalidateData } from "../dataCache";
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
@@ -79,7 +80,7 @@ export function openSlotForPair(
 /** Admin: lock the finals from the current standings and deal the opening ties. */
 export async function startFinals(seasonId: string): Promise<void> {
   const callable = httpsCallable<{ seasonId: string }, { ok: boolean }>(functions, "startFinals");
-  await callable({ seasonId });
+  await mutate(() => callable({ seasonId }));
 }
 
 /** Admin: decide an open tie without a match (absence/forfeit). */
@@ -92,7 +93,7 @@ export async function awardWalkover(
     { seasonId: string; slot: FinalsSlotKey; winnerId: string },
     { ok: boolean }
   >(functions, "awardWalkover");
-  await callable({ seasonId, slot, winnerId });
+  await mutate(() => callable({ seasonId, slot, winnerId }));
 }
 
 export interface SubmitFinalsMatchInput {
@@ -128,5 +129,6 @@ export async function submitFinalsMatch(input: SubmitFinalsMatchInput): Promise<
     date: serverTimestamp(),
     createdAt: serverTimestamp(),
   });
+  invalidateData();
   return ref.id;
 }

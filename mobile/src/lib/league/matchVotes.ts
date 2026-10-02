@@ -1,3 +1,4 @@
+import { mutate } from "../dataCache";
 /**
  * Per-match MVP peer votes (client side).
  *
@@ -74,7 +75,7 @@ export async function castVote(matchId: string, candidateId: string): Promise<vo
     functions,
     "castVote",
   );
-  await callable({ matchId, candidateId });
+  await mutate(() => callable({ matchId, candidateId }));
 }
 
 /** Epoch millis at which voting closes, or null without a readable confirmation stamp. */

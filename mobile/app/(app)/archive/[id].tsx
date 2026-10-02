@@ -3,7 +3,7 @@
  * final table and podium, and the season's awards. Desktop splits table | champion +
  * awards; phones stack champion first.
  */
-import { useCallback, useMemo, type ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -30,16 +30,15 @@ import {
 import {
   getLeaguePlayers,
   getSeason,
-  getSeasonMatches,
+  getSeasonSummary,
   getSeasonResult,
   getStandings,
-  type LeagueMatch,
   type LeaguePlayer,
   type Season,
   type SeasonResult,
   type Standing,
 } from "@/lib/league";
-import { computeSeasonAwards } from "@/lib/awards";
+import { type SeasonAward } from "@/lib/awards";
 import { useAuth } from "@/lib/auth";
 import { useBreakpoint } from "@/lib/responsive";
 import { useFocusData } from "@/lib/useFocusData";
@@ -50,7 +49,7 @@ interface ArchiveData {
   season: Season | null;
   result: SeasonResult | null;
   standings: Standing[];
-  matches: LeagueMatch[];
+  awards: SeasonAward[];
   players: Map<string, LeaguePlayer>;
 }
 
@@ -63,18 +62,18 @@ export default function ArchiveRoute() {
   const { data, refreshing, error, reload } = useFocusData<ArchiveData>(
     `archive:${id}`,
     useCallback(async () => {
-      const [seasonRow, result, table, seasonMatches, roster] = await Promise.all([
+      const [seasonRow, result, table, summary, roster] = await Promise.all([
         getSeason(id),
         getSeasonResult(id),
         getStandings(id),
-        getSeasonMatches(id),
+        getSeasonSummary(id),
         getLeaguePlayers(),
       ]);
       return {
         season: seasonRow,
         result,
         standings: table,
-        matches: seasonMatches,
+        awards: summary.awards,
         players: new Map(roster.map((player) => [player.id, player])),
       };
     }, [id]),
@@ -82,8 +81,7 @@ export default function ArchiveRoute() {
   const season = data?.season ?? null;
   const result = data?.result ?? null;
   const players = data?.players ?? new Map<string, LeaguePlayer>();
-  const matches = data?.matches;
-  const awards = useMemo(() => (matches ? computeSeasonAwards(matches) : []), [matches]);
+  const awards = data?.awards ?? [];
 
   // Only ranked players hold a place in a finalized season's table and podium.
   const rankedStandings = (data?.standings ?? []).filter(

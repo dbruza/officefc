@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }, 10_000);
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      clearFocusDataCache();
       setUser(u);
       setEmailVerified(!!u?.emailVerified);
       setLogUid(u?.uid ?? null);

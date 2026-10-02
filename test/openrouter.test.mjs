@@ -135,3 +135,25 @@ test("posts to chat completions with a bearer key", async () => {
   assert.equal(seen.opts.headers.authorization, "Bearer k");
   assert.deepEqual(JSON.parse(seen.opts.body), { model: "m" });
 });
+
+test("rate-limit Retry-After cannot exceed the extraction deadline", async () => {
+  let sleeps = 0;
+  await assert.rejects(
+    callModel({
+      apiKey: "fake",
+      request: {},
+      deadlineMs: Date.now() + 50,
+      fetchImpl: async () => ({
+        ok: false,
+        status: 429,
+        headers: { get: () => "120" },
+        text: async () => "limited",
+      }),
+      sleepImpl: async () => {
+        sleeps++;
+      },
+    }),
+    /429|deadline/i,
+  );
+  assert.equal(sleeps, 0);
+});

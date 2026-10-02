@@ -2,7 +2,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 
-const MAX_EDGE = 2048;
+const MAX_EDGE = 1568;
 const MAX_SOURCE_SIZE = 25 * 1024 * 1024;
 const JPEG_QUALITY = 0.86;
 
@@ -168,14 +168,8 @@ function canvasToJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
-function blobToDataUri(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () =>
-      reject(new PhotoPickerError("processing_failed", "Could not read that image."));
-    reader.readAsDataURL(blob);
-  });
+export function releaseMatchPhoto(uri: string | null): void {
+  if (Platform.OS === "web" && uri?.startsWith("blob:")) URL.revokeObjectURL(uri);
 }
 
 async function pickWeb(source: "camera" | "library"): Promise<SelectedMatchPhoto | null> {
@@ -184,7 +178,7 @@ async function pickWeb(source: "camera" | "library"): Promise<SelectedMatchPhoto
 }
 
 /**
- * Web: normalise an image File (picked, dropped, or pasted) to a ≤2048px JPEG data URI —
+ * Web: normalise an image File (picked, dropped, or pasted) to a ≤1568px JPEG object URL —
  * the same shape the picker produces, so upload/extraction can't tell them apart.
  */
 export async function prepareWebImageFile(file: File): Promise<SelectedMatchPhoto> {
@@ -214,7 +208,7 @@ export async function prepareWebImageFile(file: File): Promise<SelectedMatchPhot
   const blob = await canvasToJpeg(canvas);
 
   return {
-    uri: await blobToDataUri(blob),
+    uri: URL.createObjectURL(blob),
     mimeType: "image/jpeg",
     fileSize: blob.size,
     width: size.width,

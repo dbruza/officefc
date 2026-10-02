@@ -1,7 +1,8 @@
+import { modelVersion, assertQueueIdleTx } from "./rebuildQueue";
 import { HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
-import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp, Filter, FieldPath } from "firebase-admin/firestore";
 import { loggedOnCall } from "./logging";
 import { instrumentBackground } from "./sentry";
 import { LEAGUE_ID } from "./config";
@@ -66,25 +67,63 @@ export function recentTeamIds(
 
 /** Everything team-dealing needs for one season: the rated active-team pool and the
  *  season's matches newest-first (for the novelty exclusion). Shared with finals dealing. */
-export async function loadDealingContext(seasonId: string): Promise<{
+export async function loadDealingContext(
+  seasonId: string,
+  participantIds?: string[],
+): Promise<{
   pool: FixtureTeam[];
   seasonMatchesByDateDesc: Array<{ get(field: string): unknown }>;
 }> {
-  const [teamsSnap, seasonMatches] = await Promise.all([
-    db.collection("teams").where("active", "==", true).get(),
-    db.collection("matches").where("seasonId", "==", seasonId).get(),
-  ]);
-  const pool: FixtureTeam[] = teamsSnap.docs
-    .map((doc) => ({
-      id: doc.id,
-      name: String(doc.get("name") ?? doc.id),
-      overall: Number(doc.get("overall")),
-    }))
-    .filter((team) => Number.isFinite(team.overall));
-  const seasonMatchesByDateDesc = [...seasonMatches.docs].sort(
-    (a, b) => dateMillis(b.get("date")) - dateMillis(a.get("date")),
+  const snapshot = await db.doc("teamCatalogues/current").get();
+  const bundled = snapshot.get("teams");
+  const teamRows: Array<Record<string, unknown>> = Array.isArray(bundled)
+    ? bundled
+    : (await db.collection("teams").where("active", "==", true).get()).docs.map((row) => ({
+        id: row.id,
+        ...row.data(),
+      }));
+  const pool = teamRows
+    .filter((team) => typeof team.overall === "number" && Number.isFinite(team.overall))
+    .map((team) => ({
+      id: String(team.id),
+      name: String(team.name),
+      overall: Number(team.overall),
+    }));
+  const ids =
+    participantIds ??
+    (await db.collection(`leagues/${LEAGUE_ID}/members`).get()).docs.map((row) => row.id);
+  const recent = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  await Promise.all(
+    [...new Set(ids)].map(async (uid) => {
+      let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+      const seen = new Set<string>();
+      while (seen.size < FIXTURE_NOVELTY_WINDOW) {
+        let query = db
+          .collection("matches")
+          .where("seasonId", "==", seasonId)
+          .where(Filter.or(Filter.where("aId", "==", uid), Filter.where("bId", "==", uid)))
+          .orderBy("date", "desc")
+          .orderBy(FieldPath.documentId())
+          .limit(25);
+        if (cursor) query = query.startAfter(cursor);
+        const page = await query.get();
+        for (const row of page.docs) {
+          recent.set(row.id, row);
+          const team = row.get(row.get("aId") === uid ? "aTeamId" : "bTeamId");
+          if (typeof team === "string" && team) seen.add(team);
+          if (seen.size >= FIXTURE_NOVELTY_WINDOW) break;
+        }
+        if (page.size < 25) break;
+        cursor = page.docs.at(-1);
+      }
+    }),
   );
-  return { pool, seasonMatchesByDateDesc };
+  return {
+    pool,
+    seasonMatchesByDateDesc: [...recent.values()].sort(
+      (a, b) => dateMillis(b.get("date")) - dateMillis(a.get("date")) || a.id.localeCompare(b.id),
+    ),
+  };
 }
 
 /**
@@ -121,10 +160,11 @@ export const createFixture = loggedOnCall("createFixture", { cors: true }, async
     throw new HttpsError("failed-precondition", "No rerolls left for this matchup.");
   }
 
+  const generation = await modelVersion();
   const [aStanding, bStanding, dealing] = await Promise.all([
     db.doc(`seasons/${seasonId}/standings/${uid}`).get(),
     db.doc(`seasons/${seasonId}/standings/${opponentId}`).get(),
-    loadDealingContext(seasonId),
+    loadDealingContext(seasonId, [uid, opponentId]),
   ]);
   const { pool, seasonMatchesByDateDesc: byDateDesc } = dealing;
   const aRecent = recentTeamIds(byDateDesc, uid);
@@ -172,7 +212,16 @@ export const createFixture = loggedOnCall("createFixture", { cors: true }, async
     expiresAt,
     matchId: null,
   };
-  await fixtureRef.set(fixture);
+  await db.runTransaction(async (tx) => {
+    await assertQueueIdleTx(tx, generation);
+    const current = await tx.get(fixtureRef);
+    const season = await tx.get(db.doc(`seasons/${seasonId}`));
+    if (!season.get("active") || season.get("finalized"))
+      throw new HttpsError("failed-precondition", "The season changed. Reload and retry.");
+    if (current.updateTime?.toMillis() !== existing.updateTime?.toMillis())
+      throw new HttpsError("aborted", "This matchup changed. Reload to use the latest deal.");
+    tx.set(fixtureRef, fixture);
+  });
   logger.info("createFixture", {
     fixtureId: fixtureRef.id,
     aId: uid,

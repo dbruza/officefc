@@ -71,8 +71,8 @@ jobs:
       - name: Type-check mobile app
         run: npm run typecheck:mobile
 
-      - name: Type-check Cloud Functions
-        run: npm --prefix functions run typecheck
+      - name: Build Cloud Functions once
+        run: npm --prefix functions run build
 
       - name: Export production web app
         # CI bundles against the placeholder config written above rather than real
@@ -83,13 +83,16 @@ jobs:
         run: npm run build:web
 
       - name: Test Cloud Functions
-        run: npm run test:functions
+        run: npm --prefix functions run test:compiled
 
       - name: Test mobile app
-        run: npm --prefix mobile test
+        run: npm --prefix mobile run test:compiled
 
       - name: Test extraction and ELO
-        run: npm test
+        run: npm run test:compiled
 
       - name: Test Firebase security rules
-        run: npm run test:rules
+        run: npm run test:rules:compiled
+
+      - name: Check append-only recalculation performance
+        run: node scripts/benchmark-performance.mjs

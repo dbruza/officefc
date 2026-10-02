@@ -19,7 +19,8 @@ import type { PendingMatch } from "./types";
 export type PendingImpactInput = Pick<
   PendingMatch,
   "id" | "seasonId" | "aId" | "bId" | "aTeamId" | "bTeamId" | "aGoals" | "bGoals"
->;
+> &
+  Pick<PendingMatch, "finals" | "source" | "aStats" | "bStats">;
 
 export interface PendingImpact {
   matchId: string;
@@ -58,14 +59,21 @@ export async function getPendingImpacts(
     getTeams().catch(() => []),
     Promise.all(seasonIds.map((id) => getSeason(id).catch(() => null))),
     Promise.all(seasonIds.map((id) => getStandings(id).catch(() => []))),
-    Promise.all(matches.map((m) => getDoc(doc(db, "matches", m.id)).catch(() => null))),
+    Promise.all(
+      matches.map((m) =>
+        "finals" in m
+          ? Promise.resolve(m as unknown as Record<string, unknown>)
+          : getDoc(doc(db, "matches", m.id))
+              .then((snap) => (snap.exists() ? snap.data() : null))
+              .catch(() => null),
+      ),
+    ),
   ]);
   const overallById = new Map(teams.map((team) => [team.id, team.overall]));
 
   matches.forEach((match, index) => {
-    const snap = docs[index];
-    if (!snap?.exists()) return;
-    const data = snap.data() as Record<string, unknown>;
+    const data = docs[index];
+    if (!data) return;
     const seasonIndex = seasonIds.indexOf(match.seasonId);
     const table = standings[seasonIndex] ?? [];
     const premierId = seasons[seasonIndex]?.reigningPremierId ?? null;

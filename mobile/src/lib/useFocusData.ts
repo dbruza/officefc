@@ -15,14 +15,21 @@ import { useCallback, useRef, useState } from "react";
 import { AppState, InteractionManager } from "react-native";
 import { useFocusEffect } from "expo-router";
 
-const cache = new Map<string, unknown>();
+import {
+  dataCache,
+  dataSessionRevision,
+  clearSessionData,
+  invalidateData,
+  onDataInvalidated,
+} from "./dataCache";
+import { logger } from "./logger";
 
 /** Minimum age before returning to the app/tab triggers a background refresh. */
 const REVISIT_STALE_MS = 30_000;
 
 /** Drop all cached screen data (call on sign-out so no user sees another's league). */
 export function clearFocusDataCache() {
-  cache.clear();
+  clearSessionData();
 }
 
 export interface FocusData<T> {
@@ -44,7 +51,7 @@ export interface FocusData<T> {
 }
 
 export function useFocusData<T>(key: string, fetcher: () => Promise<T>): FocusData<T> {
-  const [data, setData] = useState<T | undefined>(() => cache.get(key) as T | undefined);
+  const [data, setData] = useState<T | undefined>(() => dataCache.peek<T>(`screen:${key}`));
   const [dataKey, setDataKey] = useState(key);
   const [fetching, setFetching] = useState(false);
   const lastFetchedAt = useRef(0);
@@ -58,48 +65,81 @@ export function useFocusData<T>(key: string, fetcher: () => Promise<T>): FocusDa
   // if present; otherwise keep the previous data visible while the refresh runs.
   if (keyRef.current !== key) {
     keyRef.current = key;
-    const cached = cache.get(key) as T | undefined;
+    const cached = dataCache.peek<T>(`screen:${key}`);
     if (cached !== undefined) {
       setData(cached);
       setDataKey(key);
     }
   }
 
-  const reload = useCallback(async () => {
+  const fetchData = useCallback(async (force = false) => {
+    if (force) invalidateData();
+    const session = dataSessionRevision();
+    const revision = dataCache.revision();
+    const start = Date.now();
     const gen = ++generation.current;
     const fetchedKey = keyRef.current;
+    const cached = dataCache.fresh(`screen:${fetchedKey}`);
     setFetching(true);
     setError(false);
     try {
-      const value = await fetcherRef.current();
-      cache.set(fetchedKey, value);
+      const value = await dataCache.read(`screen:${fetchedKey}`, fetcherRef.current);
+      if (session !== dataSessionRevision()) return;
+      logger.performance("screen_data_ready", Date.now() - start, {
+        screen: fetchedKey.split(":")[0],
+        cached,
+      });
       lastFetchedAt.current = Date.now();
-      if (generation.current === gen) {
+      if (
+        generation.current === gen &&
+        fetchedKey === keyRef.current &&
+        session === dataSessionRevision() &&
+        revision === dataCache.revision()
+      ) {
         setData(value);
         setDataKey(fetchedKey);
       }
     } catch {
-      if (generation.current === gen) setError(true);
+      if (
+        generation.current === gen &&
+        fetchedKey === keyRef.current &&
+        session === dataSessionRevision() &&
+        revision === dataCache.revision()
+      )
+        setError(true);
     } finally {
-      if (generation.current === gen) setFetching(false);
+      if (
+        generation.current === gen &&
+        fetchedKey === keyRef.current &&
+        session === dataSessionRevision() &&
+        revision === dataCache.revision()
+      )
+        setFetching(false);
     }
   }, []);
 
+  const reload = useCallback(() => fetchData(true), [fetchData]);
+
   useFocusEffect(
     useCallback(() => {
-      const task = InteractionManager.runAfterInteractions(() => void reload());
+      const task = InteractionManager.runAfterInteractions(() => void fetchData());
       // Returning to the app/tab while this screen is focused: refresh if it's been a while.
       const sub = AppState.addEventListener("change", (state) => {
         if (state === "active" && Date.now() - lastFetchedAt.current > REVISIT_STALE_MS) {
-          void reload();
+          void fetchData();
         }
       });
+      const stop = onDataInvalidated(() => {
+        void fetchData();
+      });
       return () => {
+        generation.current++;
+        stop();
         task.cancel();
         sub.remove();
       };
       // `key` retriggers the fetch when the cache key changes while focused.
-    }, [reload, key]),
+    }, [fetchData, key]),
   );
 
   return {

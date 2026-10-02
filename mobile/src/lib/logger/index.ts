@@ -1,3 +1,4 @@
+import { dataCache } from "../dataCache";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Sentry from "@sentry/react-native";
@@ -80,7 +81,7 @@ function emit(level: LogLevel, event: string, context?: unknown): void {
     });
   }
 
-  if (REMOTE_ENABLED && (level === "warn" || level === "error")) {
+  if (REMOTE_ENABLED && (level === "warn" || level === "error" || event === "performance_sample")) {
     buffer.push(entry);
     if (buffer.size >= FLUSH_AT) void flush();
     else scheduleFlush();
@@ -88,6 +89,10 @@ function emit(level: LogLevel, event: string, context?: unknown): void {
 }
 
 export const logger = {
+  performance: (operation: string, durationMs: number, context: Record<string, unknown> = {}) => {
+    if (Math.random() < 0.1)
+      emit("info", "performance_sample", { ...context, operation, durationMs, sampleRate: 0.1 });
+  },
   debug: (event: string, context?: unknown) => emit("debug", event, context),
   info: (event: string, context?: unknown) => emit("info", event, context),
   warn: (event: string, context?: unknown) => emit("warn", event, context),
@@ -136,6 +141,7 @@ export async function timed<T>(
     const result = await fn();
     const durationMs = Date.now() - start;
     const count = Array.isArray(result) ? result.length : undefined;
+    logger.performance(label, durationMs, { count });
     if (isSlow(durationMs, thresholdMs)) logger.warn("slow_read", { label, durationMs, count });
     else if (__DEV__) logger.debug("read", { label, durationMs, count });
     return result;
@@ -148,3 +154,5 @@ export async function timed<T>(
     throw error;
   }
 }
+
+dataCache.observe(({ durationMs, ...context }) => logger.performance("cache", durationMs, context));

@@ -10,7 +10,7 @@
  * Scopes are labelled wherever they mix: the band and chart are this season, the stat
  * cards and rivals are all-time.
  */
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { type ReactNode, useCallback, useRef, useState, useMemo } from "react";
 import { MIN_RANKED_GAMES } from "@/lib/league/standings";
 import { type ScrollView, StyleSheet, View } from "react-native";
 import { type Href, useRouter } from "expo-router";
@@ -49,7 +49,9 @@ import {
   getEloHistory,
   getHeadToHeadsForPlayer,
   getLeaguePlayers,
-  getPlayerMatches,
+  getPlayerMatchPage,
+  getProfileSummary,
+  type ProfileSummary,
   getPlayerStats,
   getSeasonResults,
   getSeasons,
@@ -95,6 +97,7 @@ interface ProfileData {
   rankedCount: number;
   stats: PlayerStats | null;
   matches: LeagueMatch[];
+  summary: ProfileSummary | null;
   history: ChartPoint[];
   headToHeads: HeadToHead[];
   /** Catalogue lookup for the teams section — competition and OVR only. */
@@ -147,18 +150,20 @@ export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenPr
           rankedCount: 0,
           stats: null,
           matches: [],
+          summary: null,
           history: [],
           headToHeads: [],
           teamsById: new Map(),
         };
       }
-      const [seasonRows, roster, allTime, pairs, playedMatches, results, teamsById] =
+      const summary = await getProfileSummary(uid);
+      const [seasonRows, roster, allTime, pairs, playedPage, results, teamsById] =
         await Promise.all([
           getSeasons(),
           getLeaguePlayers(),
           getPlayerStats(uid),
           getHeadToHeadsForPlayer(uid),
-          getPlayerMatches(uid),
+          getPlayerMatchPage(uid, null, RECENT_PREVIEW),
           getSeasonResults(),
           loadTeamCatalogue(),
         ]);
@@ -175,7 +180,8 @@ export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenPr
         standing: table.find((item) => item.uid === uid) ?? null,
         rankedCount: table.filter((item) => item.ranked).length,
         stats: allTime,
-        matches: playedMatches,
+        matches: playedPage.matches.slice().reverse(),
+        summary,
         history: eloPoints.map((point) => ({
           date: point.date.toISOString().slice(0, 10),
           rating: point.rating,
@@ -327,8 +333,14 @@ function ProfileBody({
       champion && premier ? "double" : champion ? "champion" : premier ? "premier" : null;
     return kind ? [{ seasonId: result.seasonId, kind }] : [];
   });
-  const teamRecords = computeTeamRecords(uid, matches, data.teamsById);
-  const achievements = computeAchievements(uid, stats, matches);
+  const teamRecords = useMemo(
+    () => data.summary?.teamRecords ?? computeTeamRecords(uid, matches, data.teamsById),
+    [data.summary, uid, matches, data.teamsById],
+  );
+  const achievements = useMemo(
+    () => computeAchievements(uid, stats, matches, data.summary?.facts),
+    [uid, stats, matches, data.summary?.facts],
+  );
   const unlocked = achievements.filter((a) => a.unlocked);
   const nextUp = achievements
     .filter((a) => !a.unlocked)
@@ -511,14 +523,14 @@ function ProfileBody({
     <View>
       <SectionLabel
         action={
-          matches.length > RECENT_PREVIEW ? (
+          (data.summary?.matchCount ?? matches.length) > RECENT_PREVIEW ? (
             <TextLink
               label="SEE ALL"
               onPress={() => router.push({ pathname: "/(app)/games", params: { uid } } as Href)}
             />
           ) : matches.length ? (
             <Txt variant="monoBold" size={11} color={colors.textDim}>
-              {matches.length} played
+              {data.summary?.matchCount ?? matches.length} played
             </Txt>
           ) : undefined
         }

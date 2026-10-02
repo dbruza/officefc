@@ -149,8 +149,22 @@ export function deriveLeagueStats(
     pairMap.set(pairKey, row);
   }
 
+  const matchesByPlayer = new Map<string, ConfirmedMatchInput[]>();
+  const pairsByPlayer = new Map<string, HeadToHead[]>();
+  for (const match of matches)
+    for (const uid of [match.aId, match.bId]) {
+      const list = matchesByPlayer.get(uid) ?? [];
+      list.push(match);
+      matchesByPlayer.set(uid, list);
+    }
+  for (const pair of pairMap.values())
+    for (const uid of [pair.aId, pair.bId]) {
+      const list = pairsByPlayer.get(uid) ?? [];
+      list.push(pair);
+      pairsByPlayer.set(uid, list);
+    }
   const players = [...playerIds].map((uid): PlayerStats => {
-    const mine = matches.filter((match) => match.aId === uid || match.bId === uid);
+    const mine = matchesByPlayer.get(uid) ?? [];
     const perspectives = mine.map((match) => ({ match, ...perspective(match, uid) }));
     let w = 0;
     let d = 0;
@@ -200,8 +214,7 @@ export function deriveLeagueStats(
       currentStreak += 1;
     }
 
-    const candidates = [...pairMap.values()]
-      .filter((pair) => pair.aId === uid || pair.bId === uid)
+    const candidates = (pairsByPlayer.get(uid) ?? [])
       .map((pair) => {
         const isA = pair.aId === uid;
         const wins = isA ? pair.aWins : pair.bWins;

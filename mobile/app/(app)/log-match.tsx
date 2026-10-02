@@ -1,3 +1,4 @@
+import { SnapFlow } from "@/components/SnapFlow";
 /**
  * Log a match — the core loop. Three ways in (photo, auto-matchup, manual) plus the
  * finals tie when one is open. The last-used way is remembered, so regulars land
@@ -34,7 +35,6 @@ import {
   Segmented,
   Skeleton,
   SkeletonRows,
-  SnapFlow,
   Tag,
   TeamPicker,
   Txt,
@@ -52,7 +52,7 @@ import {
   getActiveSeason,
   getBracket,
   getLeaguePlayers,
-  getPlayerMatches,
+  getProfileSummary,
   getStandings,
   getTeams,
   previewElo,
@@ -69,7 +69,7 @@ import {
   type Team,
 } from "@/lib/league";
 import { friendlyError } from "@/lib/friendlyError";
-import { EMPTY_HISTORY, summarizeHistory, type MatchHistorySummary } from "@/lib/matchHistory";
+import { EMPTY_HISTORY, type MatchHistorySummary } from "@/lib/matchHistory";
 import { useBreakpoint } from "@/lib/responsive";
 import { useDocumentTitle } from "@/lib/web";
 import { firstName } from "@/lib/format";
@@ -136,7 +136,7 @@ async function loadLeague(uid: string): Promise<LeagueData> {
     getLeaguePlayers(),
     getTeams(),
     // Only sorts the opponent list / defaults teams — never block logging on it.
-    getPlayerMatches(uid).catch(() => []),
+    getProfileSummary(uid).catch(() => null),
     readLastMode(),
   ]);
   const [standings, bracket] = season
@@ -151,7 +151,12 @@ async function loadLeague(uid: string): Promise<LeagueData> {
     teams,
     standings,
     bracket,
-    history: summarizeHistory(played, uid),
+    history: played
+      ? {
+          myTeamIds: played.history.myTeamIds,
+          opponents: new Map(Object.entries(played.history.opponents)),
+        }
+      : EMPTY_HISTORY,
     lastMode,
   };
 }

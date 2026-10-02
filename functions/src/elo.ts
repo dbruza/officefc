@@ -59,6 +59,9 @@ export interface EloExplain {
 }
 
 export interface CalculatedMatch extends SeasonMatchInput {
+  leaderBeforeId: string | null;
+  leaderAfterId: string | null;
+  winnerStreakAfter: number;
   aEloBefore: number;
   aEloAfter: number;
   aDelta: number;
@@ -204,7 +207,27 @@ export function calculateSeason(
     history[uid] = [{ matchId: null, dateMillis: seasonStartMillis, rating: BASE_ELO }];
   }
 
+  let leaderId: string | null = null;
+  const winRuns = new Map<string, number>();
+  const leader = (): string | null => {
+    let best: Standing | null = null;
+    for (const uid of players) {
+      const row = stats.get(uid)!;
+      if (row.w + row.d + row.l < MIN_RANKED_GAMES) continue;
+      const candidate: Standing = {
+        ...row,
+        uid,
+        elo: ratings.get(uid)!,
+        ranked: true,
+        rank: 0,
+        move: 0,
+      };
+      if (!best || compareStandings(candidate, best) < 0) best = candidate;
+    }
+    return best?.uid ?? null;
+  };
   const calculated = matches.map((match): CalculatedMatch => {
+    const leaderBeforeId = leaderId;
     const aEloBefore = ratings.get(match.aId) ?? BASE_ELO;
     const bEloBefore = ratings.get(match.bId) ?? BASE_ELO;
     const aStats = stats.get(match.aId)!;
@@ -256,9 +279,16 @@ export function calculateSeason(
     bStats[bResult === "W" ? "w" : bResult === "D" ? "d" : "l"] += 1;
     aStats.form.push(aResult);
     bStats.form.push(bResult);
+    winRuns.set(match.aId, aResult === "W" ? (winRuns.get(match.aId) ?? 0) + 1 : 0);
+    winRuns.set(match.bId, bResult === "W" ? (winRuns.get(match.bId) ?? 0) + 1 : 0);
+    leaderId = leader();
 
     return {
       ...match,
+      leaderBeforeId,
+      leaderAfterId: leaderId,
+      winnerStreakAfter:
+        aResult === "W" ? winRuns.get(match.aId)! : bResult === "W" ? winRuns.get(match.bId)! : 0,
       aEloBefore,
       aEloAfter,
       aDelta,

@@ -1,3 +1,5 @@
+import { mutate } from "../dataCache";
+import { dataCache } from "../dataCache";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
@@ -37,28 +39,34 @@ function sortTeams(teams: Team[]): Team[] {
 }
 
 export async function getTeams(includeInactive = false): Promise<Team[]> {
-  if (!includeInactive) {
-    const snapshot = await getDoc(doc(db, "teamCatalogues", "current"));
-    const teams = snapshot.exists() ? snapshot.get("teams") : null;
-    if (Array.isArray(teams)) {
-      return sortTeams(
-        teams
-          .filter((team) => (team as Record<string, unknown>).category !== "women")
-          .map((team) => {
-            const data = team as Record<string, unknown>;
-            return mapTeam(String(data.id ?? ""), data);
-          }),
-      );
-    }
-  }
+  return dataCache.read(
+    `teams:${includeInactive}`,
+    async () => {
+      if (!includeInactive) {
+        const snapshot = await getDoc(doc(db, "teamCatalogues", "current"));
+        const teams = snapshot.exists() ? snapshot.get("teams") : null;
+        if (Array.isArray(teams)) {
+          return sortTeams(
+            teams
+              .filter((team) => (team as Record<string, unknown>).category !== "women")
+              .map((team) => {
+                const data = team as Record<string, unknown>;
+                return mapTeam(String(data.id ?? ""), data);
+              }),
+          );
+        }
+      }
 
-  const snap = includeInactive
-    ? await getDocs(collection(db, "teams"))
-    : await getDocs(query(collection(db, "teams"), where("active", "==", true)));
-  return sortTeams(
-    snap.docs
-      .filter((teamDoc) => teamDoc.get("category") !== "women")
-      .map((teamDoc) => mapTeam(teamDoc.id, teamDoc.data())),
+      const snap = includeInactive
+        ? await getDocs(collection(db, "teams"))
+        : await getDocs(query(collection(db, "teams"), where("active", "==", true)));
+      return sortTeams(
+        snap.docs
+          .filter((teamDoc) => teamDoc.get("category") !== "women")
+          .map((teamDoc) => mapTeam(teamDoc.id, teamDoc.data())),
+      );
+    },
+    300000,
   );
 }
 
@@ -67,7 +75,7 @@ export async function seedTeams(): Promise<TeamCatalogueSyncResult> {
     functions,
     "seedTeams",
   );
-  const result = await callable({});
+  const result = await mutate(() => callable({}));
   return result.data;
 }
 
@@ -95,6 +103,6 @@ export async function manageTeam(
     data.teamId = teamIdOrName;
     if (name) data.name = name;
   }
-  const result = await callable(data);
+  const result = await mutate(() => callable(data));
   return result.data;
 }

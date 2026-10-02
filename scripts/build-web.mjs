@@ -1,3 +1,4 @@
+import { missingFontAssets } from "./web-assets.mjs";
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -90,9 +91,13 @@ if (!allowPlaceholderConfig) {
   }
 }
 
-const fontDir = resolve("mobile/dist/assets/node_modules");
-if (!statSync(fontDir, { throwIfNoEntry: false })?.isDirectory()) {
-  console.error("Web export is missing bundled font assets.");
+const fontDir = resolve("mobile/dist/assets");
+const assets = statSync(fontDir, { throwIfNoEntry: false })?.isDirectory()
+  ? readdirSync(fontDir, { recursive: true }).filter((name) => typeof name === "string")
+  : [];
+const missingFonts = missingFontAssets(assets);
+if (missingFonts.length) {
+  console.error(`Web export is missing bundled fonts: ${missingFonts.join(", ")}.`);
   process.exit(1);
 }
 

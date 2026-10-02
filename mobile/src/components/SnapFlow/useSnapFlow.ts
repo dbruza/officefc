@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { uploadMatchPhoto } from "@/lib/upload";
 import {
   canUseCamera,
+  releaseMatchPhoto,
   pickMatchPhoto,
   prepareWebImageFile,
   type SelectedMatchPhoto,
@@ -68,6 +69,7 @@ export function useSnapFlow(props: SnapFlowProps) {
   const [step, setStep] = useState<SnapStep>("capture");
   const [phase, setPhase] = useState<SnapPhase>("uploading");
   const [imageUri, setImageUri] = useState<string | null>(null);
+  useEffect(() => () => releaseMatchPhoto(imageUri), [imageUri]);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
   const [error, setError] = useState<string | null>(null);

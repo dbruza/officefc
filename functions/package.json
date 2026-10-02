@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test test/*.test.js",
     "serve": "npm run build && firebase emulators:start --only functions",
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "test:compiled": "node --test test/*.test.js"
   },
   "dependencies": {
     "@sentry/node": "^10.67.0",

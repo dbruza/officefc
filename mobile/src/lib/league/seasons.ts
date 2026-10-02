@@ -1,3 +1,5 @@
+import { mutate } from "../dataCache";
+import { dataCache } from "../dataCache";
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
@@ -23,6 +25,10 @@ function mapSeason(id: string, data: Record<string, unknown>): Season {
 function mapSeasonResult(id: string, get: (field: string) => unknown): SeasonResult {
   return {
     seasonId: id,
+    thirdId: get("thirdId") as string | null | undefined,
+    awards:
+      Number(get("summaryVersion")) >= 1 ? (get("awards") as SeasonResult["awards"]) : undefined,
+    potm: Array.isArray(get("potm")) ? (get("potm") as PotmResult[]) : undefined,
     championId: String(get("championId")),
     runnerUpId: String(get("runnerUpId")),
     premierId: typeof get("premierId") === "string" ? (get("premierId") as string) : null,
@@ -32,27 +38,41 @@ function mapSeasonResult(id: string, get: (field: string) => unknown): SeasonRes
 }
 
 export async function getActiveSeason(): Promise<Season | null> {
-  return timed("getActiveSeason", async () => {
-    const snap = await getDocs(
-      query(collection(db, "seasons"), where("active", "==", true), limit(1)),
-    );
-    const doc = snap.docs[0];
-    if (!doc) return null;
-    return mapSeason(doc.id, doc.data());
-  });
+  return dataCache.read(
+    "season:active",
+    async () => {
+      return timed("getActiveSeason", async () => {
+        const snap = await getDocs(
+          query(collection(db, "seasons"), where("active", "==", true), limit(1)),
+        );
+        const doc = snap.docs[0];
+        if (!doc) return null;
+        return mapSeason(doc.id, doc.data());
+      });
+    },
+    30000,
+  );
 }
 
 export async function getSeasons(): Promise<Season[]> {
-  const snap = await getDocs(collection(db, "seasons"));
-  return snap.docs
-    .map((seasonDoc) => mapSeason(seasonDoc.id, seasonDoc.data()))
-    .sort((a, b) => b.start.getTime() - a.start.getTime());
+  return dataCache.read(
+    "seasons",
+    async () => {
+      const snap = await getDocs(collection(db, "seasons"));
+      return snap.docs
+        .map((seasonDoc) => mapSeason(seasonDoc.id, seasonDoc.data()))
+        .sort((a, b) => b.start.getTime() - a.start.getTime());
+    },
+    30000,
+  );
 }
 
 export async function getSeason(seasonId: string): Promise<Season | null> {
-  const snap = await getDoc(doc(db, "seasons", seasonId));
-  if (!snap.exists()) return null;
-  return mapSeason(snap.id, snap.data());
+  return dataCache.read(`season:${seasonId}`, async () => {
+    const snap = await getDoc(doc(db, "seasons", seasonId));
+    if (!snap.exists()) return null;
+    return mapSeason(snap.id, snap.data());
+  });
 }
 
 export async function getSeasonResult(seasonId: string): Promise<SeasonResult | null> {
@@ -63,10 +83,16 @@ export async function getSeasonResult(seasonId: string): Promise<SeasonResult | 
 
 /** All finalized season results, most recently finalized first. */
 export async function getSeasonResults(): Promise<SeasonResult[]> {
-  const snap = await getDocs(collection(db, "seasonResults"));
-  return snap.docs
-    .map((resultDoc) => mapSeasonResult(resultDoc.id, (field) => resultDoc.get(field)))
-    .sort((a, b) => (b.finalizedAt?.getTime() ?? 0) - (a.finalizedAt?.getTime() ?? 0));
+  return dataCache.read(
+    "seasonResults",
+    async () => {
+      const snap = await getDocs(collection(db, "seasonResults"));
+      return snap.docs
+        .map((resultDoc) => mapSeasonResult(resultDoc.id, (field) => resultDoc.get(field)))
+        .sort((a, b) => (b.finalizedAt?.getTime() ?? 0) - (a.finalizedAt?.getTime() ?? 0));
+    },
+    300000,
+  );
 }
 
 export async function getSeasonPotm(seasonId: string): Promise<PotmResult[]> {
@@ -85,7 +111,7 @@ export async function createSeason(
     { name: string; start: string; end: string },
     { ok: boolean; seasonId: string }
   >(functions, "createSeason");
-  const result = await callable({ name, start, end });
+  const result = await mutate(() => callable({ name, start, end }));
   return result.data;
 }
 
@@ -94,7 +120,7 @@ export async function activateSeason(seasonId: string): Promise<{ seasonId: stri
     functions,
     "activateSeason",
   );
-  const result = await callable({ seasonId });
+  const result = await mutate(() => callable({ seasonId }));
   return result.data;
 }
 
@@ -106,7 +132,7 @@ export async function finalizeSeason(
     { seasonId: string; force?: boolean },
     { ok: boolean; championId: string | null; runnerUpId: string | null; potmCount: number }
   >(functions, "finalizeSeason");
-  const result = await callable({ seasonId, force });
+  const result = await mutate(() => callable({ seasonId, force }));
   return result.data;
 }
 

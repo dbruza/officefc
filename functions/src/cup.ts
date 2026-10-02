@@ -1,3 +1,5 @@
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
+import { instrumentBackground } from "./sentry";
 /**
  * IO layer for the mid-season knockout cup. State lives in ONE document,
  * `seasons/{id}/cup/state` (member-readable via the seasons subtree rules; all writes
@@ -25,7 +27,7 @@ import {
   toStoredRounds,
   type CupBracket,
 } from "./cupRules";
-import { sendPush } from "./notify";
+import { enqueuePushesTx } from "./notify";
 
 const db = getFirestore();
 
@@ -180,41 +182,44 @@ export const forceAdvanceCup = loggedOnCall("forceAdvanceCup", { cors: true }, a
 });
 
 /**
- * Push "wins the cup" to every member once. The status flip to "complete" happens inside
- * the SAME transaction that decided the final tie, so two racing callers (a confirmed
- * result and a force-advance landing together) can't both pass the guard — only the one
- * whose write flipped live→complete sends.
+ * Publish the cup's completed state and all announcement outbox entries atomically.
+ * Replays after a bracket advance resume this step, while announcedAt prevents duplicates.
  */
 async function announceChampionIfComplete(seasonId: string): Promise<void> {
-  const snap = await db.runTransaction(async (tx) => {
-    const ref = cupRef(seasonId);
-    const current = await tx.get(ref);
-    if (!current.exists || current.get("status") !== "live") return null;
+  await db.runTransaction(async (tx) => {
+    const ref = cupRef(seasonId),
+      current = await tx.get(ref);
+    if (!current.exists || current.get("status") !== "live" || current.get("announcedAt")) return;
     const bracket = bracketFromSnap(current.data()!);
     const championId = cupChampion(bracket);
-    if (!championId || !isComplete(bracket)) return null;
-    tx.set(ref, {
-      ...current.data()!,
+    if (!championId || !isComplete(bracket)) return;
+    const champion = await tx.get(db.doc(`profiles/${championId}`));
+    const members = await tx.get(db.collection(`leagues/${LEAGUE_ID}/members`));
+    const name = String(champion.get("displayName") ?? championId);
+    await enqueuePushesTx(
+      tx,
+      members.docs.map((member) => ({
+        uid: member.id,
+        title: "Cup decided",
+        body: `🏆 ${name} wins the cup!`,
+        data: { type: "cup", seasonId },
+      })),
+    );
+    tx.update(ref, {
       status: "complete",
+      announcedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
-    return { championId };
   });
-
-  if (!snap) return;
-  const { championId } = snap;
-  const championProfile = await db.doc(`profiles/${championId}`).get();
-  const championName = String(championProfile.get("displayName") ?? championId);
-  const membersSnap = await db.collection(`leagues/${LEAGUE_ID}/members`).get();
-  await Promise.all(
-    membersSnap.docs.map((doc) =>
-      sendPush(doc.id, "Cup decided", `🏆 ${championName} wins the cup!`, {
-        type: "cup",
-        seasonId,
-      }),
-    ),
-  );
 }
+
+/** Independent retries keep ancillary cup failures out of the league rebuild queue. */
+export const announceCupChampion = onDocumentWritten(
+  { document: "seasons/{seasonId}/cup/state", region: "australia-southeast1", retry: true },
+  instrumentBackground("announceCupChampion", async (event) => {
+    await announceChampionIfComplete(event.params.seasonId);
+  }),
+);
 
 export interface CupMatchInput {
   aId: string;
@@ -243,7 +248,8 @@ export interface CupMatchInput {
  */
 export async function maybeConsumeCupResult(input: CupMatchInput): Promise<void> {
   const pre = await cupRef(input.seasonId).get();
-  if (!pre.exists || pre.get("status") !== "live") return;
+  if (!pre.exists) return;
+  if (pre.get("status") !== "live") return;
 
   const winnerId =
     input.aGoals > input.bGoals ? input.aId : input.bGoals > input.aGoals ? input.bId : null;
@@ -268,7 +274,10 @@ export async function maybeConsumeCupResult(input: CupMatchInput): Promise<void>
     return true;
   });
 
-  if (!applied) return;
+  if (!applied) {
+    await announceChampionIfComplete(input.seasonId);
+    return;
+  }
   logger.info("cup_tie_consumed", {
     seasonId: input.seasonId,
     aId: input.aId,

@@ -1,6 +1,7 @@
+import { migratePendingScheduling } from "./scheduling";
 import * as logger from "firebase-functions/logger";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { LEAGUE_ID } from "./config";
 import { calculateSeason } from "./elo";
@@ -13,7 +14,6 @@ import {
   armAutoConfirm,
   autoConfirmMatch,
   finalizeAutoConfirmedBatch,
-  markSeasonRecalcPending,
   pendingRecalcSeasonIds,
   type AutoConfirmed,
 } from "./matchLifecycle";
@@ -66,7 +66,7 @@ export const weeklySnapshot = onSchedule(
         .where("seasonId", "==", seasonId)
         .where("status", "==", "confirmed")
         .get(),
-      db.collection(`seasons/${seasonId}/snapshots`).get(),
+      db.collection(`seasons/${seasonId}/snapshots`).orderBy("capturedAt", "desc").limit(1).get(),
     ]);
 
     // Finals matches decide the bracket only — exclude them like every other ELO consumer.
@@ -136,6 +136,10 @@ export const sendReminders = onSchedule(
     const pending = await db
       .collection("matches")
       .where("status", "==", "pending_confirmation")
+      .where("reminderSentAt", "==", null)
+      .where("reminderDueAt", "<=", Timestamp.now())
+      .orderBy("reminderDueAt")
+      .limit(100)
       .get();
 
     let sent = 0;
@@ -161,7 +165,9 @@ export const sendReminders = onSchedule(
         await sendPush(
           opponentId,
           "Confirm before it locks in",
-          `A result needs your response — it confirms automatically ${AUTO_CONFIRM_HOURS}h after it was submitted.`,
+          data.finals === true
+            ? "A finals result needs your confirmation or dispute."
+            : `A result needs your response — it confirms automatically ${AUTO_CONFIRM_HOURS}h after it was submitted.`,
           { type: "match_pending", matchId: doc.id },
         );
         await db.doc(`matches/${doc.id}`).update({
@@ -199,6 +205,7 @@ export const autoConfirmStaleMatches = onSchedule(
   // read-modify-write over shared playerStats/h2h docs including a delete pass.
   { schedule: "*/10 * * * *", timeoutSeconds: 540, maxInstances: 1 },
   instrumentBackground("autoConfirmStaleMatches", async () => {
+    await migratePendingScheduling();
     const now = Date.now();
     const cutoff = now - AUTO_CONFIRM_HOURS * 60 * 60 * 1000;
     const floor = now - AUTO_CONFIRM_MAX_AGE_HOURS * 60 * 60 * 1000;
@@ -235,6 +242,10 @@ export const autoConfirmStaleMatches = onSchedule(
       .collection("matches")
       .where("status", "==", "pending_confirmation")
       .where("seasonId", "==", seasonId)
+      .where("autoConfirmDueAt", ">=", Timestamp.fromMillis(floor + AUTO_CONFIRM_HOURS * 3600000))
+      .where("autoConfirmDueAt", "<=", Timestamp.fromMillis(now))
+      .orderBy("autoConfirmDueAt")
+      .limit(AUTO_CONFIRM_BATCH_LIMIT + 1)
       .get();
 
     // Cheap pre-filter with the same predicate the transaction re-applies; the transaction is
@@ -260,7 +271,6 @@ export const autoConfirmStaleMatches = onSchedule(
     // Mark the season before flipping anything. A flip and its rebuild can't share a
     // transaction, so without this marker a crash in between would leave a match confirmed but
     // missing from the tables, and invisible to the next run — it is no longer pending.
-    if (eligible.length > 0) await markSeasonRecalcPending([seasonId]);
 
     const batch: AutoConfirmed[] = [];
     let flipFailed = 0;
@@ -282,10 +292,7 @@ export const autoConfirmStaleMatches = onSchedule(
 
     // Anything we marked has to be cleared by this run, even if every flip lost its race and the
     // batch came back empty — otherwise the season stays pending and is re-swept forever.
-    const outcome = await finalizeAutoConfirmedBatch(
-      batch,
-      eligible.length > 0 ? [...heal, seasonId] : heal,
-    );
+    const outcome = await finalizeAutoConfirmedBatch(batch, heal);
     // `eligible` vs `confirmed` distinguishes a quiet run from one where every transaction is
     // failing — both would otherwise log `confirmed: 0`.
     if (eligible.length > 0 && batch.length === 0) {
@@ -311,61 +318,78 @@ export const autoConfirmStaleMatches = onSchedule(
  * Runs daily at 03:00 UTC; failed object deletions remain marked for the next run.
  */
 export const cleanupAbandonedDrafts = onSchedule(
-  "0 3 * * *",
+  { schedule: "0 3 * * *", timeoutSeconds: 540, maxInstances: 1, concurrency: 1 },
   instrumentBackground("cleanupAbandonedDrafts", async () => {
     const cutoffMillis = Date.now() - DRAFT_RETENTION_HOURS * 60 * 60 * 1000;
-    const drafts = await db.collection("matchDrafts").where("submitted", "==", false).get();
-
     let deleted = 0;
-    for (const snapshot of drafts.docs) {
-      const data = snapshot.data() as DraftState & { createdAt?: unknown };
-      if (
-        !isStaleUnsubmittedDraft({
-          createdAtMillis: dateMillis(data.createdAt),
-          submitted: data.submitted,
-          cutoffMillis,
-        })
-      ) {
-        continue;
-      }
+    let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+    const started = Date.now();
+    for (let page = 0; page < 5 && Date.now() - started < 480000; page++) {
+      let query = db
+        .collection("matchDrafts")
+        .where("submitted", "==", false)
+        .where("createdAt", "<=", Timestamp.fromMillis(cutoffMillis))
+        .orderBy("createdAt")
+        .limit(100);
 
-      const claimed = await db.runTransaction(async (tx) => {
-        const current = await tx.get(snapshot.ref);
-        if (!current.exists) return null;
-        const currentData = current.data() as DraftState & { createdAt?: unknown };
-        if (
-          !isStaleUnsubmittedDraft({
-            createdAtMillis: dateMillis(currentData.createdAt),
-            submitted: currentData.submitted,
-            cutoffMillis,
-          })
-        ) {
-          return null;
+      if (cursor) query = query.startAfter(cursor);
+      const drafts = await query.get();
+      for (const snapshot of drafts.docs) {
+        try {
+          const data = snapshot.data() as DraftState & { createdAt?: unknown };
+          if (
+            !isStaleUnsubmittedDraft({
+              createdAtMillis: dateMillis(data.createdAt),
+              submitted: data.submitted,
+              cutoffMillis,
+            })
+          ) {
+            continue;
+          }
+
+          const claimed = await db.runTransaction(async (tx) => {
+            const current = await tx.get(snapshot.ref);
+            if (!current.exists) return null;
+            const currentData = current.data() as DraftState & { createdAt?: unknown };
+            if (
+              !isStaleUnsubmittedDraft({
+                createdAtMillis: dateMillis(currentData.createdAt),
+                submitted: currentData.submitted,
+                cutoffMillis,
+              })
+            ) {
+              return null;
+            }
+            tx.update(snapshot.ref, {
+              status: "abandoning",
+              cleanupStartedAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+            return typeof currentData.storagePath === "string" ? currentData.storagePath : "";
+          });
+          if (claimed === null) continue;
+
+          if (claimed) {
+            const file = storage.bucket().file(claimed);
+            const [exists] = await file.exists();
+            if (exists) await file.delete();
+          }
+
+          await db.runTransaction(async (tx) => {
+            const current = await tx.get(snapshot.ref);
+            if (!current.exists) return;
+            const currentData = current.data() as DraftState;
+            if (currentData.submitted !== true && currentData.status === "abandoning") {
+              tx.delete(snapshot.ref);
+            }
+          });
+          deleted++;
+        } catch (error) {
+          logger.error("draft_cleanup_failed", { draftId: snapshot.id, error: String(error) });
         }
-        tx.update(snapshot.ref, {
-          status: "abandoning",
-          cleanupStartedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-        return typeof currentData.storagePath === "string" ? currentData.storagePath : "";
-      });
-      if (claimed === null) continue;
-
-      if (claimed) {
-        const file = storage.bucket().file(claimed);
-        const [exists] = await file.exists();
-        if (exists) await file.delete();
       }
-
-      await db.runTransaction(async (tx) => {
-        const current = await tx.get(snapshot.ref);
-        if (!current.exists) return;
-        const currentData = current.data() as DraftState;
-        if (currentData.submitted !== true && currentData.status === "abandoning") {
-          tx.delete(snapshot.ref);
-        }
-      });
-      deleted++;
+      if (drafts.size < 100) break;
+      cursor = drafts.docs.at(-1);
     }
     logger.info("stale_drafts_deleted", { deleted });
   }),

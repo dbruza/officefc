@@ -29,7 +29,7 @@ export function MaintenanceSection({ onDone }: { onDone?: () => void }) {
         try {
           const result = await rebuildLeagueReadModels();
           toast.success(
-            `Ratings recalculated: ${result.matchCount} matches across ${result.seasonCount} season${
+            `${result.queued ? "Recalculation queued" : "Ratings recalculated"}: ${result.matchCount} matches across ${result.seasonCount} season${
               result.seasonCount === 1 ? "" : "s"
             }`,
           );
