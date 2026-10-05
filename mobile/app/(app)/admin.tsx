@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Button,
   Card,
@@ -47,6 +47,7 @@ import { SeasonsSection } from "@/screens/admin/SeasonsSection";
 import { TeamsSection } from "@/screens/admin/TeamsSection";
 import { PendingSection } from "@/screens/admin/PendingSection";
 import { MaintenanceSection } from "@/screens/admin/MaintenanceSection";
+import { SafetySection } from "@/screens/admin/SafetySection";
 import {
   formatDay,
   loadAdminSeasons,
@@ -56,7 +57,7 @@ import {
   type SeasonActions,
 } from "@/screens/admin/seasonActions";
 
-type Section = "seasons" | "pending" | "teams" | "maintenance";
+type Section = "seasons" | "pending" | "teams" | "safety" | "maintenance";
 
 export default function AdminScreen() {
   const { membership } = useAuth();
@@ -98,8 +99,12 @@ function AdminDashboard() {
   // Cup for the active season (undefined = not loaded)
   const [cup, setCup] = useState<CupState | null | undefined>(undefined);
 
-  const [section, setSection] = useState<Section>("seasons");
-  const userPicked = useRef(false);
+  // A report push deep-links to ?section=safety.
+  const params = useLocalSearchParams<{ section?: string }>();
+  const [section, setSection] = useState<Section>(
+    params.section === "safety" ? "safety" : "seasons",
+  );
+  const userPicked = useRef(params.section === "safety");
   const [createRequested, setCreateRequested] = useState(false);
   const createHandled = useCallback(() => setCreateRequested(false), []);
   const [refreshing, setRefreshing] = useState(false);
@@ -210,7 +215,7 @@ function AdminDashboard() {
       header={
         <ScreenHeader
           title="Admin"
-          subtitle="Seasons, results, teams and invites"
+          subtitle="Seasons, results, teams, safety and invites"
           onRefresh={() => void refreshAll()}
           refreshing={refreshing}
         />
@@ -266,6 +271,7 @@ function AdminDashboard() {
             badge: pendingCount || undefined,
           },
           { value: "teams", label: "Teams", icon: isPhone ? undefined : "jersey" },
+          { value: "safety", label: "Safety", icon: isPhone ? undefined : "shield" },
           {
             value: "maintenance",
             label: isPhone ? "Tools" : "Maintenance",
@@ -296,6 +302,7 @@ function AdminDashboard() {
           />
         ) : null}
         {section === "teams" ? <TeamsSection /> : null}
+        {section === "safety" ? <SafetySection /> : null}
         {section === "maintenance" ? <MaintenanceSection onDone={() => void refreshAll()} /> : null}
       </View>
     </Page>

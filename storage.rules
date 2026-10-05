@@ -11,9 +11,12 @@ service firebase.storage {
     function signedIn() {
       return request.auth != null;
     }
+    // Removed members and account-deletion tombstones keep a member doc with a status.
+    // One cross-service read; get() on a missing doc errors, which denies.
     function isMember() {
       return signedIn()
-        && firestore.exists(/databases/(default)/documents/leagues/office/members/$(request.auth.uid));
+        && firestore.get(/databases/(default)/documents/leagues/office/members/$(request.auth.uid))
+          .data.get('status', 'active') == 'active';
     }
     function isImage() {
       return request.resource.contentType.matches('image/.*');

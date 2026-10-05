@@ -120,13 +120,16 @@ function RootNavigator() {
   const router = useRouter();
   const pendingRoute = useRef<string | null>(null);
   const ready = !initializing && !loadingProfile;
+  // Privacy, terms and support are open to everyone at every stage: never redirected, and
+  // shown without waiting on auth (a signed-out web visitor may land straight on one).
+  const isPublic = (segments as string[])[0] === "(public)";
 
   useEffect(() => {
     setLogRoute(segments.join("/") || "/");
   }, [segments]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || isPublic) return;
     // A failed bootstrap read says nothing about onboarding stage — hold position and let
     // the user retry rather than bouncing an established user into profile-setup/join.
     if (profileReadFailed) return;
@@ -162,13 +165,25 @@ function RootNavigator() {
       pendingRoute.current = null;
       router.replace((target ?? "/(app)/(tabs)") as Href);
     }
-  }, [ready, profileReadFailed, user, emailVerified, profile, membership, segments, router]);
+  }, [
+    ready,
+    isPublic,
+    profileReadFailed,
+    user,
+    emailVerified,
+    profile,
+    membership,
+    segments,
+    router,
+  ]);
 
-  if (!ready) {
-    return <BootSplash />;
-  }
-  if (user && profileReadFailed) {
-    return <BootstrapFailed onRetry={() => void refresh()} />;
+  if (!isPublic) {
+    if (!ready) {
+      return <BootSplash />;
+    }
+    if (user && profileReadFailed) {
+      return <BootstrapFailed onRetry={() => void refresh()} />;
+    }
   }
   return (
     <LogErrorBoundary fallback={<CrashFallback />}>

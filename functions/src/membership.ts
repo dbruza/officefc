@@ -11,6 +11,7 @@ import {
 } from "./utils";
 import { seasonJoinRejection } from "./membershipRules";
 import { seedTeamCatalogue } from "./teams";
+import { isActiveMember } from "./members";
 
 type Role = "admin" | "member";
 
@@ -63,6 +64,12 @@ export const redeemInvite = loggedOnCall("redeemInvite", { cors: true }, async (
 
   const existing = await memberRef.get();
   if (existing.exists) {
+    // A removed member keeps their doc, so a join code can't quietly re-admit them.
+    if (!isActiveMember(existing))
+      throw new HttpsError(
+        "permission-denied",
+        "You've been removed from this league. Contact your league admin if you think this is a mistake.",
+      );
     return { ok: true, role: existing.get("role") as Role };
   }
 

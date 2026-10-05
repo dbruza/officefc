@@ -747,3 +747,100 @@ test("notification and rebuild outboxes remain private to functions", async () =
     );
   }
 });
+
+// ---- App Store safety: removed members, blocks, profile validation, private settings ----
+
+const manualMatch = (id, bId = "dave") =>
+  setDoc(doc(member(), `matches/${id}`), {
+    seasonId: "s1",
+    submittedBy: "alice",
+    aId: "alice",
+    bId,
+    aTeamId: "team-a",
+    bTeamId: "team-b",
+    aTeam: "Crimson Albion",
+    bTeam: "Royal Vega",
+    aGoals: 1,
+    bGoals: 0,
+    status: "pending_confirmation",
+    source: "manual",
+    date: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  });
+
+const seed = (path, data) =>
+  testEnv.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), path), data));
+
+test("a removed member loses league access but can still read their own membership", async () => {
+  await seed("leagues/office/members/alice", { role: "member", status: "removed" });
+  await assertFails(getDoc(doc(member(), "matches/m1")));
+  await assertFails(getDoc(doc(member(), "profiles/bob")));
+  await assertSucceeds(getDoc(doc(member(), "leagues/office/members/alice")));
+  await assertFails(manualMatch("removed-1"));
+});
+
+test("a removed member cannot upload match photos", async () => {
+  await seed("leagues/office/members/alice", { role: "member", status: "removed" });
+  const photo = testEnv
+    .authenticatedContext("alice")
+    .storage()
+    .ref("match-photos/alice/draft-9/source.jpg");
+  await assertFails(photo.put(new Uint8Array([1, 2, 3]), { contentType: "image/jpeg" }));
+});
+
+test("a removed admin loses admin rights", async () => {
+  await seed("leagues/office/members/dave", { role: "admin", status: "removed" });
+  await seed("reports/r1", { reporterId: "alice", targetId: "bob", status: "open" });
+  await assertFails(getDoc(doc(admin(), "reports/r1")));
+});
+
+test("matches can't be logged against removed or deleted players", async () => {
+  await seed("leagues/office/members/bob", { role: "member", status: "deleted" });
+  await assertFails(manualMatch("vs-deleted", "bob"));
+  await seed("leagues/office/members/bob", { role: "member", status: "removed" });
+  await assertFails(manualMatch("vs-removed", "bob"));
+  await assertSucceeds(manualMatch("vs-active", "dave"));
+});
+
+test("block lists are readable only by their owner and written only by functions", async () => {
+  await seed("userBlocks/alice", { blocked: ["bob"] });
+  await assertSucceeds(getDoc(doc(member(), "userBlocks/alice")));
+  await assertFails(getDoc(doc(admin(), "userBlocks/alice")));
+  await assertFails(setDoc(doc(member(), "userBlocks/alice"), { blocked: [] }));
+});
+
+test("reports are admin-readable and function-written", async () => {
+  await seed("reports/r1", { reporterId: "alice", targetId: "bob", status: "open" });
+  await assertSucceeds(getDoc(doc(admin(), "reports/r1")));
+  await assertFails(getDoc(doc(member(), "reports/r1")));
+  await assertFails(setDoc(doc(member(), "reports/r2"), { reporterId: "alice", targetId: "bob" }));
+  await assertFails(updateDoc(doc(admin(), "reports/r1"), { status: "dismissed" }));
+});
+
+test("profile writes are limited to name, handle, jersey and colour, and validated", async () => {
+  const own = doc(member(), "profiles/alice");
+  await assertSucceeds(updateDoc(own, { displayName: "Alice B", updatedAt: serverTimestamp() }));
+  await assertFails(updateDoc(own, { displayName: "A" }));
+  await assertFails(updateDoc(own, { displayName: "x".repeat(41) }));
+  await assertFails(updateDoc(own, { handle: "Bad Handle" }));
+  await assertFails(updateDoc(own, { verified: true }));
+  await assertFails(updateDoc(own, { role: "admin" }));
+  await assertFails(updateDoc(doc(member(), "profiles/bob"), { displayName: "Bobby" }));
+  const fresh = doc(testEnv.authenticatedContext("nora").firestore(), "profiles/nora");
+  await assertFails(setDoc(fresh, { displayName: "Nora", handle: "nora", extra: 1 }));
+});
+
+test("privacy settings are owner-only with a fixed shape", async () => {
+  const own = doc(member(), "privacySettings/alice");
+  await assertSucceeds(
+    setDoc(own, { aiPhotoReading: true, aiPhotoReadingUpdatedAt: serverTimestamp() }),
+  );
+  await assertSucceeds(getDoc(own));
+  await assertFails(setDoc(own, { aiPhotoReading: "yes" }));
+  await assertFails(setDoc(own, { aiPhotoReading: true, other: 1 }));
+  await assertFails(getDoc(doc(admin(), "privacySettings/alice")));
+  // Before joining (sign-up), terms acceptance can still be recorded.
+  await assertSucceeds(
+    setDoc(doc(outsider(), "privacySettings/nora"), { termsAcceptedAt: serverTimestamp() }),
+  );
+});

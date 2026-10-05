@@ -1,10 +1,12 @@
 /**
- * State machine for the photo flow: pick/drop/paste an image → upload + AI extraction
- * (a staged checklist) → which side you were → opponent → teams → verify & submit → done.
- * Every failure lands back on a step with friendly copy; none of them disables the flow.
+ * State machine for the photo flow: AI consent (until allowed) → pick/drop/paste an image →
+ * upload + AI extraction (a staged checklist) → which side you were → opponent → teams →
+ * verify & submit → done. Every failure lands back on a step with friendly copy; none of
+ * them disables the flow.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { logger } from "@/lib/logger";
+import { getAiPhotoConsent, setAiPhotoConsent } from "@/lib/privacySettings";
 import { uploadMatchPhoto } from "@/lib/upload";
 import {
   canUseCamera,
@@ -37,6 +39,19 @@ function errorContext(err: unknown): { message: string; code: string | null } {
   return { message: err instanceof Error ? err.message : String(err), code };
 }
 
+/** extractMatchStats refused because AI photo reading isn't allowed (functions aiConsent.ts). */
+function needsAiConsent(err: unknown): boolean {
+  const details =
+    err && typeof err === "object" && "details" in err
+      ? (err as { details: unknown }).details
+      : null;
+  return (
+    !!details &&
+    typeof details === "object" &&
+    (details as { reason?: unknown }).reason === "ai_photo_consent_required"
+  );
+}
+
 export function useSnapFlow(props: SnapFlowProps) {
   const {
     uid,
@@ -66,7 +81,12 @@ export function useSnapFlow(props: SnapFlowProps) {
   // (plus drag-and-drop and paste), whatever its window width.
   const [showCameraOption] = useState(canUseCamera);
 
-  const [step, setStep] = useState<SnapStep>("capture");
+  // Photos only go to the AI after an explicit opt-in, so the flow opens on "consent" while
+  // that's looked up and moves on to capture once it's known to be allowed. A failed lookup
+  // asks again rather than assuming yes.
+  const [step, setStep] = useState<SnapStep>("consent");
+  const [checkingConsent, setCheckingConsent] = useState(true);
+  const [savingConsent, setSavingConsent] = useState(false);
   const [phase, setPhase] = useState<SnapPhase>("uploading");
   const [imageUri, setImageUri] = useState<string | null>(null);
   useEffect(() => () => releaseMatchPhoto(imageUri), [imageUri]);
@@ -101,6 +121,23 @@ export function useSnapFlow(props: SnapFlowProps) {
   const [scoreConfirmed, setScoreConfirmed] = useState(false);
   const activeDraftId = useRef<string | null>(null);
   const cancelRequested = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAiPhotoConsent(uid)
+      .catch((err) => {
+        logger.warn("snap_consent_lookup_failed", errorContext(err));
+        return false;
+      })
+      .then((allowed) => {
+        if (cancelled) return;
+        setCheckingConsent(false);
+        if (allowed) setStep("capture");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
 
   const ratingByUid = useMemo(() => new Map(standings.map((s) => [s.uid, s.elo])), [standings]);
   const gamesByUid = useMemo(
@@ -244,6 +281,20 @@ export function useSnapFlow(props: SnapFlowProps) {
     }
   }
 
+  async function allowAiPhotos() {
+    setSavingConsent(true);
+    setError(null);
+    try {
+      await setAiPhotoConsent(uid, true);
+      setStep("capture");
+    } catch (err) {
+      logger.error("snap_consent_save_failed", errorContext(err));
+      setError(friendlyError(err, "Couldn't save that. Check your connection and try again."));
+    } finally {
+      setSavingConsent(false);
+    }
+  }
+
   /** Shared tail of every way in (picker, camera, drop, paste). */
   async function handlePicked(read: () => Promise<SelectedMatchPhoto | null>, source: string) {
     cancelRequested.current = false;
@@ -335,6 +386,17 @@ export function useSnapFlow(props: SnapFlowProps) {
       if (cancelRequested.current) return;
       setStep("side");
     } catch (err) {
+      if (needsAiConsent(err)) {
+        // Switched off since this flow checked (e.g. in Settings on another device). The
+        // server already discarded the upload, so ask again instead of a dead-end error.
+        logger.warn("snap_extract_rejected", { reason: "ai_consent_required", draftId: id });
+        activeDraftId.current = null;
+        setDraftId(null);
+        setImageUri(null);
+        setError("AI photo reading is turned off. Allow it to read your photo, or log manually.");
+        setStep("consent");
+        return;
+      }
       logger.error("snap_extract_failed", { ...errorContext(err), draftId: id });
       setError(
         friendlyError(err, "The AI couldn't read that photo just now. Try again, or log manually."),
@@ -446,6 +508,9 @@ export function useSnapFlow(props: SnapFlowProps) {
   }
 
   return {
+    checkingConsent,
+    savingConsent,
+    allowAiPhotos,
     showCameraOption,
     error,
     clearError: () => setError(null),

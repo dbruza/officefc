@@ -16,6 +16,18 @@ export { redeemInvite, ensureLeagueSetup } from "./membership";
 // Season join codes
 export { getSeasonJoinCode, rotateSeasonJoinCode } from "./joinCodes";
 
+// In-app account deletion
+export { deleteAccount } from "./account";
+
+// Player safety: reports, blocks, admin moderation, offensive-name screen
+export {
+  reportPlayer,
+  setPlayerBlocked,
+  resolveReport,
+  moderateMember,
+  screenProfileName,
+} from "./safety";
+
 // Team catalogue sync
 export { seedTeams } from "./teams";
 

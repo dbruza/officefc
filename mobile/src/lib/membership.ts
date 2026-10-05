@@ -5,15 +5,18 @@ import { httpsCallable } from "firebase/functions";
 import { db, functions } from "./firebase";
 import { LEAGUE_ID } from "./constants";
 import type { Role } from "./profiles";
+import { memberStatusOf } from "../../../functions/src/models/safety";
 
 export interface Membership {
   uid: string;
   role: Role;
 }
 
+/** Null until joined — and for a removed member, whose doc stays but who has no access. */
 export async function getMembership(uid: string): Promise<Membership | null> {
   const snap = await getDoc(doc(db, "leagues", LEAGUE_ID, "members", uid));
-  return snap.exists() ? { uid, role: snap.data().role as Role } : null;
+  if (!snap.exists() || memberStatusOf(snap.data()) !== "active") return null;
+  return { uid, role: snap.data().role as Role };
 }
 
 export interface RedeemResult {

@@ -1,10 +1,12 @@
 /**
- * Log a match from a photo of the full-time stats screen: upload → AI extraction →
- * side → opponent → teams → verify & submit. See useSnapFlow for the state machine.
+ * Log a match from a photo of the full-time stats screen: AI consent (until allowed) →
+ * upload → AI extraction → side → opponent → teams → verify & submit. See useSnapFlow for
+ * the state machine.
  */
 import { useSnapFlow } from "./useSnapFlow";
 import {
   CaptureStep,
+  ConsentStep,
   DoneStep,
   OpponentStep,
   ProcessingStep,
@@ -18,6 +20,8 @@ export function SnapFlow(props: SnapFlowProps) {
   const flow = useSnapFlow(props);
 
   switch (flow.step) {
+    case "consent":
+      return <ConsentStep flow={flow} modeSwitch={props.modeSwitch} />;
     case "capture":
       return <CaptureStep flow={flow} modeSwitch={props.modeSwitch} />;
     case "processing":

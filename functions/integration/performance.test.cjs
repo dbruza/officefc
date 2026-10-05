@@ -218,7 +218,7 @@ test("analysis reads current bounded summaries without fabricating a pre-match r
   assert.equal(context.headToHead.aWins, 0);
   assert.equal(context.headToHead.bWins, 2);
   assert.equal(context.headToHead.recent[0].score, "1-3");
-  assert.equal(context.mvpName, null);
+  assert.equal(context.mvpSide, null);
   assert.deepEqual(Object.keys(context.seasonForm).sort(), ["a", "b"]);
 });
 

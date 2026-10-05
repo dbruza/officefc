@@ -18,6 +18,7 @@ import {
   type AutoConfirmed,
 } from "./matchLifecycle";
 import { canAutoConfirm, matchCreatedMillis } from "./matchRules";
+import { activeMemberIds } from "./members";
 
 const db = getFirestore();
 const storage = getStorage();
@@ -78,7 +79,7 @@ export const weeklySnapshot = onSchedule(
     const premierId = active.docs[0].get("reigningPremierId");
     const result = calculateSeason(
       matches,
-      members.docs.map((s) => s.id),
+      activeMemberIds(members.docs),
       dateMillis(active.docs[0].get("start")),
       { premierId: typeof premierId === "string" ? premierId : null },
     );

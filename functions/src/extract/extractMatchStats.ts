@@ -1,4 +1,5 @@
 import { HttpsError } from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
 import { loggedOnCall } from "../logging";
 import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
@@ -6,6 +7,7 @@ import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "../auth";
 import { extractMatchFromImage } from "./core/extract.mjs";
 import { DEFAULT_MODEL } from "./core/schema.mjs";
+import { aiPhotoConsentRequired, hasAiPhotoConsent } from "./aiConsent";
 import {
   asHttpsError,
   assertValidDraftId,
@@ -92,6 +94,23 @@ function isImageType(contentType: string | undefined): boolean {
   return !!contentType && ALLOWED_TYPES.includes(contentType);
 }
 
+/**
+ * A photo refused for missing consent is never extracted or submitted, and with no draft doc
+ * the daily cleanup would never find it, so delete the upload now. Best effort: the refusal
+ * itself must still reach the player.
+ */
+async function discardUnclaimedUpload(draftId: string, storagePath: string): Promise<void> {
+  try {
+    const draft = await db.doc(`matchDrafts/${draftId}`).get();
+    if (draft.exists) return; // A claimed draft is cleaned up with its doc.
+    const file = storage.bucket().file(storagePath);
+    const [exists] = await file.exists();
+    if (exists) await file.delete();
+  } catch (error) {
+    logger.warn("consent_upload_discard_failed", { draftId, error: String(error) });
+  }
+}
+
 export const extractMatchStats = loggedOnCall(
   "extractMatchStats",
   { cors: true, secrets: [OPENROUTER_API_KEY], timeoutSeconds: 120 },
@@ -116,6 +135,14 @@ export const extractMatchStats = loggedOnCall(
       throw error;
     }
     validateStoragePath(uid, draftId, storagePath);
+
+    // No photo reaches the AI model without the player's explicit opt-in. Checked before the
+    // draft claim and rate limit, so a refusal leaves no draft and costs no extraction slot.
+    const privacy = await db.doc(`privacySettings/${uid}`).get();
+    if (!hasAiPhotoConsent(privacy.data())) {
+      await discardUnclaimedUpload(draftId, storagePath);
+      throw aiPhotoConsentRequired();
+    }
 
     const draftRef = db.doc(`matchDrafts/${draftId}`);
     const matchRef = db.doc(`matches/${draftId}`);

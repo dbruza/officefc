@@ -9,6 +9,8 @@ import { modelVersion } from "../rebuildQueue";
  * each match is analysed at most once. Free models rotate and rate-limit, so the callable
  * walks a fallback CHAIN and, if every model fails, still returns a deterministic
  * analysis derived locally from the same numbers — the card never shows an error state.
+ * Player names (and uids) never reach the model: the prompt calls them "Player A" / "Player B"
+ * and restorePlayerNames puts the first names back into the answer before it is stored.
  */
 import { HttpsError } from "firebase-functions/v2/https";
 import { loggedOnCall } from "../logging";
@@ -16,7 +18,12 @@ import { defineSecret } from "firebase-functions/params";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { requireAuth, assertMember } from "../auth";
 import { callWithFallbackChain } from "./core/openrouter.mjs";
-import { SYSTEM_PROMPT, buildUserPrompt, parseAnalysis } from "./core/prompt.mjs";
+import {
+  SYSTEM_PROMPT,
+  buildUserPrompt,
+  parseAnalysis,
+  restorePlayerNames,
+} from "./core/prompt.mjs";
 import { fallbackAnalysis } from "./core/fallback.mjs";
 
 const OPENROUTER_API_KEY = defineSecret("OPENROUTER_API_KEY");
@@ -90,7 +97,8 @@ export interface AnalysisContext {
     recent: Array<{ score: string; dateLabel?: string }>;
   } | null;
   h2hNames: { a: string; b: string } | null;
-  mvpName: string | null;
+  /** Which player won the man-of-the-match vote (a side, not a name: the prompt is name-free). */
+  mvpSide: "a" | "b" | null;
 }
 
 async function checkRateLimit(uid: string): Promise<void> {
@@ -142,8 +150,7 @@ export async function gatherAnalysisContext(
     return typeof name === "string" && name ? name.split(" ")[0] : uid;
   };
   const leader = votes.get("leaderId");
-  const mvpName =
-    leader === aId ? nameOf(aId, aProfile) : leader === bId ? nameOf(bId, bProfile) : null;
+  const mvpSide = leader === aId ? "a" : leader === bId ? "b" : null;
   const seasonForm: Record<string, FormRow> = {};
   if (standingsDocs.length) {
     for (const doc of standingsDocs.filter((row) => row.exists)) {
@@ -251,7 +258,7 @@ export async function gatherAnalysisContext(
           }
         : null,
     h2hNames: { a: nameA, b: nameB },
-    mvpName,
+    mvpSide,
   };
 }
 
@@ -299,7 +306,10 @@ export const analyzeMatch = loggedOnCall(
           requestOpts: { systemPrompt: SYSTEM_PROMPT, userPrompt: buildUserPrompt(ctx) },
           validate: parseAnalysis,
         });
-        analysis = result.content as ReturnType<typeof parseAnalysis>;
+        analysis = restorePlayerNames(result.content as ReturnType<typeof parseAnalysis>, {
+          a: ctx.playerA.name,
+          b: ctx.playerB.name,
+        });
         model = result.model;
       } catch (error) {
         console.warn(

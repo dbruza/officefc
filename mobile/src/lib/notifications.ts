@@ -76,6 +76,8 @@ export function resolveNotificationRoute(data: Record<string, string>): Href | n
       return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
     case "match_disputed":
       return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
+    case "report":
+      return "/(app)/admin?section=safety" as Href;
     default:
       return "/(app)/(tabs)";
   }

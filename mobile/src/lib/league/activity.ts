@@ -2,6 +2,7 @@ import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { db } from "../firebase";
 import { timed } from "../logger";
 import { asNullableDate } from "./firestoreMap";
+import { getBlockedIds } from "./players";
 import type { ActivityEvent, ActivityType } from "./types";
 
 const ACTIVITY_TYPES: ActivityType[] = [
@@ -34,14 +35,19 @@ function mapActivity(id: string, data: Record<string, unknown>): ActivityEvent |
   };
 }
 
-/** Most recent league activity, newest first. Single-field order — no composite index. */
+/**
+ * Most recent league activity, newest first. Single-field order — no composite index.
+ * Events involving a player the viewer blocked are dropped.
+ */
 export async function getRecentActivity(max = 20): Promise<ActivityEvent[]> {
   return timed("getRecentActivity", async () => {
-    const snap = await getDocs(
-      query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(max)),
-    );
+    const [snap, blocked] = await Promise.all([
+      getDocs(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(max))),
+      getBlockedIds(),
+    ]);
     return snap.docs
       .map((doc) => mapActivity(doc.id, doc.data()))
-      .filter((event): event is ActivityEvent => event !== null);
+      .filter((event): event is ActivityEvent => event !== null)
+      .filter((event) => !event.actorIds.some((id) => blocked.has(id)));
   });
 }

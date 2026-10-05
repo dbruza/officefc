@@ -14,6 +14,7 @@ import {
 } from "./draftSecurity";
 import { fieldsEdited } from "./extractionAudit";
 import { checkScoreConsistency } from "./core/statsCheck.mjs";
+import { BLOCKED_MATCH_MESSAGE, isActiveMember, isBlockedBetween } from "../members";
 
 const db = getFirestore();
 
@@ -121,6 +122,7 @@ export const submitAiAssistedMatch = loggedOnCall(
       const myTeamSnap = await tx.get(myTeamRef);
       const opponentTeamSnap = await tx.get(opponentTeamRef);
       const fixtureSnap = fixtureId ? await tx.get(db.doc(`fixtures/${fixtureId}`)) : null;
+      const blocked = await isBlockedBetween(uid, opponentId, tx);
       const draft = draftSnap.exists
         ? (draftSnap.data() as DraftState & Record<string, unknown>)
         : null;
@@ -137,7 +139,9 @@ export const submitAiAssistedMatch = loggedOnCall(
 
       if (!seasonSnap.exists || !seasonSnap.get("active"))
         throw new HttpsError("failed-precondition", "No active season.");
-      if (!memberSnap.exists) throw new HttpsError("invalid-argument", "Opponent not a member.");
+      if (!isActiveMember(memberSnap))
+        throw new HttpsError("invalid-argument", "Opponent not a member.");
+      if (blocked) throw new HttpsError("failed-precondition", BLOCKED_MATCH_MESSAGE);
       // A dealt fixture pins both teams (checked below), so it stays playable after a
       // catalogue sync retires them.
       const pinnedByFixture = fixtureSnap !== null;

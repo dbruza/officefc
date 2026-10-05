@@ -55,6 +55,7 @@ import {
   getProfileSummary,
   getStandings,
   getTeams,
+  canPlayAgainst,
   previewElo,
   submitFinalsMatch,
   submitFixtureMatch,
@@ -147,7 +148,7 @@ async function loadLeague(uid: string): Promise<LeagueData> {
     : [[], null];
   return {
     season,
-    players: roster.filter((player) => player.id !== uid),
+    players: roster.filter((player) => player.id !== uid && canPlayAgainst(player)),
     teams,
     standings,
     bracket,

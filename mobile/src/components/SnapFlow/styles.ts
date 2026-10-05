@@ -14,6 +14,11 @@ export const styles = StyleSheet.create({
   modeSwitch: { marginTop: spacing.md, alignItems: "flex-start" },
   stepTitle: { marginBottom: spacing.sm },
   lede: { lineHeight: 19, marginBottom: spacing.lg },
+  // Consent
+  consentLoading: { alignItems: "center", paddingTop: spacing.x4 },
+  consentPoints: { gap: spacing.lg, marginTop: spacing.x2 },
+  consentPoint: { flexDirection: "row", gap: spacing.md },
+  policyLink: { alignSelf: "center", marginTop: spacing.lg, paddingVertical: spacing.xs },
   // Capture
   captureHero: { alignItems: "center", paddingTop: spacing.x2 },
   captureIcon: {

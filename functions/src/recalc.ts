@@ -8,6 +8,7 @@ import { LEAGUE_ID } from "./config";
 import { calculateSeason } from "./elo";
 import { deriveLeagueStats, type ConfirmedMatchInput } from "./stats";
 import { dateMillis, seasonMatchInputsWithTeams } from "./utils";
+import { activeMemberIds } from "./members";
 
 /**
  * Rebuild a season's ELO, standings, and eloHistory from its confirmed matches.
@@ -37,7 +38,7 @@ export async function recalcSeasonElo(seasonId: string, lease: RebuildLease): Pr
   const premierId = season.get("reigningPremierId");
   const result = calculateSeason(
     matches,
-    members.docs.map((snap) => snap.id),
+    activeMemberIds(members.docs),
     dateMillis(season.get("start")),
     { premierId: typeof premierId === "string" ? premierId : null },
   );
@@ -165,10 +166,7 @@ export async function recalcLeagueStats(lease: RebuildLease): Promise<void> {
         dateMillis: dateMillis(data.date ?? data.confirmedAt ?? data.createdAt),
       };
     });
-  const result = deriveLeagueStats(
-    matches,
-    members.docs.map((snap) => snap.id),
-  );
+  const result = deriveLeagueStats(matches, activeMemberIds(members.docs));
 
   const writer = new ModelWriter(lease);
   const playerIds = new Set(result.players.map((player) => player.uid));

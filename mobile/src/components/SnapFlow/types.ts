@@ -3,10 +3,19 @@ import type { LeaguePlayer, Season, Standing, Team } from "@/lib/league";
 import type { OpponentHistory } from "@/lib/matchHistory";
 
 /**
- * Photo flow steps. Verify and submit are one step — the old separate review screen only
- * repeated the values the player had just checked.
+ * Photo flow steps. "consent" comes first until the player allows AI photo reading (it also
+ * covers the lookup), so no photo can be picked before they've agreed. Verify and submit are
+ * one step — the old separate review screen only repeated the values the player had just checked.
  */
-export type SnapStep = "capture" | "processing" | "side" | "opponent" | "teams" | "verify" | "done";
+export type SnapStep =
+  | "consent"
+  | "capture"
+  | "processing"
+  | "side"
+  | "opponent"
+  | "teams"
+  | "verify"
+  | "done";
 
 /** Stages of the processing checklist, in order. */
 export type SnapPhase = "uploading" | "reading" | "matching";
@@ -67,7 +76,7 @@ export interface SnapFlowProps {
   myRecentTeamIds?: string[];
   /** Opponent chosen before entering the photo flow (deep link / mode switch). */
   initialOpponentId?: string | null;
-  /** Mode switcher rendered on the capture step (Photo / Auto / Manual). */
+  /** Mode switcher rendered on the consent and capture steps (Photo / Auto / Manual). */
   modeSwitch?: ReactNode;
   onCancel: () => void;
   /** Leave for manual entry, carrying the opponent if one was picked. */

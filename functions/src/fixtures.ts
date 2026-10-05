@@ -17,6 +17,12 @@ import {
 } from "./fixtureRules";
 import { dateMillis } from "./utils";
 import { sendPush } from "./notify";
+import {
+  activeMemberIds,
+  BLOCKED_MATCH_MESSAGE,
+  isActiveMember,
+  isBlockedBetween,
+} from "./members";
 
 const db = getFirestore();
 
@@ -91,7 +97,7 @@ export async function loadDealingContext(
     }));
   const ids =
     participantIds ??
-    (await db.collection(`leagues/${LEAGUE_ID}/members`).get()).docs.map((row) => row.id);
+    activeMemberIds((await db.collection(`leagues/${LEAGUE_ID}/members`).get()).docs);
   const recent = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
   await Promise.all(
     [...new Set(ids)].map(async (uid) => {
@@ -141,7 +147,10 @@ export const createFixture = loggedOnCall("createFixture", { cors: true }, async
   if (opponentId === uid) throw new HttpsError("invalid-argument", "You cannot play yourself.");
 
   const opponentMember = await db.doc(`leagues/${LEAGUE_ID}/members/${opponentId}`).get();
-  if (!opponentMember.exists) throw new HttpsError("invalid-argument", "Opponent not a member.");
+  if (!isActiveMember(opponentMember))
+    throw new HttpsError("invalid-argument", "Opponent not a member.");
+  if (await isBlockedBetween(uid, opponentId))
+    throw new HttpsError("failed-precondition", BLOCKED_MATCH_MESSAGE);
 
   const seasonSnap = await db.collection("seasons").where("active", "==", true).limit(1).get();
   if (seasonSnap.empty) throw new HttpsError("failed-precondition", "No active season.");

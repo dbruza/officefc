@@ -28,6 +28,8 @@ import { loadDealingContext, recentTeamIds } from "./fixtures";
 import { emitFinalsResultActivity, emitFinalsSetActivity } from "./activityFeed";
 import { scoreFinalsSlotOnApply } from "./predictions";
 import { sendPush } from "./notify";
+import { LEAGUE_ID } from "./config";
+import { activeMemberIds } from "./members";
 
 const db = getFirestore();
 
@@ -99,7 +101,12 @@ export const startFinals = loggedOnCall("startFinals", { cors: true }, async (re
   if (seasonSnap.get("phase") === "finals")
     throw new HttpsError("failed-precondition", "Finals have already started.");
 
-  const standingsSnap = await db.collection(`seasons/${seasonId}/standings`).get();
+  const [standingsSnap, membersSnap] = await Promise.all([
+    db.collection(`seasons/${seasonId}/standings`).get(),
+    db.collection(`leagues/${LEAGUE_ID}/members`).get(),
+  ]);
+  // Removed and deleted players keep their table row but can't play a tie.
+  const playable = new Set(activeMemberIds(membersSnap.docs));
   const seeds = standingsSnap.docs
     .map((doc) => ({
       uid: doc.id,
@@ -107,7 +114,7 @@ export const startFinals = loggedOnCall("startFinals", { cors: true }, async (re
       elo: Number(doc.get("elo") ?? 0),
       ranked: doc.get("ranked") === true,
     }))
-    .filter((row) => row.ranked && row.rank >= 1)
+    .filter((row) => row.ranked && row.rank >= 1 && playable.has(row.uid))
     .sort((a, b) => a.rank - b.rank)
     .map(({ uid: seedUid, rank, elo }) => ({ uid: seedUid, rank, elo }));
 

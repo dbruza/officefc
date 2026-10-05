@@ -4,6 +4,30 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.14.0.0",
+    date: "2026-10-06",
+    sections: [
+      {
+        kind: "Added",
+        items: [
+          "Delete your account from Settings → Delete account. After you re-enter your password, it deletes your login, email, profile, match photos, notification tokens and settings, blocks and reports you sent. Your past results stay in the league under \"Deleted player\", so other players' records and ratings don't change. Unconfirmed or disputed matches you're in are cancelled.",
+          "Report a player or block them from the shield on their profile. A match photo can also be reported. Blocking hides their name, photos and feed activity from you, and stops either of you logging a match against the other. Every report and block notifies the league admins.",
+          "Admin → Safety lists open reports. From there an admin can replace an offensive name, remove the player from the league, or dismiss the report. Removed players lose access, a join code won't let them back in, and they can be reinstated. Admins can also delete any match photo.",
+          "Offensive display names and handles are rejected in the profile form. A server-side check replaces any that get through and reports them to the admins.",
+          "Privacy Policy, Terms of Use and Support, at /privacy, /terms and /support on the web and in a sheet inside the app (Settings → About, and the sign-in and sign-up screens). Signing up now requires agreeing to the terms, which have zero tolerance for objectionable content or abusive users.",
+          "Photo logging asks your permission once before a photo goes to the AI model, saying what's sent and to whom. You can log manually instead, and switch AI photo reading off in Settings → Privacy & safety. The server refuses a photo without that permission.",
+        ],
+      },
+      {
+        kind: "Changed",
+        items: [
+          'Match analysis no longer sends players\' names to the AI model. The prompt uses "Player A" and "Player B", and names are put back on the server afterwards.',
+          "Profile names are limited to 40 characters, and the database rules now check the name, handle and which fields a profile write may change.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.13.0.0",
     date: "2026-10-02",
     sections: [

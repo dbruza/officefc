@@ -11,7 +11,7 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { Avatar } from "../Avatar";
 import { Button } from "../Button";
 import { Card } from "../Card";
-import { Icon } from "../Icon";
+import { Icon, type IconName } from "../Icon";
 import { Interactive } from "../Interactive";
 import { Columns, Page } from "../Page";
 import { StickySplit } from "../StickySplit";
@@ -23,6 +23,7 @@ import { EloLine, MatchSubmitted } from "../MatchSubmitted";
 import { OpponentPicker } from "../OpponentPicker";
 import { PhotoThumb } from "../PhotoLightbox";
 import { ScoreStepper } from "../ScoreStepper";
+import { useLegalSheet } from "../LegalDocument";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
 import { firstName } from "@/lib/format";
@@ -98,6 +99,156 @@ function StepTitle({ children }: { children: string }) {
     <Txt variant="head" size={22} style={styles.stepTitle} accessibilityRole="header">
       {children}
     </Txt>
+  );
+}
+
+/** What the consent step tells the player before any photo leaves the device. */
+const CONSENT_POINTS: Array<{ icon: IconName; title: string; text: string }> = [
+  {
+    icon: "photo",
+    title: "What's sent",
+    text: "Only the photo you choose. Your name, email and account details aren't sent with it.",
+  },
+  {
+    icon: "share",
+    title: "Who reads it",
+    text: "It goes to OpenRouter, which passes it to Meta's Muse Spark AI model.",
+  },
+  {
+    icon: "target",
+    title: "Why",
+    text: "To read the score and stats so you don't have to type them. You still check every value before anything is submitted.",
+  },
+  {
+    icon: "shield",
+    title: "What happens to it",
+    text: "It's stored privately in OfficeFC. League members can view submitted photos through temporary links, and you can delete yours. Photos you don't submit are deleted after 24 hours.",
+  },
+];
+
+/**
+ * Explicit opt-in before the first photo goes to the AI (App Store guideline 5.1.2(i)). Shown
+ * in place of capture until allowed; the same header as capture, so a player who already
+ * agreed only sees a brief spinner before the capture screen.
+ */
+export function ConsentStep({ flow, modeSwitch }: Flow & { modeSwitch?: ReactNode }) {
+  // A sheet, not a route: leaving for /privacy would unmount the whole logging screen.
+  const legal = useLegalSheet();
+  const { isDesktop } = useBreakpoint();
+
+  const header = (
+    <SnapHeader onClose={() => void flow.handleLeave("cancel")}>
+      {modeSwitch ? <View style={styles.modeSwitch}>{modeSwitch}</View> : null}
+    </SnapHeader>
+  );
+
+  if (flow.checkingConsent) {
+    return (
+      <Page header={header} width="narrow">
+        <View style={styles.consentLoading}>
+          <ActivityIndicator color={colors.accent} accessibilityLabel="Checking your settings" />
+        </View>
+      </Page>
+    );
+  }
+
+  return (
+    <Page header={header} width={isDesktop ? "default" : "narrow"}>
+      <Columns at="desktop" ratio={[3, 2]} gap={spacing.x3}>
+        <Reveal>
+          <View style={isDesktop ? undefined : styles.captureHero}>
+            <View style={styles.captureIcon}>
+              <Icon name="sparkle" size={30} color={colors.accent} />
+            </View>
+            <Txt
+              variant="head"
+              size={isDesktop ? 24 : 21}
+              accessibilityRole="header"
+              style={{ marginTop: spacing.lg, textAlign: isDesktop ? "left" : "center" }}
+            >
+              Let AI read your stats photos?
+            </Txt>
+            <Txt
+              color={colors.textDim}
+              size={13}
+              style={{
+                marginTop: spacing.sm,
+                lineHeight: 19,
+                maxWidth: 460,
+                textAlign: isDesktop ? "left" : "center",
+              }}
+            >
+              AI Beta can fill in a match from a photo of the full-time stats screen. That means
+              sharing the photo with an outside AI service, so it needs your OK first.
+            </Txt>
+          </View>
+          <Card style={styles.consentPoints}>
+            {CONSENT_POINTS.map(({ icon, title, text }) => (
+              <View key={title} style={styles.consentPoint}>
+                <Icon name={icon} size={18} color={colors.accent} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Txt variant="bodyMedium" size={14}>
+                    {title}
+                  </Txt>
+                  <Txt size={13} color={colors.textDim} style={{ marginTop: 2, lineHeight: 19 }}>
+                    {text}
+                  </Txt>
+                </View>
+              </View>
+            ))}
+          </Card>
+        </Reveal>
+        <Reveal delay={80}>
+          <Txt variant="head" size={16}>
+            Your choice
+          </Txt>
+          <Txt
+            size={13}
+            color={colors.textDim}
+            style={{ marginTop: spacing.sm, marginBottom: spacing.lg, lineHeight: 19 }}
+          >
+            It's optional — you can log any match manually instead. You can turn AI photo reading
+            off any time in Settings.
+          </Txt>
+          <View style={{ gap: spacing.md }}>
+            <Button
+              full
+              size="lg"
+              icon="check"
+              loading={flow.savingConsent}
+              onPress={() => void flow.allowAiPhotos()}
+            >
+              Allow and continue
+            </Button>
+            <Button
+              full
+              size="md"
+              variant="ghost"
+              icon="edit"
+              disabled={flow.savingConsent}
+              onPress={() => void flow.handleLeave("manual")}
+            >
+              Log manually instead
+            </Button>
+          </View>
+          {flow.error ? (
+            <Reveal from="fade" style={{ marginTop: spacing.lg }}>
+              <ErrorCard message={flow.error} />
+            </Reveal>
+          ) : null}
+          <Interactive
+            accessibilityRole="link"
+            onPress={() => legal.open("/privacy")}
+            style={styles.policyLink}
+          >
+            <Txt variant="head" size={12.5} color={colors.accent}>
+              Privacy policy
+            </Txt>
+          </Interactive>
+          {legal.sheet}
+        </Reveal>
+      </Columns>
+    </Page>
   );
 }
 
@@ -179,9 +330,10 @@ export function CaptureStep({ flow, modeSwitch }: Flow & { modeSwitch?: ReactNod
     <View style={styles.privacyNotice}>
       <Icon name="shield" size={16} color={colors.textDim} />
       <Txt size={11.5} color={colors.textDim} style={{ flex: 1, lineHeight: 17 }}>
-        To read the stats, the image is sent through OpenRouter to Meta's Muse Spark model. League
-        members can view submitted photos through temporary links, submitters can delete them, and
-        abandoned drafts are deleted after 24 hours.
+        To read the stats, the photo you choose is sent through OpenRouter to Meta's Muse Spark AI
+        model. League members can view submitted photos through temporary links, submitters can
+        delete them, and photos you don't submit are deleted after 24 hours. You can turn AI photo
+        reading off in Settings.
       </Txt>
     </View>
   );

@@ -6,13 +6,14 @@ import { instrumentBackground, captureServerFault } from "./sentry";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { requireAuth, assertMember } from "./auth";
+import { requireAuth, assertAdmin, assertMember } from "./auth";
 import { requestRebuild, enqueueRebuild } from "./rebuildQueue";
 import { applyFinalsResult } from "./finals";
 import type { FinalsDecidedBy, FinalsSlotKey } from "./finalsRules";
 import { maybeConsumeCupResult } from "./cup";
 import { sendPush } from "./notify";
 import { canAutoConfirm, responderRejection } from "./matchRules";
+import { BLOCKED_MATCH_MESSAGE, isBlockedBetween } from "./members";
 
 /** `confirmedBy` marker for a result the dispute-window scheduler confirmed, not a player.
  *  Distinguishes auto-accepted matches from genuine confirmations in the audit trail. */
@@ -385,10 +386,30 @@ export const disputeMatch = loggedOnCall("disputeMatch", { cors: true }, async (
   return { ok: true };
 });
 
-/** Notify the opponent when any valid client creates a pending match. */
+/**
+ * Notify the opponent when any valid client creates a pending match. A match between a
+ * blocked pair is voided instead: the rules can't check blocks (they'd exceed the
+ * per-request document-read budget), so this is where client-created matches are held to it.
+ */
 export const notifyMatchSubmitted = onDocumentCreated(
   { document: "matches/{matchId}", retry: true },
   instrumentBackground("notifyMatchSubmitted", async (event) => {
+    const created = event.data?.data();
+    if (
+      event.data &&
+      created?.status === "pending_confirmation" &&
+      (await isBlockedBetween(String(created.aId), String(created.bId)))
+    ) {
+      await event.data.ref.update({
+        status: "voided",
+        resolution: "voided",
+        resolvedBy: "system",
+        resolvedAt: FieldValue.serverTimestamp(),
+        resolutionReason: BLOCKED_MATCH_MESSAGE,
+        previousStatus: created.status,
+      });
+      return;
+    }
     if (event.data) await schedulePendingMatch(event.data.ref);
     const data = event.data?.data();
     if (!data || data.status !== "pending_confirmation") return;
@@ -403,11 +424,12 @@ export const notifyMatchSubmitted = onDocumentCreated(
   }),
 );
 
-/** Delete a match photo from storage and clear the reference. Owner only. */
+/** Delete a match photo from storage and clear the reference. Submitter, or an admin moderating. */
 export const deleteMatchPhoto = loggedOnCall("deleteMatchPhoto", { cors: true }, async (req) => {
   const { uid } = requireAuth(req);
   const matchId = String(req.data?.matchId ?? "").trim();
   if (!matchId) throw new HttpsError("invalid-argument", "matchId is required.");
+  const moderator = await isAdminUid(uid);
 
   const db = getFirestore();
   const ref = db.doc(`matches/${matchId}`);
@@ -415,7 +437,7 @@ export const deleteMatchPhoto = loggedOnCall("deleteMatchPhoto", { cors: true },
     const snap = await tx.get(ref);
     if (!snap.exists) throw new HttpsError("not-found", "Match not found.");
     const data = snap.data()!;
-    if (data.submittedBy !== uid)
+    if (data.submittedBy !== uid && !moderator)
       throw new HttpsError("permission-denied", "Only the submitter can delete their photo.");
     const photoPath = String(data.photoPath ?? "");
     if (!photoPath) throw new HttpsError("not-found", "No photo stored for this match.");
@@ -431,3 +453,12 @@ export const deleteMatchPhoto = loggedOnCall("deleteMatchPhoto", { cors: true },
   });
   return { ok: true, matchId };
 });
+
+async function isAdminUid(uid: string): Promise<boolean> {
+  try {
+    await assertAdmin(uid);
+    return true;
+  } catch {
+    return false;
+  }
+}

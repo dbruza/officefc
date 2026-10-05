@@ -3,6 +3,7 @@ import { loggedOnCall } from "../logging";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "../auth";
+import { isBlockedBetween } from "../members";
 
 const db = getFirestore();
 const storage = getStorage();
@@ -30,6 +31,9 @@ export const getMatchPhotoUrl = loggedOnCall("getMatchPhotoUrl", { cors: true },
 
   const photoPath = String(data.photoPath ?? "");
   if (!photoPath) throw new HttpsError("not-found", "No photo stored for this match.");
+  const submittedBy = String(data.submittedBy ?? "");
+  if (submittedBy !== uid && (await isBlockedBetween(uid, submittedBy)))
+    throw new HttpsError("permission-denied", "This photo is hidden because of a block.");
 
   const bucket = storage.bucket();
   const file = bucket.file(photoPath);

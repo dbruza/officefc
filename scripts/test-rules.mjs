@@ -11,7 +11,9 @@ const result = spawnSync(
     "office-fc",
     "--only",
     "firestore,storage",
-    "npm --prefix test/rules test && node --test functions/integration/*.test.cjs",
+    // Integration files share one emulator and each wipes it before every test, so they
+    // run one file at a time.
+    "npm --prefix test/rules test && node --test --test-concurrency=1 functions/integration/*.test.cjs",
   ],
   { stdio: "inherit", env: process.env },
 );

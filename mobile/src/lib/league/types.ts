@@ -94,6 +94,10 @@ export interface Team {
 
 export interface LeaguePlayer extends Player {
   role: Role;
+  /** Removed and account-deleted members stay listed so their old results still resolve. */
+  status: import("../../../../functions/src/models/safety").MemberStatus;
+  /** The viewer blocked this player: name and handle come back masked. */
+  blocked: boolean;
 }
 
 export interface Standing {

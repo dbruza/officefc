@@ -35,6 +35,7 @@ import type {
   Season,
   Standing,
 } from "@/lib/league";
+import { canPlayAgainst } from "@/lib/league";
 import { usePendingConfirmations } from "@/lib/usePendingConfirmations";
 import { useBreakpoint } from "@/lib/responsive";
 import { firstName, plural } from "@/lib/format";
@@ -522,7 +523,7 @@ export function suggestOpponents({
     });
     seasonMeetings.set(opponent, pair.meetings.filter((m) => m.seasonId === season.id).length);
   }
-  const opponents = [...players.values()].filter((p) => p.id !== uid);
+  const opponents = [...players.values()].filter((p) => p.id !== uid && canPlayAgainst(p));
   const closeness = (a: LeaguePlayer, b: LeaguePlayer) =>
     Math.abs(eloOf(a.id) - myElo) - Math.abs(eloOf(b.id) - myElo);
 

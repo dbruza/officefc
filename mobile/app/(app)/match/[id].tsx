@@ -38,6 +38,7 @@ import {
   getMatch,
   getMatchPhotoUrl,
   getSeason,
+  reportPlayer,
   type LeagueMatch,
   type LeaguePlayer,
   type Season,
@@ -71,7 +72,7 @@ interface MatchData {
 export default function MatchDetailRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, membership } = useAuth();
   const viewerId = user?.uid ?? null;
   const { isDesktop } = useBreakpoint();
   const [deleting, setDeleting] = useState(false);
@@ -155,6 +156,8 @@ export default function MatchDetailRoute() {
   const viewerIsParticipant = !!match && (viewerId === match.aId || viewerId === match.bId);
   const awaitingViewer = pending && viewerIsParticipant && match?.submittedBy !== viewerId;
   const viewerSubmitted = !!match && match.submittedBy === viewerId;
+  // Admins can take down any photo when moderating a report.
+  const canDeletePhoto = viewerSubmitted || membership?.role === "admin";
   const submitter = match ? players.get(match.submittedBy) : null;
   const opponentOfViewer = match
     ? players.get(viewerId === match.aId ? match.bId : match.aId)
@@ -168,7 +171,7 @@ export default function MatchDetailRoute() {
     confirmAction({
       title: "Delete this photo?",
       message:
-        "The stats screenshot is removed for everyone. The score and stats you submitted stay. This can't be undone.",
+        "The stats screenshot is removed for everyone. The score and stats stay. This can't be undone.",
       confirmLabel: "Delete photo",
       destructive: true,
       onConfirm: async () => {
@@ -182,6 +185,28 @@ export default function MatchDetailRoute() {
           toast.error(friendlyError(err, "Couldn't delete the photo. Try again in a moment."));
         } finally {
           setDeleting(false);
+        }
+      },
+    });
+
+  const handleReportPhoto = () =>
+    confirmAction({
+      title: "Report this photo?",
+      message:
+        "The league admins are told straight away and review it within 24 hours. They can remove the photo or the player.",
+      confirmLabel: "Report",
+      destructive: true,
+      onConfirm: async () => {
+        if (!match) return;
+        try {
+          await reportPlayer({
+            targetUid: match.submittedBy,
+            reason: "inappropriate_photo",
+            matchId: id,
+          });
+          toast.success("Photo reported. Thanks for flagging it.");
+        } catch (err) {
+          toast.error(friendlyError(err, "Couldn't send the report. Try again in a moment."));
         }
       },
     });
@@ -301,7 +326,7 @@ export default function MatchDetailRoute() {
         <View style={{ marginTop: spacing.x2 }}>
           <SectionLabel
             action={
-              viewerSubmitted ? (
+              canDeletePhoto ? (
                 <Button
                   variant="danger"
                   size="sm"
@@ -311,7 +336,11 @@ export default function MatchDetailRoute() {
                 >
                   Delete photo
                 </Button>
-              ) : undefined
+              ) : (
+                <Button variant="ghost" size="sm" icon="info" onPress={handleReportPhoto}>
+                  Report
+                </Button>
+              )
             }
           >
             Stats photo

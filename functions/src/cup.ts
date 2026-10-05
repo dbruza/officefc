@@ -28,6 +28,7 @@ import {
   type CupBracket,
 } from "./cupRules";
 import { enqueuePushesTx } from "./notify";
+import { activeMemberIds } from "./members";
 
 const db = getFirestore();
 
@@ -73,7 +74,7 @@ export const startCup = loggedOnCall("startCup", { cors: true }, async (req) => 
   const membersSnap = await db.collection(`leagues/${LEAGUE_ID}/members`).get();
   // Sorted ids make the draw reproducible from the stored seed alone — Firestore gives
   // collection reads no order guarantee, so the raw read order must never feed the shuffle.
-  const memberIds = membersSnap.docs.map((doc) => doc.id).sort();
+  const memberIds = activeMemberIds(membersSnap.docs).sort();
   if (memberIds.length < 3) {
     throw new HttpsError("failed-precondition", "A cup needs at least 3 members.");
   }

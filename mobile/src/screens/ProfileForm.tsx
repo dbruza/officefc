@@ -12,6 +12,11 @@ import { saveProfile, type ProfileInput } from "@/lib/profiles";
 import { authErrorMessage } from "@/lib/authErrors";
 import { initialsOf, type Player } from "@/types";
 import { colors, spacing } from "@/theme";
+import {
+  DISPLAY_NAME_MAX,
+  displayNameProblem,
+  isOffensiveName,
+} from "../../../functions/src/models/safety";
 
 /** Avatar colours, named for screen readers and the hover tooltip. */
 const SWATCHES = [
@@ -36,9 +41,14 @@ function cleanHandle(raw: string): string {
 function validate(displayName: string, handle: string, jersey: string): FieldErrors {
   const errors: FieldErrors = {};
   const n = Number(jersey);
-  if (displayName.trim().length < 2) errors.displayName = "Enter at least 2 characters.";
+  // Same rules the server screens with (models/safety.ts), so a name is never taken down
+  // after it saved cleanly here.
+  const nameProblem = displayNameProblem(displayName);
+  if (nameProblem) errors.displayName = nameProblem;
   if (!HANDLE_RE.test(cleanHandle(handle)))
     errors.handle = "2–20 characters: letters, numbers or underscores.";
+  else if (isOffensiveName(cleanHandle(handle)))
+    errors.handle = "Pick a handle without offensive language.";
   if (!jersey || !Number.isInteger(n) || n < 1 || n > 99) errors.jersey = "Pick a number 1–99.";
   return errors;
 }
@@ -120,6 +130,7 @@ export function ProfileForm({
         <RefTextField
           label="Display name"
           value={displayName}
+          maxLength={DISPLAY_NAME_MAX}
           onChangeText={setDisplayName}
           placeholder="Marcus Bell"
           autoCapitalize="words"

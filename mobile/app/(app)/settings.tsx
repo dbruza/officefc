@@ -1,6 +1,6 @@
 /**
- * Settings: league admin (for admins, first), account, notification categories, and
- * about. Rows are single pressables — a toggle row IS the switch (role="switch"), so
+ * Settings: league admin (for admins, first), account, notification categories, privacy
+ * and safety (AI photo reading, blocks, account deletion), and about. Rows are single pressables — a toggle row IS the switch (role="switch"), so
  * there's no nested Switch control to double-fire or to nest inside a <button> on web.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -22,6 +22,7 @@ import {
   Skeleton,
   Tag,
   Txt,
+  useLegalSheet,
   type IconName,
 } from "@/components";
 import { useAuth } from "@/lib/auth";
@@ -37,6 +38,7 @@ import {
   toggleCategory,
   type PushCategoryKey,
 } from "@/lib/league/pushPrefs";
+import { getAiPhotoConsent, setAiPhotoConsent } from "@/lib/privacySettings";
 
 const IS_WEB = Platform.OS === "web";
 
@@ -48,6 +50,7 @@ export default function Settings() {
   const { lastSeen, loaded: seenLoaded } = useChangelogLastSeen();
   const latest = latestVersion();
   const hasNews = seenLoaded && !!latest && isUnseen(latest, lastSeen);
+  const legal = useLegalSheet();
 
   // Muted categories as stored server-side; empty set = everything delivers.
   const [muted, setMuted] = useState<ReadonlySet<PushCategoryKey>>(new Set());
@@ -97,6 +100,52 @@ export default function Settings() {
       busyRef.current = false;
       setBusy(null);
     }
+  }
+
+  // AI photo reading consent; null until loaded.
+  const [aiPhotos, setAiPhotos] = useState<boolean | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  useEffect(() => {
+    if (!uid) return;
+    let cancelled = false;
+    getAiPhotoConsent(uid)
+      .then((allowed) => {
+        if (!cancelled) setAiPhotos(allowed);
+      })
+      .catch(() => {
+        if (!cancelled) setAiPhotos(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
+
+  async function saveAiPhotos(allowed: boolean) {
+    if (!uid) return;
+    setAiBusy(true);
+    try {
+      await setAiPhotoConsent(uid, allowed);
+      setAiPhotos(allowed);
+      toast.success(allowed ? "AI photo reading on" : "AI photo reading off");
+    } catch {
+      toast.error("Couldn't save that. Check your connection and try again.");
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  /** Turning it on gets the same disclosure as the photo screen; turning it off is instant. */
+  function toggleAiPhotos() {
+    if (aiPhotos === null || aiBusy) return;
+    if (aiPhotos) return void saveAiPhotos(false);
+    confirmAction({
+      title: "Allow AI photo reading?",
+      message:
+        "When you log a match from a photo, that photo is sent through OpenRouter to Meta's Muse Spark AI model to read the score and stats. Nothing else about you is sent. You can turn this off any time.",
+      confirmLabel: "Allow",
+      onConfirm: () => saveAiPhotos(true),
+    });
   }
 
   const me: Player | null = useMemo(
@@ -218,7 +267,53 @@ export default function Settings() {
         </Reveal>
       ) : null}
 
-      <Reveal index={3} style={styles.section}>
+      {uid ? (
+        <Reveal index={3} style={styles.section}>
+          <SectionLabel>Privacy & safety</SectionLabel>
+          <Card style={styles.group} padded={false}>
+            <Interactive
+              accessibilityRole="switch"
+              accessibilityLabel="AI photo reading"
+              accessibilityState={{ checked: aiPhotos === true, busy: aiBusy }}
+              disabled={aiPhotos === null || aiBusy}
+              onPress={toggleAiPhotos}
+              pressScale={0.99}
+              style={styles.row}
+              hoverStyle={styles.rowHover}
+            >
+              <RowIcon icon="camera" />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Txt variant="bodyMedium" size={13.5} numberOfLines={1}>
+                  AI photo reading
+                </Txt>
+                <Txt size={11.5} color={colors.textDim} numberOfLines={2} style={{ marginTop: 1 }}>
+                  Send stats photos to an AI model to fill in the match
+                </Txt>
+              </View>
+              {aiPhotos === null ? (
+                <Skeleton width={42} height={24} round={12} />
+              ) : (
+                <Toggle on={aiPhotos} />
+              )}
+            </Interactive>
+            <NavRow
+              icon="eyeOff"
+              label="Blocked players"
+              detail="Unblock someone you blocked"
+              onPress={() => router.push("/(app)/blocked")}
+            />
+            <NavRow
+              icon="x"
+              label="Delete account"
+              detail="Erase your login, profile and photos"
+              onPress={() => router.push("/(app)/delete-account")}
+              last
+            />
+          </Card>
+        </Reveal>
+      ) : null}
+
+      <Reveal index={4} style={styles.section}>
         <SectionLabel>About</SectionLabel>
         <Card style={styles.group} padded={false}>
           <NavRow
@@ -227,12 +322,21 @@ export default function Settings() {
             detail={`OfficeFC ${version}`}
             badge={hasNews ? "NEW" : undefined}
             onPress={() => router.push("/(app)/changelog")}
+          />
+          <NavRow icon="shield" label="Privacy policy" onPress={() => legal.open("/privacy")} />
+          <NavRow icon="list" label="Terms of use" onPress={() => legal.open("/terms")} />
+          <NavRow
+            icon="inbox"
+            label="Help & support"
+            detail="Contact us, FAQs"
+            onPress={() => legal.open("/support")}
             last
           />
         </Card>
+        {legal.sheet}
       </Reveal>
 
-      <Reveal index={4} style={{ marginTop: spacing.x3 }}>
+      <Reveal index={5} style={{ marginTop: spacing.x3 }}>
         <Button
           full
           variant="ghost"

@@ -15,10 +15,18 @@ service cloud.firestore {
     function uid() {
       return request.auth.uid;
     }
-    // Single-league v1: membership doc at leagues/office/members/{uid}.
+    // Single-league v1: membership doc at leagues/office/members/{uid}. Removed members
+    // and account-deletion tombstones keep their doc (history still resolves) but carry a
+    // status, and have no access.
+    function memberPath(userId) {
+      return /databases/$(database)/documents/leagues/office/members/$(userId);
+    }
+    function isActiveMember(userId) {
+      return exists(memberPath(userId))
+        && get(memberPath(userId)).data.get('status', 'active') == 'active';
+    }
     function isMember() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/leagues/office/members/$(uid()));
+      return signedIn() && isActiveMember(uid());
     }
     function memberRole() {
       return get(/databases/$(database)/documents/leagues/office/members/$(uid())).data.role;
@@ -26,8 +34,21 @@ service cloud.firestore {
     function isAdmin() {
       return isMember() && memberRole() == 'admin';
     }
+    // One document read instead of exists() + get(): for match creation, which is close to
+    // the 10-read budget per request. get() on a missing doc errors, which denies.
+    // Blocks aren't checked here for the same reason — notifyMatchSubmitted voids a
+    // match between a blocked pair.
     function isLeagueMember(userId) {
-      return exists(/databases/$(database)/documents/leagues/office/members/$(userId));
+      return get(memberPath(userId)).data.get('status', 'active') == 'active';
+    }
+    // Mirrors the app's checks (ProfileForm + models/safety.ts). The offensive-word screen
+    // runs in the screenProfileName function, which rules can't express.
+    function validProfileName(data) {
+      return data.displayName is string
+        && data.displayName.size() >= 2
+        && data.displayName.size() <= 40
+        && data.handle is string
+        && data.handle.matches('^[a-z0-9_]{2,20}$');
     }
     function isActiveSeason(seasonId) {
       return exists(/databases/$(database)/documents/seasons/$(seasonId))
@@ -107,12 +128,19 @@ service cloud.firestore {
     }
 
     // Profiles: any member can read; you can always read your OWN profile (needed during
-    // onboarding, before membership). You may write your own profile but never set your
-    // own role (role is authoritative on the membership doc). Admins may write any.
+    // onboarding, before membership). You may write only your own name, handle, jersey and
+    // colour (role is authoritative on the membership doc). Admins may write any.
     match /profiles/{userId} {
       allow read: if isMember() || (signedIn() && userId == uid());
-      allow create, update: if isAdmin()
-        || (signedIn() && userId == uid() && !('role' in request.resource.data));
+      allow create: if isAdmin()
+        || (signedIn() && userId == uid()
+          && request.resource.data.keys().hasOnly(['displayName', 'handle', 'jersey', 'color', 'updatedAt'])
+          && validProfileName(request.resource.data));
+      allow update: if isAdmin()
+        || (signedIn() && userId == uid()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['displayName', 'handle', 'jersey', 'color', 'updatedAt'])
+          && validProfileName(request.resource.data));
       allow delete: if isAdmin();
     }
 
@@ -182,7 +210,8 @@ service cloud.firestore {
     }
     match /matches/{matchId} {
       allow read: if isMember();
-      allow create: if isMember()
+      allow create: if signedIn()
+        && isLeagueMember(uid())
         && request.resource.data.keys().hasAll([
           'seasonId', 'submittedBy', 'aId', 'bId', 'aTeamId', 'bTeamId',
           'aTeam', 'bTeam', 'aGoals', 'bGoals', 'status', 'source', 'date', 'createdAt'
@@ -304,6 +333,29 @@ service cloud.firestore {
       allow read: if signedIn() && userId == uid();
       allow write: if signedIn() && userId == uid()
         && request.resource.data.keys().hasOnly(['muted', 'updatedAt']);
+    }
+
+    // Privacy choices (AI photo reading consent, terms acceptance): owner-only. Functions
+    // read aiPhotoReading before sending a photo to the AI model.
+    match /privacySettings/{userId} {
+      allow read: if signedIn() && userId == uid();
+      allow create, update: if signedIn() && userId == uid()
+        && request.resource.data.keys()
+          .hasOnly(['aiPhotoReading', 'aiPhotoReadingUpdatedAt', 'termsAcceptedAt'])
+        && (!('aiPhotoReading' in request.resource.data)
+          || request.resource.data.aiPhotoReading is bool);
+    }
+
+    // Your block list: you can read it; only the setPlayerBlocked function writes it.
+    match /userBlocks/{userId} {
+      allow read: if signedIn() && userId == uid();
+      allow write: if false;
+    }
+
+    // Player reports: admins review them; only reportPlayer/setPlayerBlocked write them.
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     // Default deny.

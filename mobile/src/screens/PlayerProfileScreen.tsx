@@ -31,6 +31,7 @@ import {
   Interactive,
   LineChart,
   Page,
+  PlayerSafetySheet,
   Reveal,
   ScreenHeader,
   SectionLabel,
@@ -57,6 +58,7 @@ import {
   getSeasons,
   getStandings,
   getTeams,
+  canPlayAgainst,
   type HeadToHead,
   type LeagueMatch,
   type LeaguePlayer,
@@ -123,8 +125,9 @@ export interface PlayerProfileScreenProps {
 
 export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenProps) {
   const router = useRouter();
-  const { user, signOutUser } = useAuth();
+  const { user, membership, signOutUser } = useAuth();
   const { isDesktop } = useBreakpoint();
+  const [safetyOpen, setSafetyOpen] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   useTabRetap(root ? "profile" : "", () => scrollRef.current?.scrollTo({ y: 0, animated: true }));
 
@@ -199,7 +202,8 @@ export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenPr
   const header = (
     <ScreenHeader
       title={isYou ? "Your profile" : (player?.name ?? "Player profile")}
-      subtitle={player ? `@${player.handle} · #${player.jersey}` : undefined}
+      // A blocked player comes back without a handle (masked), so skip the line.
+      subtitle={player?.handle ? `@${player.handle} · #${player.jersey}` : undefined}
       back={!root}
       onRefresh={onRefresh}
       refreshing={refreshing}
@@ -221,6 +225,14 @@ export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenPr
               color={colors.textDim}
             />
           </View>
+        ) : !isYou && player && player.status !== "deleted" ? (
+          <IconButton
+            icon="shield"
+            accessibilityLabel={`Report or block ${player.name}`}
+            onPress={() => setSafetyOpen(true)}
+            iconSize={17}
+            color={colors.textDim}
+          />
         ) : undefined
       }
     />
@@ -295,6 +307,15 @@ export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenPr
       onRefresh={onRefresh}
     >
       {body}
+      {player && !isYou ? (
+        <PlayerSafetySheet
+          player={player}
+          visible={safetyOpen}
+          isAdmin={membership?.role === "admin"}
+          onClose={() => setSafetyOpen(false)}
+          onChanged={onRefresh}
+        />
+      ) : null}
     </Page>
   );
 }
@@ -386,7 +407,7 @@ function ProfileBody({
       actions={
         !isYou ? (
           <>
-            {season && season.phase === "regular" ? (
+            {season && season.phase === "regular" && canPlayAgainst(player) ? (
               <Button
                 icon="plus"
                 size={isTablet ? "md" : "sm"}

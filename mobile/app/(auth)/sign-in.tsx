@@ -6,12 +6,12 @@
 import { useRef, useState } from "react";
 import { StyleSheet, View, type TextInput } from "react-native";
 import { Link } from "expo-router";
-import { FormScreen, Txt } from "@/components";
+import { FormScreen, LegalLinks, Txt, useLegalSheet } from "@/components";
 import { RefTextField, SubmitButton, submitOnEnter } from "@/components/FormScreen";
 import { useAuth } from "@/lib/auth";
 import { authErrorMessage } from "@/lib/authErrors";
 import { useBreakpoint } from "@/lib/responsive";
-import { colors } from "@/theme";
+import { colors, spacing } from "@/theme";
 
 type Field = "email" | "password";
 
@@ -27,6 +27,7 @@ function codeOf(e: unknown): string {
 }
 
 export default function SignIn() {
+  const legal = useLegalSheet();
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,15 +62,19 @@ export default function SignIn() {
       documentTitle="Sign in"
       onSubmit={submit}
       footer={
-        <View style={styles.footerRow}>
-          <Txt size={13} color={colors.textDim}>
-            New here?
-          </Txt>
-          <Link href="/(auth)/sign-up">
-            <Txt variant="head" size={13} color={colors.accent}>
-              Create an account
+        <View style={styles.footer}>
+          <View style={styles.footerRow}>
+            <Txt size={13} color={colors.textDim}>
+              New here?
             </Txt>
-          </Link>
+            <Link href="/(auth)/sign-up">
+              <Txt variant="head" size={13} color={colors.accent}>
+                Create an account
+              </Txt>
+            </Link>
+          </View>
+          <LegalLinks onOpen={legal.open} />
+          {legal.sheet}
         </View>
       }
     >
@@ -131,5 +136,6 @@ export default function SignIn() {
 }
 
 const styles = StyleSheet.create({
+  footer: { gap: spacing.sm },
   footerRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
 });
