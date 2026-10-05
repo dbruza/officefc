@@ -217,7 +217,6 @@ export async function drainRebuildQueue(): Promise<boolean> {
 }
 export const rebuildQueuedModels = onDocumentWritten(
   {
-    region: "australia-southeast1",
     document: QUEUE_PATH,
     timeoutSeconds: 540,
     maxInstances: 1,
@@ -232,7 +231,6 @@ export const rebuildQueuedModels = onDocumentWritten(
 );
 export const recoverQueuedModels = onSchedule(
   {
-    region: "australia-southeast1",
     schedule: "* * * * *",
     timeoutSeconds: 540,
     maxInstances: 1,

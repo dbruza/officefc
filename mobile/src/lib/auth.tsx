@@ -149,6 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const reloadUser = useCallback(async () => {
     if (!auth.currentUser) return;
     await reload(auth.currentUser);
+    // reload() updates the profile but not the cached ID token, and joining the league is
+    // checked against the token's email_verified claim, so fetch a fresh one.
+    if (auth.currentUser.emailVerified) await auth.currentUser.getIdToken(true);
     setEmailVerified(auth.currentUser.emailVerified);
   }, []);
 

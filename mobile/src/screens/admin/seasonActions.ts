@@ -6,7 +6,7 @@
  * - one action at a time (a ref guard, so a double click can't fire two calls);
  * - finalizing the ACTIVE season offers to activate the next one in the same step,
  *   because an empty active slot makes the backend's ensureLeagueData recreate a
- *   placeholder "Summer Showdown" season that new matches then land in. Finalize runs
+ *   placeholder "New season" that new matches then land in. Finalize runs
  *   first so the next season's activation stamps the right reigning Premier.
  */
 import { useRef, useState } from "react";
@@ -245,7 +245,7 @@ export function useSeasonActions({
     if (!next) {
       chooseAction({
         title: "No season lined up",
-        message: `Finalizing ${season.name} leaves the league with no active season, and the app then auto-creates a placeholder "Summer Showdown" season that new matches land in. Create the next season first; you can then finalize and switch in one step.`,
+        message: `Finalizing ${season.name} leaves the league with no active season, and the app then auto-creates a placeholder "New season" that new matches land in. Create the next season first; you can then finalize and switch in one step.`,
         options: [
           { label: "Cancel", style: "cancel" },
           {

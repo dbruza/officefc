@@ -13,8 +13,24 @@ node eval/validate-labels.mjs                             # check labels before 
 ```
 
 In REAL mode you can also set `OPENROUTER_BASE_URL`, or `EXTRACTION_MODEL` instead of `--model`.
+REAL mode uses your own OpenRouter key from the shell environment and is billed to it; it
+never reads your deployment's `OPENROUTER_API_KEY` secret.
 
-## Eval gate (M4 release requirement)
+The harness runs the same extraction core as the `extractMatchStats` Cloud Function
+(`functions/src/extract/core`), and defaults to the same model (`DEFAULT_MODEL` in
+`schema.mjs`). If you change the model for your deployment, score it here first, and update
+the app copy that names the model: the privacy policy (`mobile/src/lib/legal.ts`), the AI
+consent step (`mobile/src/components/SnapFlow/steps.tsx`), and the AI setting in
+`mobile/app/(app)/settings.tsx`.
+
+The repository ships only a couple of sample images. Add your own photos of your league's
+screens to measure accuracy in your setting; keep players' personal data out of anything you
+commit.
+
+## Eval gate
+
+Before relying on AI photo reading (`AI_FEATURES=true`), or after changing the prompt,
+schema, or model, aim for:
 
 - At least **20** readable FIFA/FC stats-screen images (clean screenshots, glare-y TV photos, draws, big scores, different layouts)
 - At least **5** non-stats/unreadable images (set `"detected_screen": false`)

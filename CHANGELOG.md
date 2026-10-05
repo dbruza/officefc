@@ -3,6 +3,52 @@
 All notable changes to OfficeFC are documented here.
 Versions follow a 4-digit MAJOR.MINOR.PATCH.MICRO scheme; dates are YYYY-MM-DD.
 
+## [1.15.0.0] - 2026-10-06
+
+### Added
+
+- OfficeFC is open source under the MIT license. Any office can run its own league on its
+  own Firebase project; `docs/self-hosting.md` walks through it.
+
+### Changed
+
+- Settings that were written into the code for one deployment are now configuration. The
+  Cloud Functions region, the admin emails and the AI features are Firebase params in
+  `functions/.env.<projectId>`. The app reads its functions region, AI switch, operator
+  name, support email and data location from `mobile/.env`, or from EAS environment
+  variables for native builds. The admin list no longer ships in the app; the join screen
+  asks the server whether to offer admin setup.
+- AI photo reading and match analysis are optional per deployment (`AI_FEATURES`), so a
+  league can run without an OpenRouter account. With them off, the app offers manual and
+  auto-matchup logging, and the privacy policy leaves out the AI section.
+- Every Cloud Function runs in the one configured region. The extra us-central1 copies of
+  the callables are gone, so app builds older than 1.13 can no longer reach the backend.
+- Native builds take their bundle ID and EAS project from environment variables
+  (`mobile/app.config.ts`). Local emulators and tests use the `demo-officefc` project, and
+  `mobile/.env.example` runs against them as-is.
+- The web build check now compares `mobile/.env` with the active Firebase project and the
+  functions' region and AI settings, and refuses the emulator-only demo config.
+
+### Fixed
+
+- Joining the league needs a verified email address. Before, someone could sign up with an
+  admin's address that had never been registered and join as an admin.
+- Wrong join codes are limited to 10 an hour per account, and new codes come from a secure
+  random generator. Member records no longer keep the code they joined with, which other
+  members could read.
+- Blocking a player notifies the admins only the first time. An offensive name that keeps
+  coming back is replaced every time but reported once while its report is open, and only
+  for league members.
+- Viewing a profile with no stats no longer rebuilds the whole league's statistics.
+- Removed members can't make finals predictions, and prediction entries can't carry extra
+  data. Match photos can't be replaced after upload or uploaded as SVG.
+- The web app can't be embedded in other sites, and each function runs at most 10
+  instances unless it sets its own limit.
+
+### Removed
+
+- The one-off join-code migration endpoint (`backfillSeasonCodes`).
+
 ## [1.14.0.0] - 2026-10-06
 
 ### Added

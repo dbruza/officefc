@@ -1,7 +1,7 @@
 # Running M2 locally
 
 > Historical milestone runbook. For the current setup and release state, see
-> [Firebase setup](firebase-setup.md) and the
+> [Firebase setup](../firebase-setup.md) and the
 > [implementation overview](implementation-plan.md).
 
 M2 adds the first complete competitive loop:

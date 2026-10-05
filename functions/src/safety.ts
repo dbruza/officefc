@@ -66,6 +66,22 @@ async function fileReport(input: ReportInput): Promise<string> {
   return ref.id;
 }
 
+/** True when `reporterId` already filed a report like this one about `targetId`. */
+async function hasReport(filter: {
+  reporterId?: string;
+  targetId: string;
+  source: ReportInput["source"];
+  openOnly?: boolean;
+}): Promise<boolean> {
+  const snap = await db.collection("reports").where("targetId", "==", filter.targetId).get();
+  return snap.docs.some(
+    (doc) =>
+      doc.get("source") === filter.source &&
+      (filter.reporterId === undefined || doc.get("reporterId") === filter.reporterId) &&
+      (!filter.openOnly || doc.get("status") === "open"),
+  );
+}
+
 function targetOf(data: unknown, uid: string): string {
   const targetUid = String((data as { targetUid?: unknown })?.targetUid ?? "").trim();
   if (!targetUid) throw new HttpsError("invalid-argument", "targetUid is required.");
@@ -117,6 +133,8 @@ export const setPlayerBlocked = loggedOnCall("setPlayerBlocked", { cors: true },
   await assertMember(uid);
   const targetId = targetOf(req.data, uid);
   const blocked = req.data?.blocked === true;
+  if (!(await memberRef(targetId).get()).exists)
+    throw new HttpsError("not-found", "Player not found.");
 
   const ref = userBlocksRef(uid);
   const wasBlocked = await db.runTransaction(async (tx) => {
@@ -129,7 +147,8 @@ export const setPlayerBlocked = loggedOnCall("setPlayerBlocked", { cors: true },
     });
     return before;
   });
-  if (blocked && !wasBlocked)
+  // One report per pair: blocking again after an unblock doesn't page the admins again.
+  if (blocked && !wasBlocked && !(await hasReport({ reporterId: uid, targetId, source: "block" })))
     await fileReport({
       reporterId: uid,
       targetId,
@@ -203,7 +222,7 @@ export const moderateMember = loggedOnCall("moderateMember", { cors: true }, asy
  * tell the admins.
  */
 export const screenProfileName = onDocumentWritten(
-  { document: "profiles/{uid}", region: "australia-southeast1", retry: true },
+  { document: "profiles/{uid}", retry: true },
   instrumentBackground("screenProfileName", async (event) => {
     const after = event.data?.after;
     if (!after?.exists) return;
@@ -215,6 +234,10 @@ export const screenProfileName = onDocumentWritten(
       ...neutralProfileName(after.get("jersey")),
       nameModeratedAt: FieldValue.serverTimestamp(),
     });
+    // The name is replaced either way. Admins only hear about league members, once per
+    // open report, so re-saving a name in a loop can't flood them.
+    if (!isActiveMember(await memberRef(event.params.uid).get())) return;
+    if (await hasReport({ targetId: event.params.uid, source: "auto", openOnly: true })) return;
     await fileReport({
       reporterId: "system",
       targetId: event.params.uid,

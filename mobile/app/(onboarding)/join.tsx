@@ -9,8 +9,7 @@ import { useLocalSearchParams } from "expo-router";
 import { Button, Card, FormScreen, Icon, TextField, Txt } from "@/components";
 import { SubmitButton, submitOnEnter } from "@/components/FormScreen";
 import { useAuth } from "@/lib/auth";
-import { redeemInvite } from "@/lib/membership";
-import { isAllowlistedAdmin } from "@/lib/constants";
+import { getJoinOptions, redeemInvite } from "@/lib/membership";
 import { authErrorMessage } from "@/lib/authErrors";
 import { confirmAction } from "@/lib/dialogs";
 import {
@@ -35,8 +34,21 @@ export default function Join() {
   const [busy, setBusy] = useState(false);
   // Once the user types, a late-arriving stashed code must not overwrite their input.
   const typed = useRef(false);
-  const admin = isAllowlistedAdmin(user?.email);
+  // Admin setup is the server's call; until it answers, the screen asks for a code.
+  const [admin, setAdmin] = useState(false);
   const { isWeb, isTablet } = useBreakpoint();
+
+  useEffect(() => {
+    let cancelled = false;
+    getJoinOptions()
+      .then((options) => {
+        if (!cancelled) setAdmin(options.adminSetup);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid]);
 
   useEffect(() => {
     if (linkCode) {

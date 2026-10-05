@@ -52,9 +52,9 @@ jobs:
         run: |
           cp mobile/.env.example mobile/.env
           sed -i 's|EXPO_PUBLIC_FIREBASE_API_KEY=.*|EXPO_PUBLIC_FIREBASE_API_KEY=ci-api-key|' mobile/.env
-          sed -i 's|EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=.*|EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=office-fc.firebaseapp.com|' mobile/.env
-          sed -i 's|EXPO_PUBLIC_FIREBASE_PROJECT_ID=.*|EXPO_PUBLIC_FIREBASE_PROJECT_ID=office-fc|' mobile/.env
-          sed -i 's|EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=.*|EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=office-fc.firebasestorage.app|' mobile/.env
+          sed -i 's|EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=.*|EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-officefc.firebaseapp.com|' mobile/.env
+          sed -i 's|EXPO_PUBLIC_FIREBASE_PROJECT_ID=.*|EXPO_PUBLIC_FIREBASE_PROJECT_ID=demo-officefc|' mobile/.env
+          sed -i 's|EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=.*|EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-officefc.firebasestorage.app|' mobile/.env
           sed -i 's|EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=.*|EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=000000000000|' mobile/.env
           sed -i 's|EXPO_PUBLIC_FIREBASE_APP_ID=.*|EXPO_PUBLIC_FIREBASE_APP_ID=1:000000000000:web:ci|' mobile/.env
           sed -i 's|EXPO_PUBLIC_USE_EMULATORS=.*|EXPO_PUBLIC_USE_EMULATORS=0|' mobile/.env

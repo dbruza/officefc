@@ -4,7 +4,7 @@
  * links). Keep the privacy policy in step with what the app and functions actually
  * collect, and bump `LEGAL_UPDATED` whenever the policy or terms change.
  */
-import { SUPPORT_EMAIL } from "./constants";
+import { AI_FEATURES, DATA_LOCATION, OPERATOR_NAME, SUPPORT_EMAIL } from "./constants";
 
 /** ISO date the privacy policy and terms last changed. */
 export const LEGAL_UPDATED = "2026-10-06";
@@ -30,6 +30,26 @@ export interface LegalDoc {
   sections: readonly LegalSection[];
 }
 
+const MATCH_PHOTOS_SECTION: LegalSection = {
+  heading: "Match photos",
+  blocks: [
+    "Photos of end-of-match stats screens that you choose to upload. They're stored privately in Firebase Storage, and members of your league view them through temporary links that expire after 10 minutes.",
+    "You can delete a photo you submitted at any time. Drafts you never submit are deleted automatically after 24 hours.",
+  ],
+};
+
+const AI_SECTION: LegalSection = {
+  heading: "AI features (only with your permission)",
+  blocks: [
+    "OfficeFC asks for your permission before your first photo is read by AI, and you can turn it off at any time in Settings.",
+    [
+      "Reading match photos: your stats-screen photo is sent through OpenRouter to Meta's Muse Spark model, which reads the stats so you don't have to type them.",
+      "Match analysis (optional): the match's stats and ratings, but not names or photos, are sent through OpenRouter to AI models that write a summary of the match.",
+    ],
+    "OpenRouter and the model providers process this data to return the result.",
+  ],
+};
+
 export const PRIVACY_POLICY: LegalDoc = {
   title: "Privacy Policy",
   label: "Privacy",
@@ -40,7 +60,7 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       heading: "Who we are",
       blocks: [
-        "OfficeFC is an independent app run by its developer, David Bruza, for private, invite-only workplace leagues for EA SPORTS FC. It's intended for adults and isn't directed at children.",
+        `OfficeFC is an independent app run by ${OPERATOR_NAME}, for private, invite-only workplace leagues for EA SPORTS FC. It's intended for adults and isn't directed at children.`,
         `Questions about your data go to ${SUPPORT_EMAIL}.`,
       ],
     },
@@ -60,27 +80,12 @@ export const PRIVACY_POLICY: LegalDoc = {
       heading: "League activity",
       blocks: [
         "Match results, the teams you used, match stats, ratings (ELO), predictions, player-of-the-match votes, and the reasons you give when you dispute a result.",
-        "Members of your league see results, stats and ratings. Dispute reasons are seen by league admins. League data is stored in Google Cloud Firestore in Sydney, Australia.",
+        `Members of your league see results, stats and ratings. Dispute reasons are seen by league admins. League data is stored in Google Cloud Firestore${DATA_LOCATION ? ` in ${DATA_LOCATION}` : ""}.`,
       ],
     },
-    {
-      heading: "Match photos",
-      blocks: [
-        "Photos of end-of-match stats screens that you choose to upload. They're stored privately in Firebase Storage, and members of your league view them through temporary links that expire after 10 minutes.",
-        "You can delete a photo you submitted at any time. Drafts you never submit are deleted automatically after 24 hours.",
-      ],
-    },
-    {
-      heading: "AI features (only with your permission)",
-      blocks: [
-        "OfficeFC asks for your permission before your first photo is read by AI, and you can turn it off at any time in Settings.",
-        [
-          "Reading match photos: your stats-screen photo is sent through OpenRouter to Meta's Muse Spark model, which reads the stats so you don't have to type them.",
-          "Match analysis (optional): the match's stats and ratings, but not names or photos, are sent through OpenRouter to AI models that write a summary of the match.",
-        ],
-        "OpenRouter and the model providers process this data to return the result.",
-      ],
-    },
+    // Photos only come in through AI photo logging, so deployments without the AI functions
+    // (AI_FEATURES off) neither store them nor send anything to a model.
+    ...(AI_FEATURES ? [MATCH_PHOTOS_SECTION, AI_SECTION] : []),
     {
       heading: "Notifications",
       blocks: [
@@ -115,9 +120,13 @@ export const PRIVACY_POLICY: LegalDoc = {
           "Google Firebase and Google Cloud: sign-in, league data, match photos and app logs.",
           "Expo: delivering push notifications.",
           "Sentry: crash reports and performance data.",
-          "OpenRouter and the AI model providers it uses, including Meta: AI photo reading and match analysis, only with your permission.",
+          ...(AI_FEATURES
+            ? [
+                "OpenRouter and the AI model providers it uses, including Meta: AI photo reading and match analysis, only with your permission.",
+              ]
+            : []),
         ],
-        "Some of these services may process data outside Australia.",
+        "Some of these services may process data in other countries.",
       ],
     },
     {
@@ -140,8 +149,8 @@ export const PRIVACY_POLICY: LegalDoc = {
         [
           "Edit your profile at any time.",
           "Mute notification categories in Settings.",
-          "Turn off AI photo reading in Settings.",
-          "Delete any match photo you submitted.",
+          ...(AI_FEATURES ? ["Turn off AI photo reading in Settings."] : []),
+          ...(AI_FEATURES ? ["Delete any match photo you submitted."] : []),
           "Delete your account in Settings → Delete account.",
         ],
       ],
@@ -166,7 +175,7 @@ export const TERMS_OF_USE: LegalDoc = {
     {
       heading: "About OfficeFC",
       blocks: [
-        "OfficeFC is an independent app run by its developer, David Bruza, for private, invite-only workplace leagues for EA SPORTS FC. You join with a code from your league admin. It's intended for adults.",
+        `OfficeFC is an independent app run by ${OPERATOR_NAME}, for private, invite-only workplace leagues for EA SPORTS FC. You join with a code from your league admin. It's intended for adults.`,
       ],
     },
     {

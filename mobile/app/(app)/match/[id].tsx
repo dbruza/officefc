@@ -53,6 +53,7 @@ import { mix, withAlpha } from "@/lib/color";
 import { confirmAction } from "@/lib/dialogs";
 import { friendlyError } from "@/lib/friendlyError";
 import { toast } from "@/lib/toast";
+import { AI_FEATURES } from "@/lib/constants";
 import { useBreakpoint } from "@/lib/responsive";
 import { firstName, fmtXg } from "@/lib/format";
 import { timeAgo } from "@/lib/when";
@@ -132,7 +133,7 @@ export default function MatchDetailRoute() {
     useCallback(
       async () => ({
         id,
-        value: match?.status === "confirmed" ? await getCachedAnalysis(id) : null,
+        value: AI_FEATURES && match?.status === "confirmed" ? await getCachedAnalysis(id) : null,
       }),
       [id, match?.status],
     ),
@@ -416,7 +417,7 @@ export default function MatchDetailRoute() {
         {ratings}
         {details}
       </Columns>
-      {match.status === "confirmed" ? (
+      {AI_FEATURES && match.status === "confirmed" ? (
         <View style={{ marginTop: spacing.lg }}>
           {analysing ? (
             <AnalysisLoading />

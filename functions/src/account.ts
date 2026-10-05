@@ -98,6 +98,7 @@ export async function eraseUserData(uid: string): Promise<{ matchesTouched: numb
     `userBlocks/${uid}`,
     `aiRateLimits/${uid}`,
     `aiRateLimits/${uid}:analysis`,
+    `joinAttempts/${uid}`,
   ])
     writes.push({ kind: "delete", ref: db.doc(path) });
   await commitAll(writes);

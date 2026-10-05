@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-initializeApp({ projectId: "office-fc", storageBucket: "office-fc.firebasestorage.app" });
+initializeApp({ projectId: "demo-officefc", storageBucket: "demo-officefc.firebasestorage.app" });
 const {
   enqueueRebuild,
   drainRebuildQueue,
@@ -42,7 +42,7 @@ async function seedMatch(id, minute, score = 3) {
 }
 test.beforeEach(async () => {
   const response = await fetch(
-    `http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/office-fc/databases/(default)/documents`,
+    `http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/demo-officefc/databases/(default)/documents`,
     { method: "DELETE" },
   );
   assert.equal(response.ok, true);

@@ -28,7 +28,7 @@ before(async () => {
   testEnv = await initializeTestEnvironment({
     // Match the emulator CLI project so Storage's firestore.exists() cross-service
     // lookup reads the same Firestore namespace seeded below.
-    projectId: "office-fc",
+    projectId: "demo-officefc",
     firestore: {
       rules,
       host: "127.0.0.1",
@@ -547,6 +547,16 @@ test("a member can upload and delete their own private match photo", async () =>
   await assertSucceeds(photo.delete());
 });
 
+test("a match photo can't be replaced once uploaded, or uploaded as SVG", async () => {
+  const storage = testEnv.authenticatedContext("alice").storage();
+  const photo = storage.ref("match-photos/alice/draft-4/source.jpg");
+  await assertSucceeds(photo.put(new Uint8Array([1, 2, 3]), { contentType: "image/jpeg" }));
+  // A confirmed match's evidence must not be swapped afterwards.
+  await assertFails(photo.put(new Uint8Array([4, 5, 6]), { contentType: "image/jpeg" }));
+  const svg = storage.ref("match-photos/alice/draft-5/source.svg");
+  await assertFails(svg.put(new Uint8Array([60, 115, 118, 103]), { contentType: "image/svg+xml" }));
+});
+
 test("direct client reads of match photos are denied, including to members", async () => {
   const photo = testEnv
     .authenticatedContext("alice")
@@ -599,6 +609,17 @@ test("predictorId is pinned to the doc id (no forging another member's entry)", 
       predictorId: "bob",
       picks: { e1: { predictedWinnerId: "alice" } },
       updatedAt: serverTimestamp(),
+    }),
+  );
+});
+
+test("a picks doc carries only predictorId, picks and updatedAt", async () => {
+  await assertFails(
+    setDoc(doc(member(), "finalsPredictions/s1/picks/alice"), {
+      predictorId: "alice",
+      picks: { e1: { predictedWinnerId: "dave" } },
+      updatedAt: serverTimestamp(),
+      padding: "x".repeat(1000),
     }),
   );
 });

@@ -47,6 +47,7 @@ import { OpponentPicker } from "@/components/OpponentPicker";
 import { ScoreStepper } from "@/components/ScoreStepper";
 import { StickySplit } from "@/components/StickySplit";
 import { useAuth } from "@/lib/auth";
+import { AI_FEATURES } from "@/lib/constants";
 import {
   createFixture,
   getActiveSeason,
@@ -87,8 +88,9 @@ const AUTO_STEP_NAMES = ["Opponent", "Matchup", "Score"];
 const FINALS_STEP_NAMES = ["Tie", "Teams", "Score"];
 const LAST_STEP = 2;
 
+// Photo logging needs the AI functions, which a deployment may not run (AI_FEATURES).
 const MODE_OPTIONS: SegmentOption<FlowMode>[] = [
-  { value: "snap", label: "Photo", icon: "camera" },
+  ...(AI_FEATURES ? [{ value: "snap" as const, label: "Photo", icon: "camera" as const }] : []),
   { value: "auto", label: "Auto", icon: "swords" },
   { value: "manual", label: "Manual", icon: "edit" },
 ];
@@ -120,7 +122,8 @@ interface SubmittedResult {
 async function readLastMode(): Promise<FlowMode | null> {
   try {
     const stored = await AsyncStorage.getItem(LAST_MODE_KEY);
-    return stored === "manual" || stored === "auto" || stored === "snap" ? stored : null;
+    if (stored === "snap") return AI_FEATURES ? stored : null;
+    return stored === "manual" || stored === "auto" ? stored : null;
   } catch {
     return null;
   }
@@ -743,14 +746,18 @@ export default function LogMatch() {
             },
           ]
         : []),
-      {
-        key: "snap",
-        icon: "camera",
-        tint: colors.accent,
-        title: "Upload match photo",
-        body: "Snap the full-time stats screen. AI Beta suggests the score and stats for you to verify.",
-        onPress: () => enterMode("snap", opponent, true),
-      },
+      ...(AI_FEATURES
+        ? [
+            {
+              key: "snap",
+              icon: "camera" as IconName,
+              tint: colors.accent,
+              title: "Upload match photo",
+              body: "Snap the full-time stats screen. AI Beta suggests the score and stats for you to verify.",
+              onPress: () => enterMode("snap", opponent, true),
+            },
+          ]
+        : []),
       {
         key: "auto",
         icon: "swords",

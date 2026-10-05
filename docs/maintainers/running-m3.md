@@ -1,7 +1,7 @@
 # Running M3 locally
 
 > Historical milestone runbook. For the current setup and release state, see
-> [Firebase setup](firebase-setup.md) and the
+> [Firebase setup](../firebase-setup.md) and the
 > [implementation overview](implementation-plan.md).
 
 M3 adds the read-heavy league experience on top of the M2 match lifecycle:

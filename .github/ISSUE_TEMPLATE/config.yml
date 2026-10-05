@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Self-hosting help and questions
+    url: https://github.com/dbruza/officefc/discussions
+    about: Setting up, deploying, or running your own league? Ask in Discussions.
+  - name: Self-hosting guide
+    url: https://github.com/dbruza/officefc/blob/main/docs/self-hosting.md
+    about: Step-by-step instructions, costs, and troubleshooting for your own deployment.
+  - name: Report a security vulnerability
+    url: https://github.com/dbruza/officefc/security/advisories/new
+    about: Please report security problems privately, not as a public issue.

@@ -8,7 +8,7 @@ const result = spawnSync(
     "--config",
     process.env.FIREBASE_TEST_CONFIG ?? "firebase.test.json",
     "--project",
-    "office-fc",
+    "demo-officefc",
     "--only",
     "firestore,storage",
     // Integration files share one emulator and each wipes it before every test, so they

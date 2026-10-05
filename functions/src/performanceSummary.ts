@@ -5,6 +5,8 @@ import { loggedOnCall } from "./logging";
 import { HttpsError } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireAuth, assertMember } from "./auth";
+import { LEAGUE_ID } from "./config";
+import { isActiveMember } from "./members";
 import { enqueueRebuild, drainRebuildQueue } from "./rebuildQueue";
 import { SUMMARY_VERSION, playerSummary } from "./models/summaries";
 import { QUEUE_PATH } from "./modelWriter";
@@ -28,6 +30,15 @@ export const ensurePerformanceSummary = loggedOnCall(
     const existing = await ref.get();
     if ((seasonId ? existing.get("version") : existing.get("summary.version")) === SUMMARY_VERSION)
       return seasonId ? existing.data() : existing.get("summary");
+    // Rebuilds write stats for active members and anyone with results. Anyone else has
+    // nothing to summarise, and rebuilding for them would never produce a row, so every
+    // call would rebuild the whole league.
+    if (
+      !seasonId &&
+      !existing.exists &&
+      !isActiveMember(await db.doc(`leagues/${LEAGUE_ID}/members/${id}`).get())
+    )
+      return playerSummary(id, [], new Map());
     const state = await db.doc(QUEUE_PATH).get();
     if (
       Number(state.get("requestedRevision") ?? 0) === Number(state.get("completedRevision") ?? 0)
@@ -49,7 +60,7 @@ export const ensurePerformanceSummary = loggedOnCall(
 
 /** Catalogue names/ratings also feed projections; a metadata edit must not wait for another match. */
 export const refreshCatalogueModels = onDocumentWritten(
-  { document: "teamCatalogues/current", region: "australia-southeast1", retry: true },
+  { document: "teamCatalogues/current", retry: true },
   instrumentBackground("refreshCatalogueModels", async (event) => {
     if (
       !event.data?.after.exists ||

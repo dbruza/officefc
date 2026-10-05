@@ -211,7 +211,6 @@ async function deliverQueuedPush(id: string): Promise<void> {
 }
 export const deliverNotification = onDocumentCreated(
   {
-    region: "australia-southeast1",
     document: "notificationOutbox/{id}",
     timeoutSeconds: 60,
     retry: true,
@@ -222,7 +221,6 @@ export const deliverNotification = onDocumentCreated(
 );
 export const retryNotifications = onSchedule(
   {
-    region: "australia-southeast1",
     schedule: "* * * * *",
     timeoutSeconds: 120,
     maxInstances: 1,

@@ -1,4 +1,4 @@
-import { HttpsError } from "firebase-functions/v2/https";
+import { HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { loggedOnCall } from "./logging";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { LEAGUE_ID, isAllowlistedAdmin } from "./config";
@@ -15,13 +15,19 @@ import { isActiveMember } from "./members";
 
 type Role = "admin" | "member";
 
-const DEFAULT_SEASON = {
-  id: "summer-2026",
-  name: "Summer Showdown",
-  year: 2026,
-  start: Timestamp.fromDate(new Date("2026-04-01T00:00:00.000Z")),
-  end: Timestamp.fromDate(new Date("2026-06-30T23:59:59.999Z")),
-};
+/** Placeholder season for a league with none active: three months from today. Admins
+ * rename it or replace it from Admin → Seasons. */
+function placeholderSeason(now = new Date()) {
+  const end = new Date(now);
+  end.setUTCMonth(end.getUTCMonth() + 3);
+  return {
+    id: `season-${now.getTime()}`,
+    name: "New season",
+    year: now.getUTCFullYear(),
+    start: Timestamp.fromDate(now),
+    end: Timestamp.fromDate(end),
+  };
+}
 
 /** Ensure the singleton league, one active season, and the team catalogue exist. */
 async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number }> {
@@ -33,13 +39,15 @@ async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number
   const active = await db.collection("seasons").where("active", "==", true).limit(1).get();
   let activeSeasonId = active.docs[0]?.id;
   if (!activeSeasonId) {
-    activeSeasonId = DEFAULT_SEASON.id;
+    const season = placeholderSeason();
+    activeSeasonId = season.id;
     await db.doc(`seasons/${activeSeasonId}`).set({
-      name: DEFAULT_SEASON.name,
-      year: DEFAULT_SEASON.year,
-      start: DEFAULT_SEASON.start,
-      end: DEFAULT_SEASON.end,
+      name: season.name,
+      year: season.year,
+      start: season.start,
+      end: season.end,
       active: true,
+      finalized: false,
       createdAt: FieldValue.serverTimestamp(),
     });
     await writeSeasonJoinCode(activeSeasonId, await generateUniqueJoinCode());
@@ -50,6 +58,54 @@ async function ensureLeagueData(): Promise<{ seasonId: string; teamCount: number
   const { active: activeTeamCount } = await seedTeamCatalogue();
   return { seasonId: activeSeasonId, teamCount: activeTeamCount };
 }
+
+/**
+ * Joining is keyed on the caller's email (the admin allowlist) and costs an attacker
+ * nothing per account, so it requires an email Firebase has verified.
+ */
+function hasVerifiedEmail(req: CallableRequest): boolean {
+  return req.auth?.token.email_verified === true;
+}
+
+/** Join codes are short; wrong guesses per account are capped so they can't be enumerated. */
+const JOIN_FAILURE_LIMIT = 10;
+const JOIN_FAILURE_WINDOW_MS = 60 * 60 * 1000;
+
+async function assertJoinAttemptsLeft(uid: string): Promise<void> {
+  const snap = await getFirestore().doc(`joinAttempts/${uid}`).get();
+  const windowStart = snap.get("windowStart")?.toMillis?.() ?? 0;
+  if (
+    Date.now() - windowStart < JOIN_FAILURE_WINDOW_MS &&
+    Number(snap.get("failures") ?? 0) >= JOIN_FAILURE_LIMIT
+  )
+    throw new HttpsError(
+      "resource-exhausted",
+      "Too many incorrect join codes. Try again in an hour, or ask your admin for an invite link.",
+    );
+}
+
+async function recordJoinFailure(uid: string): Promise<void> {
+  const db = getFirestore();
+  const ref = db.doc(`joinAttempts/${uid}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const now = Date.now();
+    const windowStart = snap.get("windowStart")?.toMillis?.() ?? 0;
+    if (now - windowStart >= JOIN_FAILURE_WINDOW_MS)
+      tx.set(ref, { windowStart: Timestamp.fromMillis(now), failures: 1 });
+    else tx.update(ref, { failures: FieldValue.increment(1) });
+  });
+}
+
+/**
+ * What the join screen should offer: admin setup when the caller's own verified email is
+ * on the allowlist. It answers only about the caller, so the allowlist never ships in the
+ * app.
+ */
+export const getJoinOptions = loggedOnCall("getJoinOptions", { cors: true }, async (req) => {
+  const { email } = requireAuth(req);
+  return { adminSetup: hasVerifiedEmail(req) && isAllowlistedAdmin(email) };
+});
 
 /**
  * Join the league.
@@ -73,6 +129,9 @@ export const redeemInvite = loggedOnCall("redeemInvite", { cors: true }, async (
     return { ok: true, role: existing.get("role") as Role };
   }
 
+  if (!hasVerifiedEmail(req))
+    throw new HttpsError("failed-precondition", "Verify your email address before joining.");
+
   if (isAllowlistedAdmin(email)) {
     await ensureLeagueData();
     await memberRef.set({
@@ -88,8 +147,12 @@ export const redeemInvite = loggedOnCall("redeemInvite", { cors: true }, async (
     .toUpperCase();
   if (!code) throw new HttpsError("failed-precondition", "A season join code is required.");
 
+  await assertJoinAttemptsLeft(uid);
   const seasonId = await findSeasonIdByJoinCode(code);
-  if (!seasonId) throw new HttpsError("not-found", "Join code not found.");
+  if (!seasonId) {
+    await recordJoinFailure(uid);
+    throw new HttpsError("not-found", "Join code not found.");
+  }
   const seasonDoc = await db.doc(`seasons/${seasonId}`).get();
   if (!seasonDoc.exists) throw new HttpsError("not-found", "Join code not found.");
   const rejection = seasonJoinRejection({
@@ -104,8 +167,8 @@ export const redeemInvite = loggedOnCall("redeemInvite", { cors: true }, async (
   await memberRef.set({
     role: "member" as Role,
     joinedAt: FieldValue.serverTimestamp(),
+    // Not the code itself: member docs are readable by every member, and the code is not.
     viaSeason: seasonId,
-    viaCode: code,
   });
 
   return { ok: true, role: "member" as Role };

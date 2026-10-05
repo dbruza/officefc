@@ -14,7 +14,7 @@ import { modelVersion } from "../rebuildQueue";
  */
 import { HttpsError } from "firebase-functions/v2/https";
 import { loggedOnCall } from "../logging";
-import { defineSecret } from "firebase-functions/params";
+import { OMIT_UNLESS_AI, OPENROUTER_SECRET, openRouterApiKey } from "../config";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { requireAuth, assertMember } from "../auth";
 import { callWithFallbackChain } from "./core/openrouter.mjs";
@@ -25,8 +25,6 @@ import {
   restorePlayerNames,
 } from "./core/prompt.mjs";
 import { fallbackAnalysis } from "./core/fallback.mjs";
-
-const OPENROUTER_API_KEY = defineSecret("OPENROUTER_API_KEY");
 
 // Free-tier models rotate often; each is tried in order until one yields valid JSON.
 // Keep this list short — every entry adds worst-case latency before the local fallback.
@@ -264,7 +262,7 @@ export async function gatherAnalysisContext(
 
 export const analyzeMatch = loggedOnCall(
   "analyzeMatch",
-  { cors: true, secrets: [OPENROUTER_API_KEY], timeoutSeconds: 120 },
+  { cors: true, secrets: [OPENROUTER_SECRET], timeoutSeconds: 120, omit: OMIT_UNLESS_AI },
   async (req) => {
     const { uid } = requireAuth(req);
     await assertMember(uid);
@@ -299,7 +297,7 @@ export const analyzeMatch = loggedOnCall(
       try {
         const result = await callWithFallbackChain({
           models: MODEL_CHAIN,
-          apiKey: OPENROUTER_API_KEY.value(),
+          apiKey: openRouterApiKey(),
           timeoutMs: 8000,
           maxAttempts: 1,
           deadlineMs: Date.now() + 30000,

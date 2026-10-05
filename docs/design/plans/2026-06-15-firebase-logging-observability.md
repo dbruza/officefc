@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Firebase Functions v2 (`firebase-functions/logger`), Firebase JS SDK v10, Expo / React Native, `node:test` (functions, already in use) + `tsx` + `node:test` (new mobile runner).
 
-**Spec:** [docs/superpowers/specs/2026-06-15-firebase-logging-observability-design.md](../specs/2026-06-15-firebase-logging-observability-design.md)
+**Spec:** [docs/design/specs/2026-06-15-firebase-logging-observability-design.md](../specs/2026-06-15-firebase-logging-observability-design.md)
 
 ---
 

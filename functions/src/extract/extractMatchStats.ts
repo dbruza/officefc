@@ -1,7 +1,7 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { loggedOnCall } from "../logging";
-import { defineSecret } from "firebase-functions/params";
+import { OMIT_UNLESS_AI, OPENROUTER_SECRET, openRouterApiKey } from "../config";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertMember } from "../auth";
@@ -16,7 +16,6 @@ import {
   type DraftState,
 } from "./draftSecurity";
 
-const OPENROUTER_API_KEY = defineSecret("OPENROUTER_API_KEY");
 const EXTRACTION_MODEL = DEFAULT_MODEL;
 
 const db = getFirestore();
@@ -113,7 +112,7 @@ async function discardUnclaimedUpload(draftId: string, storagePath: string): Pro
 
 export const extractMatchStats = loggedOnCall(
   "extractMatchStats",
-  { cors: true, secrets: [OPENROUTER_API_KEY], timeoutSeconds: 120 },
+  { cors: true, secrets: [OPENROUTER_SECRET], timeoutSeconds: 120, omit: OMIT_UNLESS_AI },
   async (req) => {
     const { uid } = requireAuth(req);
     await assertMember(uid);
@@ -216,7 +215,7 @@ export const extractMatchStats = loggedOnCall(
         imageBase64,
         mediaType: processedType,
         model: EXTRACTION_MODEL,
-        apiKey: OPENROUTER_API_KEY.value(),
+        apiKey: openRouterApiKey(),
       });
 
       await db.runTransaction(async (tx) => {

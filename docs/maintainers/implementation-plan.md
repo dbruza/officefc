@@ -77,7 +77,7 @@ Before a release:
 
 Operational and deployment details live in:
 
-- [Web MVP launch](web-mvp-launch.md)
-- [Real-device testing](real-device-testing.md)
-- [Firebase setup](firebase-setup.md)
-- [AI extraction evaluation](../eval/README.md)
+- [Web MVP launch](../web-mvp-launch.md)
+- [Real-device testing](../real-device-testing.md)
+- [Firebase setup](../firebase-setup.md)
+- [AI extraction evaluation](../../eval/README.md)

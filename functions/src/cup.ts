@@ -216,7 +216,7 @@ async function announceChampionIfComplete(seasonId: string): Promise<void> {
 
 /** Independent retries keep ancillary cup failures out of the league rebuild queue. */
 export const announceCupChampion = onDocumentWritten(
-  { document: "seasons/{seasonId}/cup/state", region: "australia-southeast1", retry: true },
+  { document: "seasons/{seasonId}/cup/state", retry: true },
   instrumentBackground("announceCupChampion", async (event) => {
     await announceChampionIfComplete(event.params.seasonId);
   }),

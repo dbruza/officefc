@@ -2,7 +2,7 @@
   "expo": {
     "name": "OfficeFC",
     "slug": "officefc",
-    "version": "1.14.0",
+    "version": "1.15.0",
     "scheme": "officefc",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -10,7 +10,6 @@
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.officefc.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "OfficeFC uses the camera to capture end-of-match stats screens for AI-assisted match logging.",
@@ -18,7 +17,6 @@
       }
     },
     "android": {
-      "package": "com.officefc.app",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -74,13 +72,6 @@
           "color": "#00ff87"
         }
       ],
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "david-b-z0",
-          "project": "officefc-mobile"
-        }
-      ],
       "expo-sharing"
     ],
     "experiments": {
@@ -88,11 +79,7 @@
       "onDemandFilesystem": false
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "0752f3a3-5e97-4809-a3bf-13351e6985d6"
-      }
-    },
-    "owner": "dbruza"
+      "router": {}
+    }
   }
 }

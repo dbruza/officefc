@@ -8,7 +8,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-export const PRODUCTION_PROJECT_ID = "office-fc";
+/** Firebase's default, and the default of the FUNCTIONS_REGION param in functions/src/config.ts. */
+export const DEFAULT_FUNCTIONS_REGION = "us-central1";
 
 export const REQUIRED_KEYS = [
   "EXPO_PUBLIC_FIREBASE_API_KEY",
@@ -29,7 +30,14 @@ export const REQUIRED_KEYS = [
  * This list only names today's literals. The shape rules below are what actually close
  * the class — a new stand-in nobody added here still fails them.
  */
-export const CI_PLACEHOLDERS = ["ci-api-key", "000000000000", "1:000000000000:web:ci"];
+export const CI_PLACEHOLDERS = [
+  "ci-api-key",
+  "000000000000",
+  "1:000000000000:web:ci",
+  // mobile/.env.example's emulator-only values
+  "demo-api-key",
+  "1:000000000000:web:demo",
+];
 
 /**
  * Set by CI, which deliberately builds against the placeholders above to prove the bundle
@@ -76,15 +84,53 @@ export function readWebEnv() {
   }
 }
 
+/** The project `firebase deploy` targets — the `default` alias in `.firebaserc` — or null. */
+export function readActiveProjectId() {
+  try {
+    const projectId = JSON.parse(readFileSync(resolve(".firebaserc"), "utf8")).projects?.default;
+    return typeof projectId === "string" && projectId ? projectId : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The Cloud Functions params firebase-tools would deploy `projectId` with:
+ * `functions/.env`, overridden by `functions/.env.<projectId>`. Missing files are skipped.
+ */
+export function readFunctionsEnv(projectId) {
+  const files = ["functions/.env", ...(projectId ? [`functions/.env.${projectId}`] : [])];
+  let values = {};
+  for (const file of files) {
+    try {
+      values = { ...values, ...parseEnv(readFileSync(resolve(file), "utf8")) };
+    } catch {
+      // Not every deployment has every file.
+    }
+  }
+  return values;
+}
+
+function isOn(value) {
+  return /^(1|true)$/i.test(String(value ?? "").trim());
+}
+
 /**
  * Every reason `values` cannot produce a working production bundle, as printable lines.
  * Empty means good to build. Reports all problems at once so a half-filled `.env` takes
  * one round trip to the Firebase console instead of six.
  *
  * `allowPlaceholders` is CI's opt-out: it stands down the credential-realism rules only.
- * Project and emulator targeting stay enforced everywhere.
+ * Project, emulator and backend-agreement checks stay enforced everywhere.
+ *
+ * `activeProjectId` is the project `firebase deploy` will target (null when none is
+ * selected, as in CI); `functionsEnv` holds the Cloud Functions params for that project, so
+ * the app is never built against a region or feature set the backend doesn't deploy.
  */
-export function validateWebEnv(values, { allowPlaceholders = false } = {}) {
+export function validateWebEnv(
+  values,
+  { allowPlaceholders = false, activeProjectId = null, functionsEnv = {} } = {},
+) {
   const problems = [];
 
   const missing = REQUIRED_KEYS.filter((key) => !values[key]);
@@ -94,13 +140,32 @@ export function validateWebEnv(values, { allowPlaceholders = false } = {}) {
   }
 
   const projectId = values.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
-  if (projectId !== PRODUCTION_PROJECT_ID) {
+  if (activeProjectId && projectId !== activeProjectId) {
     problems.push(
-      `EXPO_PUBLIC_FIREBASE_PROJECT_ID must be ${PRODUCTION_PROJECT_ID} for the MVP production build.`,
+      `EXPO_PUBLIC_FIREBASE_PROJECT_ID is ${projectId} but the active Firebase project is ` +
+        `${activeProjectId}. Switch with \`npx firebase use\`, or fix mobile/.env.`,
     );
   }
   if (values.EXPO_PUBLIC_USE_EMULATORS !== "0") {
     problems.push("EXPO_PUBLIC_USE_EMULATORS must be exactly 0 for a production web build.");
+  }
+
+  // The app calls functions in one region; a mismatch fails every callable (it surfaces in
+  // the browser as a CORS error).
+  const envFile = `functions/.env.${activeProjectId ?? projectId}`;
+  const appRegion = values.EXPO_PUBLIC_FUNCTIONS_REGION || DEFAULT_FUNCTIONS_REGION;
+  const functionsRegion = functionsEnv.FUNCTIONS_REGION || DEFAULT_FUNCTIONS_REGION;
+  if (appRegion !== functionsRegion) {
+    problems.push(
+      `EXPO_PUBLIC_FUNCTIONS_REGION is ${appRegion} but the functions deploy to ${functionsRegion}. ` +
+        `Set the same region in mobile/.env and as FUNCTIONS_REGION in ${envFile}.`,
+    );
+  }
+  if (isOn(values.EXPO_PUBLIC_AI_FEATURES) && !isOn(functionsEnv.AI_FEATURES)) {
+    problems.push(
+      `EXPO_PUBLIC_AI_FEATURES is on but AI_FEATURES isn't true in ${envFile}, so the AI ` +
+        "functions aren't deployed. Turn both on (and set the OPENROUTER_API_KEY secret), or both off.",
+    );
   }
 
   if (allowPlaceholders) return problems;
@@ -112,6 +177,14 @@ export function validateWebEnv(values, { allowPlaceholders = false } = {}) {
     problems.push(
       `mobile/.env still holds CI placeholder values: ${placeholders.join(", ")}. ` +
         "Restore the real config from Firebase console → Project settings → Your apps → Web app.",
+    );
+  }
+
+  if (projectId.startsWith("demo-")) {
+    // Firebase reserves demo-* ids for the emulators; no real project can have one.
+    problems.push(
+      `EXPO_PUBLIC_FIREBASE_PROJECT_ID is ${projectId}, the emulator-only demo project. ` +
+        "Use your Firebase project's config for a production build.",
     );
   }
 

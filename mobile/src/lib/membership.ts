@@ -19,6 +19,15 @@ export async function getMembership(uid: string): Promise<Membership | null> {
   return { uid, role: snap.data().role as Role };
 }
 
+/**
+ * Whether the join screen should offer admin setup: the server checks the caller's own
+ * verified email against its allowlist, which never ships in the app.
+ */
+export async function getJoinOptions(): Promise<{ adminSetup: boolean }> {
+  const callable = httpsCallable<void, { adminSetup: boolean }>(functions, "getJoinOptions");
+  return (await callable()).data;
+}
+
 export interface RedeemResult {
   ok: boolean;
   role: Role;
@@ -27,8 +36,8 @@ export interface RedeemResult {
 }
 
 /**
- * Redeem a season join code to join the league. Allowlisted admins may pass an empty code
- * (the function admits + promotes them). The code is the current season's shared, multi-use
+ * Redeem a season join code to join the league. Allowlisted admins with a verified email
+ * may pass an empty code (the function admits + promotes them). The code is the current season's shared, multi-use
  * code; all validation is server-side.
  */
 export async function redeemInvite(code: string): Promise<RedeemResult> {

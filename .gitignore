@@ -21,6 +21,14 @@ mobile/android/
 .env
 .env.local
 .env.*.local
+# Per-project Cloud Functions params (functions/.env.<projectId>) and emulator secrets
+functions/.env.*
+!functions/.env.example
+!functions/.env.demo-officefc
+functions/.secret.local
+
+# The selected Firebase project is per-deployment: run `npx firebase use --add`
+.firebaserc
 
 # Logs & OS cruft
 *.log

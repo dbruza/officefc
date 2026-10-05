@@ -8,7 +8,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-initializeApp({ projectId: "office-fc", storageBucket: "office-fc.firebasestorage.app" });
+initializeApp({ projectId: "demo-officefc", storageBucket: "demo-officefc.firebasestorage.app" });
 const { eraseUserData, deleteAccount } = require("../lib/account");
 const {
   reportPlayer,
@@ -16,15 +16,20 @@ const {
   moderateMember,
   screenProfileName,
 } = require("../lib/safety");
-const { redeemInvite } = require("../lib/membership");
+const { redeemInvite, getJoinOptions } = require("../lib/membership");
+const { writeSeasonJoinCode } = require("../lib/utils");
 const { notifyMatchSubmitted } = require("../lib/matchLifecycle");
 const db = getFirestore();
 
 const caller = (uid, token = {}) => ({ auth: { uid, token } });
+const verified = (uid, email = `${uid}@office.test`) =>
+  caller(uid, { email, email_verified: true });
+// Params reach the runtime as environment variables, exactly as written in the .env file.
+process.env.ADMIN_EMAILS = "ops@office.test, boss@office.test";
 
 test.beforeEach(async () => {
   const response = await fetch(
-    `http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/office-fc/databases/(default)/documents`,
+    `http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/demo-officefc/databases/(default)/documents`,
     { method: "DELETE" },
   );
   assert.equal(response.ok, true);
@@ -146,6 +151,10 @@ test("blocking files a report, and a blocked pair's new match is voided without 
 
   await setPlayerBlocked.run({ ...caller("b"), data: { targetUid: "a", blocked: false } });
   assert.deepEqual((await db.doc("userBlocks/b").get()).get("blocked"), []);
+
+  // Blocking again doesn't page the admins a second time.
+  await setPlayerBlocked.run({ ...caller("b"), data: { targetUid: "a", blocked: true } });
+  assert.equal((await db.collection("reports").where("targetId", "==", "a").get()).size, 1);
 });
 
 test("reports validate their reason and reach the admins", async () => {
@@ -203,4 +212,60 @@ test("an offensive name written straight to Firestore is replaced and reported",
   await ref.update({ displayName: "Alice Again" });
   await screenProfileName.run({ data: { after: await ref.get() }, params: { uid: "a" } });
   assert.equal((await ref.get()).get("displayName"), "Alice Again");
+
+  // Re-saving an offensive name is replaced again but adds no report while one is open.
+  await ref.update({ displayName: "Big Fucker" });
+  await screenProfileName.run({ data: { after: await ref.get() }, params: { uid: "a" } });
+  assert.equal((await ref.get()).get("displayName"), "Player 7");
+  assert.equal((await db.collection("reports").where("targetId", "==", "a").get()).size, 1);
+
+  // A non-member's offensive name is replaced, and the admins aren't paged about it.
+  const stranger = db.doc("profiles/stranger");
+  await stranger.set({ displayName: "Big Fucker", handle: "x", jersey: 3 });
+  await screenProfileName.run({
+    data: { after: await stranger.get() },
+    params: { uid: "stranger" },
+  });
+  assert.equal((await stranger.get()).get("displayName"), "Player 3");
+  assert.equal((await db.collection("reports").where("targetId", "==", "stranger").get()).size, 0);
+});
+
+test("an allowlisted email only makes an admin once it's verified", async () => {
+  // Anyone can register an allowlisted address nobody has claimed yet; they can't verify it.
+  const squatter = caller("mallory", { email: "Boss@office.test", email_verified: false });
+  await assert.rejects(redeemInvite.run({ ...squatter, data: { code: "" } }), /Verify your email/);
+  assert.equal((await db.doc("leagues/office/members/mallory").get()).exists, false);
+  assert.deepEqual(await getJoinOptions.run(squatter), { adminSetup: false });
+
+  assert.deepEqual(await getJoinOptions.run(verified("boss", "Boss@office.test")), {
+    adminSetup: true,
+  });
+  assert.deepEqual(await getJoinOptions.run(verified("c")), { adminSetup: false });
+});
+
+test("joining records the season rather than the code, and wrong codes run out", async () => {
+  await db.doc("seasons/s1").set({ name: "S1", active: true, finalized: false });
+  await writeSeasonJoinCode("s1", "OFC-GOODX");
+
+  await redeemInvite.run({ ...verified("c"), data: { code: "OFC-GOODX" } });
+  const member = (await db.doc("leagues/office/members/c").get()).data();
+  assert.equal(member.viaSeason, "s1");
+  assert.equal("viaCode" in member, false, "members can read member docs, so no codes there");
+
+  for (let i = 0; i < 10; i++)
+    await assert.rejects(
+      redeemInvite.run({ ...verified("d"), data: { code: `OFC-BAD${i}` } }),
+      /not found/,
+    );
+  await assert.rejects(
+    redeemInvite.run({ ...verified("d"), data: { code: "OFC-GOODX" } }),
+    /Too many incorrect join codes/,
+  );
+});
+
+test("blocking someone who isn't in the league is refused", async () => {
+  await assert.rejects(
+    setPlayerBlocked.run({ ...caller("a"), data: { targetUid: "ghost", blocked: true } }),
+    /Player not found/,
+  );
 });

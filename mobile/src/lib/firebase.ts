@@ -20,6 +20,7 @@ import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FUNCTIONS_REGION } from "./constants";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -63,10 +64,7 @@ export const db =
     ? getFirestore(app)
     : initializeFirestore(app, { experimentalForceLongPolling: true });
 export const storage = getStorage(app);
-export const functions = getFunctions(
-  app,
-  process.env.EXPO_PUBLIC_FUNCTIONS_REGION ?? "australia-southeast1",
-);
+export const functions = getFunctions(app, FUNCTIONS_REGION);
 
 const useEmulators =
   process.env.EXPO_PUBLIC_USE_EMULATORS === "1" || process.env.EXPO_PUBLIC_USE_EMULATORS === "true";

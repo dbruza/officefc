@@ -291,18 +291,21 @@ service cloud.firestore {
     }
 
     // Finals predictions (prediction game): members read all; each member writes only
-    // their own prediction doc. Every pick must name an OPEN bracket slot at write time —
+    // their own prediction doc (removed members can't). Every pick must name an OPEN
+    // bracket slot at write time —
     // once a tie is decided its slot closes and the stored pick is frozen, which is what
     // makes every scored pick provably pre-decision (no timestamp comparison needed).
     // predictorId is pinned to the caller so a member cannot forge another member's entry,
     // and updatedAt must equal request.time so the stamp is server-written.
     match /finalsPredictions/{seasonId}/picks/{predictorId} {
       allow read: if isMember();
-      allow create: if signedIn() && predictorId == uid()
+      allow create: if isMember() && predictorId == uid()
+        && request.resource.data.keys().hasOnly(['predictorId', 'picks', 'updatedAt'])
         && request.resource.data.predictorId == uid()
         && request.resource.data.updatedAt == request.time
         && picksAreForOpenSlots(request.resource.data, seasonId);
-      allow update: if signedIn() && predictorId == uid()
+      allow update: if isMember() && predictorId == uid()
+        && request.resource.data.keys().hasOnly(['predictorId', 'picks', 'updatedAt'])
         && request.resource.data.predictorId == resource.data.predictorId
         && request.resource.data.updatedAt == request.time
         && picksAreForOpenSlots(request.resource.data, seasonId);

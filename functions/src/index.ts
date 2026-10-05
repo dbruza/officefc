@@ -7,11 +7,17 @@
 // Sentry first so its handlers exist before any domain module loads.
 import "./sentry";
 import { initializeApp } from "firebase-admin/app";
+import { setGlobalOptions } from "firebase-functions/v2";
+import { FUNCTIONS_REGION } from "./config";
 
 initializeApp();
+// Before the domain modules below define their functions, so every one inherits them. The
+// instance cap bounds what a flood of requests can cost; functions that need less set
+// their own.
+setGlobalOptions({ region: FUNCTIONS_REGION, maxInstances: 10 });
 
 // Membership & league setup
-export { redeemInvite, ensureLeagueSetup } from "./membership";
+export { redeemInvite, getJoinOptions, ensureLeagueSetup } from "./membership";
 
 // Season join codes
 export { getSeasonJoinCode, rotateSeasonJoinCode } from "./joinCodes";
@@ -80,9 +86,6 @@ export {
 
 // Client log sink
 export { ingestLog } from "./clientLogs";
-
-// TEMPORARY one-off migration — remove after the join-code backfill has run (see #22).
-export { backfillSeasonCodes } from "./migrations/backfillSeasonCodes";
 
 export { rebuildQueuedModels, recoverQueuedModels } from "./rebuildQueue";
 

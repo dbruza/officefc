@@ -18,8 +18,9 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/leagues/office/members/$(request.auth.uid))
           .data.get('status', 'active') == 'active';
     }
+    // The formats extraction accepts. No SVG or other active content behind a signed URL.
     function isImage() {
-      return request.resource.contentType.matches('image/.*');
+      return request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
     function underLimit() {
       return request.resource.size < 12 * 1024 * 1024; // 12 MB
@@ -28,7 +29,12 @@ service firebase.storage {
     // match-photos/{uid}/{draftId}/source.{ext}
     match /match-photos/{userId}/{allPaths=**} {
       allow read: if false; // served via signed URLs only
-      allow write: if isMember() && userId == request.auth.uid && isImage() && underLimit();
+      // New objects only: every upload gets a fresh draft path, and a photo already
+      // attached to a match must not be swapped afterwards. (Re-uploading over an existing
+      // object is evaluated as `create`, hence the `resource == null`.)
+      allow create: if isMember() && userId == request.auth.uid && resource == null
+        && isImage() && underLimit();
+      allow update: if false;
       allow delete: if isMember() && userId == request.auth.uid;
     }
 

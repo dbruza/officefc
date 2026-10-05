@@ -1,7 +1,7 @@
 # Running M1 locally (auth + membership)
 
 > Historical milestone runbook. For the current setup and release state, see
-> [Firebase setup](firebase-setup.md) and the
+> [Firebase setup](../firebase-setup.md) and the
 > [implementation overview](implementation-plan.md).
 
 M1 adds real Firebase auth, profile setup, and invite-code membership, backed by two

@@ -14,13 +14,13 @@ import {
   validateWebEnv,
 } from "../scripts/web-env.mjs";
 
-/** A well-formed office-fc web config. Realistic in shape, not a real key. */
+/** A well-formed web config for an example project. Realistic in shape, not a real key. */
 function validConfig(overrides = {}) {
   return {
     EXPO_PUBLIC_FIREBASE_API_KEY: "AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q",
-    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "office-fc.firebaseapp.com",
-    EXPO_PUBLIC_FIREBASE_PROJECT_ID: "office-fc",
-    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "office-fc.firebasestorage.app",
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "acme-league.firebaseapp.com",
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID: "acme-league",
+    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "acme-league.firebasestorage.app",
     EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "123456789012",
     EXPO_PUBLIC_FIREBASE_APP_ID: "1:123456789012:web:abc123def456abc123",
     EXPO_PUBLIC_USE_EMULATORS: "0",
@@ -37,7 +37,7 @@ function ciConfig() {
   });
 }
 
-test("a real office-fc config passes", () => {
+test("a real project config passes", () => {
   assert.deepEqual(validateWebEnv(validConfig()), []);
 });
 
@@ -58,8 +58,12 @@ test("a placeholder nobody listed is still rejected", () => {
 test("CI's opt-out stands down credential realism but not project targeting", () => {
   assert.deepEqual(validateWebEnv(ciConfig(), { allowPlaceholders: true }), []);
 
-  const wrongProject = validConfig({ EXPO_PUBLIC_FIREBASE_PROJECT_ID: "office-fc-staging" });
-  assert.equal(validateWebEnv(wrongProject, { allowPlaceholders: true }).length, 1);
+  const wrongProject = validConfig({ EXPO_PUBLIC_FIREBASE_PROJECT_ID: "acme-league-staging" });
+  assert.equal(
+    validateWebEnv(wrongProject, { allowPlaceholders: true, activeProjectId: "acme-league" })
+      .length,
+    1,
+  );
 
   const emulators = validConfig({ EXPO_PUBLIC_USE_EMULATORS: "1" });
   assert.ok(
@@ -67,6 +71,47 @@ test("CI's opt-out stands down credential realism but not project targeting", ()
       p.includes("EXPO_PUBLIC_USE_EMULATORS"),
     ),
   );
+});
+
+test("the app must target the project firebase deploy will use", () => {
+  assert.deepEqual(validateWebEnv(validConfig(), { activeProjectId: "acme-league" }), []);
+  const problems = validateWebEnv(validConfig(), { activeProjectId: "other-league" });
+  assert.ok(problems.some((p) => p.includes("active Firebase project is other-league")));
+});
+
+test("the app's functions region must match the deployed one", () => {
+  // Both unset: both sides fall back to us-central1.
+  assert.deepEqual(validateWebEnv(validConfig()), []);
+
+  const sydney = validConfig({ EXPO_PUBLIC_FUNCTIONS_REGION: "australia-southeast1" });
+  assert.ok(
+    validateWebEnv(sydney).some((p) => p.includes("functions deploy to us-central1")),
+    "an app pointed at Sydney must not ship against Iowa functions",
+  );
+  assert.deepEqual(
+    validateWebEnv(sydney, { functionsEnv: { FUNCTIONS_REGION: "australia-southeast1" } }),
+    [],
+  );
+});
+
+test("AI features in the app need the AI functions deployed", () => {
+  const aiApp = validConfig({ EXPO_PUBLIC_AI_FEATURES: "1" });
+  assert.ok(validateWebEnv(aiApp).some((p) => p.includes("AI_FEATURES")));
+  assert.deepEqual(validateWebEnv(aiApp, { functionsEnv: { AI_FEATURES: "true" } }), []);
+  // Backend on, app off is harmless: the functions just go unused.
+  assert.deepEqual(validateWebEnv(validConfig(), { functionsEnv: { AI_FEATURES: "true" } }), []);
+});
+
+test("the emulator-only example config can't ship", () => {
+  const example = validConfig({
+    EXPO_PUBLIC_FIREBASE_API_KEY: "demo-api-key",
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "demo-officefc.firebaseapp.com",
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID: "demo-officefc",
+    EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "demo-officefc.firebasestorage.app",
+  });
+  assert.ok(validateWebEnv(example).some((p) => p.includes("emulator-only demo project")));
+  // CI builds against it deliberately, with the realism rules stood down.
+  assert.deepEqual(validateWebEnv(example, { allowPlaceholders: true }), []);
 });
 
 test("every missing variable is named in one message", () => {
@@ -83,17 +128,17 @@ test("a config assembled from two different apps is rejected", () => {
   assert.ok(validateWebEnv(mixed).some((p) => p.includes("copy all six values from one app")));
 });
 
-test("Firebase-owned domains must belong to office-fc, custom ones need not", () => {
+test("Firebase-owned domains must belong to the project, custom ones need not", () => {
   const foreign = validConfig({
     EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "some-other-project.firebaseapp.com",
   });
   assert.ok(validateWebEnv(foreign).some((p) => p.includes("different Firebase project")));
 
-  const custom = validConfig({ EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "auth.bruza.tech" });
+  const custom = validConfig({ EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "auth.example.com" });
   assert.deepEqual(validateWebEnv(custom), []);
 
   const pastedUrl = validConfig({
-    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "https://office-fc.firebaseapp.com/",
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: "https://acme-league.firebaseapp.com/",
   });
   assert.ok(validateWebEnv(pastedUrl).some((p) => p.includes("bare hostname")));
 });
@@ -102,11 +147,11 @@ test("the storage bucket must be one the console actually hands out", () => {
   // .env.example warns about this exact confusion: newer projects are .firebasestorage.app,
   // older ones .appspot.com, and a hand-typed bucket silently breaks every upload.
   assert.deepEqual(
-    validateWebEnv(validConfig({ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "office-fc.appspot.com" })),
+    validateWebEnv(validConfig({ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "acme-league.appspot.com" })),
     [],
   );
 
-  const invented = validConfig({ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "office-fc-uploads" });
+  const invented = validConfig({ EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: "acme-league-uploads" });
   assert.ok(
     validateWebEnv(invented).some((p) => p.includes("EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET")),
   );

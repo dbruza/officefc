@@ -6,9 +6,8 @@
  */
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-/** Public web build — native has no origin of its own to build links from. */
-const WEB_APP_URL = "https://office-fc.web.app";
+// Public web build — native has no origin of its own to build links from.
+import { WEB_APP_URL } from "./constants";
 
 const STASH_KEY = "officefc.pendingJoinCode";
 

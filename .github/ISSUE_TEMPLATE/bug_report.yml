@@ -1,0 +1,75 @@
+name: Bug report
+description: Something in OfficeFC doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please search existing issues first.
+
+        - **Security problems:** don't file them here. Use private vulnerability reporting (see SECURITY.md).
+        - **Help setting up or running your own league:** ask in [Discussions](https://github.com/dbruza/officefc/discussions).
+        - Don't paste API keys, `.env` files, or players' personal data.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as a league member
+        2. Open Log match
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OfficeFC version
+      description: Shown in Settings → About in the app, or the `VERSION` file in your deployment's checkout.
+      placeholder: 1.14.0
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - Web (desktop browser)
+        - Web (mobile browser or installed PWA)
+        - iOS app
+        - Android app
+        - Cloud Functions / backend
+        - Local development (emulators)
+    validations:
+      required: true
+  - type: input
+    id: browser-device
+    attributes:
+      label: Browser or device
+      placeholder: Chrome 140 on Windows 11, Safari on iPhone 16 (iOS 26), ...
+  - type: dropdown
+    id: ai
+    attributes:
+      label: Are AI features enabled in this deployment?
+      options:
+        - "No"
+        - "Yes"
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, errors, or screenshots
+      description: Browser console errors, Cloud Functions logs (filter on `jsonPayload.fn`), or screenshots. Remove personal data first.
+      render: text
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Recent changes to your deployment, Firebase region, custom configuration, and so on.

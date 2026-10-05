@@ -1,51 +1,53 @@
-# OfficeFC Web MVP Launch Runbook
+# Web release runbook
 
-Production URL: <https://officefc.bruza.tech>  
-Firebase project: `office-fc`  
-Firebase fallback URL: <https://office-fc.web.app>
+A checklist for shipping a web release to a deployment that is already set up: verify,
+deploy, smoke-test, and roll back if needed. For a first-time setup, follow the
+[self-hosting guide](self-hosting.md).
 
-The MVP is invite-only and uses email/password authentication. AI photo extraction is
-assistive beta functionality: users must verify all values and opponents must confirm a
-match before ELO changes.
+In the examples, `https://<your-domain>` is your web app's address: your custom domain, or
+`https://<your-project-id>.web.app`.
 
-## 1. Production prerequisites
+The league is invite-only and uses email/password authentication. AI photo reading, when
+enabled, is assistive: players check every value, and opponents must confirm a match before
+ELO changes.
+
+## 1. Prerequisites
 
 From the repository root:
 
 ```bash
 npx firebase login
-npx firebase use office-fc
+npx firebase use              # confirm the active project is the one you mean to deploy
 npm ci
 npm --prefix mobile ci
 npm --prefix functions ci
 npm --prefix test/rules ci
 ```
 
-Confirm `mobile/.env` contains the Firebase Web app config for `office-fc` and:
+Confirm `mobile/.env` holds the Firebase web app config for that project, with
+`EXPO_PUBLIC_USE_EMULATORS=0`. Compare it with `mobile/.env.example` for settings added
+since your last release.
 
-```dotenv
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=office-fc
-EXPO_PUBLIC_USE_EMULATORS=0
-```
+The build stops before exporting if a required Firebase value is missing or looks like a
+placeholder, the project ID isn't the active project, emulators are enabled, or the region
+and AI settings disagree with `functions/.env.<projectId>`.
 
-The build fails before export if a required Firebase value is missing, the project ID is
-wrong, or emulators are enabled.
+## 2. Secrets
 
-## 2. Configure the OpenRouter secret
-
-Set or rotate the secret without putting it in `.env` or Git:
+Only needed with `AI_FEATURES=true`. Set or rotate the OpenRouter key without putting it in
+`.env` or Git:
 
 ```bash
-firebase functions:secrets:set OPENROUTER_API_KEY --project office-fc
+npx firebase functions:secrets:set OPENROUTER_API_KEY
 ```
 
-After rotation, redeploy Functions so new instances receive the latest secret:
+After a rotation, redeploy the backend so new instances receive the latest secret:
 
 ```bash
 npm run deploy:backend
 ```
 
-## 3. Verify before deployment
+## 3. Verify before deploying
 
 ```bash
 npm run check
@@ -56,118 +58,103 @@ Inspect `mobile/dist/index.html` and confirm the export completed without emulat
 
 ## 4. Deploy
 
-Deploy everything required by the MVP:
+Deploy everything:
 
 ```bash
 npm run deploy:mvp
 ```
 
-For later scoped releases:
+Or in scoped steps:
 
 ```bash
+npm run deploy:backend   # Firestore rules and indexes, Storage rules, Functions, scheduled jobs
 npm run deploy:web       # validated web export + Hosting only
-npm run deploy:backend   # Firestore, Storage, Functions, and scheduled jobs
 ```
 
-First test <https://office-fc.web.app>. Check sign-in, a nested route refresh, a manual
-match, and one photo extraction before connecting the custom domain.
+When a release adds Firestore indexes, deploy the backend first and wait for the indexes to
+finish building before deploying the web app.
+
+Test `https://<your-project-id>.web.app` first: sign in, refresh a nested route, log a
+manual match, and (with AI on) read one photo.
 
 ### Hosting cache invariants
 
 Two `firebase.json` hosting rules exist to stop a deploy from white-screening returning
 visitors. Both are easy to break by "simplifying" the config, so re-check them after any
-edit — the hosting emulator (`firebase emulators:start --only hosting`) reproduces the
-production matcher exactly:
+edit. The hosting emulator (`npx firebase emulators:start --only hosting --project
+demo-officefc`) reproduces the production matcher exactly:
 
 1. **Every HTML response must be uncacheable.** The no-store rule is `"source": "**"`, not
    `"source": "/index.html"`. Header globs are matched against the _requested_ path, not
    the rewrite destination, so a rule scoped to `/index.html` never fires for `/` or for
-   any deep route — those are the only paths real users request. A cached `index.html`
+   any deep route, and those are the only paths real users request. A cached `index.html`
    points at the previous release's bundle hash, which no longer exists.
 2. **The SPA rewrite must never cover `/_expo/**` or `/assets/**`.** A catch-all
    `"source": "**"` rewrite answers a request for a missing hashed bundle with
    `index.html` at HTTP 200 and `Content-Type: text/html`. The browser parses that as
-   JavaScript, throws `Unexpected token '<'`, and renders nothing — and because those
-   paths also carry `max-age=31536000, immutable`, it caches the broken response for a
-   year, so reloading never recovers. Excluding the two asset roots turns that case into a
-   clean 404 instead.
+   JavaScript, throws `Unexpected token '<'`, and renders nothing. Because those paths
+   also carry `max-age=31536000, immutable`, it caches the broken response for a year, so
+   reloading never recovers. Excluding the two asset roots turns that case into a clean
+   404 instead.
 
 Verify after deploying:
 
 ```bash
-curl -sI https://officefc.bruza.tech/ | grep -i cache-control
+curl -sI https://<your-domain>/ | grep -i cache-control
 # expect: no-cache, no-store, must-revalidate
 
-curl -sI https://officefc.bruza.tech/_expo/static/js/web/entry-doesnotexist.js | head -1
-# expect: HTTP/2 404 — NOT 200
+curl -sI https://<your-domain>/_expo/static/js/web/entry-doesnotexist.js | head -1
+# expect: HTTP/2 404, NOT 200
 ```
 
 A visitor already stuck on a white screen from an earlier release recovers on a
 cache-bypassing reload (Ctrl/Cmd+Shift+R) or by clearing site data; a normal reload will
 not clear a poisoned immutable entry.
 
-## 5. Connect `officefc.bruza.tech`
+## 5. Custom domain
 
-1. Firebase Console -> Hosting -> Add custom domain.
-2. Enter `officefc.bruza.tech`.
-3. Copy the exact verification and routing records Firebase displays.
-4. Add those TXT/CNAME/A records at the DNS provider for `bruza.tech`.
-5. Remove only records Firebase explicitly identifies as conflicting.
-6. Wait for Firebase to show the domain as connected and the TLS certificate as active.
-7. Open <https://officefc.bruza.tech> and verify there is no certificate warning.
+Connecting a domain and authorizing it for sign-in is covered in
+[Optional: custom domain](self-hosting.md#optional-custom-domain). Firebase's
+custom-domain wizard is the source of truth for DNS records; don't copy record values from
+any document.
 
-DNS and certificate provisioning can take several hours. Do not invent record values from
-this document; Firebase's custom-domain wizard is the source of truth.
-
-## 6. Authorize the domain
-
-Firebase Console -> Authentication -> Settings -> Authorized domains:
-
-- Add `officefc.bruza.tech`.
-- Keep `office-fc.firebaseapp.com` and the existing Firebase-generated `authDomain`.
-- Keep `localhost` for local development if it is already present.
-
-Email/password is the only MVP provider, so no OAuth redirect-domain migration is needed.
-
-## 7. Bootstrap the league
-
-1. Sign up with `djbruza@gmail.com` and verify the email.
-2. Complete the profile and join flow. The configured admin allowlist bootstraps this
-   account as league admin without an invite code.
-3. On Home, allow the app to create the initial active season and team catalogue if absent.
-4. Review the season dates and active teams in Admin.
-5. Generate a one-use member invite.
-6. Create and verify a second account, redeem the invite, and complete its profile.
-7. Do not reset existing production collections; setup functions merge missing seed data.
-
-## 8. Production smoke test
+## 6. Smoke test
 
 Use two separate browser profiles or an incognito window.
 
-- Sign-up, email verification, sign-in, password reset, sign-out, and invite redemption.
+- Sign-up, email verification, sign-in, password reset, sign-out, and joining with an
+  invite link.
 - Manual match submission appears immediately in the opponent's confirmation inbox.
-- Confirm updates ELO, standings, profiles, H2H, and match detail.
-- Dispute keeps the match out of ELO; admin resolution works.
+- Confirming updates ELO, standings, profiles, head-to-head, and match detail.
+- A dispute keeps the match out of ELO; admin resolution works.
+- Refresh Home, confirmations, match detail, player, head-to-head, seasons, and archive
+  URLs directly.
+- `/privacy`, `/terms`, and `/support` load signed out and show your operator name and
+  support email.
+- Repeat the critical paths in current iPhone Safari, Android Chrome, desktop Chrome,
+  Safari, and Edge.
+
+With AI photo reading on, also check:
+
 - Mobile browser camera capture and library upload both normalize and upload.
 - Desktop file upload accepts JPEG/PNG/WebP and safely rejects unreadable formats.
-- AI extraction never auto-submits; edit extracted values before submission.
-- Cancelling/replacing an upload removes the draft; stale unsubmitted drafts clear after 24 hours.
-- Submitted photos open through temporary signed URLs and direct Storage reads remain denied.
+- Extraction never auto-submits; edit extracted values before submission.
+- Cancelling or replacing an upload removes the draft; stale unsubmitted drafts clear after
+  24 hours.
+- Submitted photos open through temporary signed URLs, and direct Storage reads stay
+  denied.
 - The submitter can delete a submitted photo.
-- Refresh Home, confirmations, match detail, player, H2H, seasons, and archive URLs directly.
-- Repeat critical paths in current iPhone Safari, Android Chrome, desktop Chrome, Safari, and Edge.
+- Use at least five readable full-time screens and two unreadable or non-stats images.
+  Every failure must offer manual entry, and no image may auto-submit.
 
-AI beta smoke set: use at least five readable full-time screens and two unreadable or
-non-stats images. Every failure must offer manual entry and no image may auto-submit.
-
-## 9. Rollback
+## 7. Rollback
 
 Hosting:
 
-1. Firebase Console -> Hosting -> Release history.
+1. Firebase console → Hosting → Release history.
 2. Select the last known-good release and choose Roll back.
 
-Backend/rules:
+Backend and rules:
 
 1. Check out the last known-good Git revision in a clean worktree.
 2. Run its tests.
@@ -176,16 +163,15 @@ Backend/rules:
 If a bad release affects data, disable the affected UI path first. Do not delete or reset
 production data as a rollback mechanism.
 
-## 10. Operational checks
+## 8. Operational checks
 
-- Firebase Console -> Functions: confirm `cleanupAbandonedDrafts` is scheduled daily and
-  `sendReminders`/`weeklySnapshot` are healthy.
-- Cloud Logging: monitor extraction failures, rate limits, and scheduled cleanup errors.
-- Sentry: once DSNs are provisioned (mobile `eas.json`/`.env`, functions `.env` — see
-  [firebase-setup.md](firebase-setup.md)), watch the `officefc-mobile` and
-  `officefc-functions` projects for new issues. Until then Sentry is dormant and a
-  `sentry_disabled` warning appears in Cloud Logging.
-- Firebase Usage and billing: set budget alerts for the project.
-- Rotate `OPENROUTER_API_KEY` immediately if exposed, then redeploy Functions.
-- Keep native/EAS configuration buildable, but do not include App Store or Play Store work
-  in the web MVP release.
+- Firebase console → Functions: confirm the scheduled jobs (`sendReminders`,
+  `autoConfirmStaleMatches`, `weeklySnapshot`, `cleanupAbandonedDrafts`,
+  `retryNotifications`, `recoverQueuedModels`) are deployed and healthy.
+- Cloud Logging: monitor callable failures, extraction failures, rate limits, and
+  scheduled-job errors. The [Firebase backend reference](firebase-setup.md) explains the
+  log fields.
+- Sentry, if configured: watch the app and functions projects for new issues. Without a
+  DSN, Sentry is off and a `sentry_disabled` warning appears in Cloud Logging.
+- Billing: keep a budget alert on the project.
+- Rotate `OPENROUTER_API_KEY` immediately if it is exposed, then redeploy the backend.

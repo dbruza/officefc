@@ -39,6 +39,7 @@ import {
   type PushCategoryKey,
 } from "@/lib/league/pushPrefs";
 import { getAiPhotoConsent, setAiPhotoConsent } from "@/lib/privacySettings";
+import { AI_FEATURES } from "@/lib/constants";
 
 const IS_WEB = Platform.OS === "web";
 
@@ -107,7 +108,7 @@ export default function Settings() {
   const [aiBusy, setAiBusy] = useState(false);
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid || !AI_FEATURES) return;
     let cancelled = false;
     getAiPhotoConsent(uid)
       .then((allowed) => {
@@ -271,31 +272,38 @@ export default function Settings() {
         <Reveal index={3} style={styles.section}>
           <SectionLabel>Privacy & safety</SectionLabel>
           <Card style={styles.group} padded={false}>
-            <Interactive
-              accessibilityRole="switch"
-              accessibilityLabel="AI photo reading"
-              accessibilityState={{ checked: aiPhotos === true, busy: aiBusy }}
-              disabled={aiPhotos === null || aiBusy}
-              onPress={toggleAiPhotos}
-              pressScale={0.99}
-              style={styles.row}
-              hoverStyle={styles.rowHover}
-            >
-              <RowIcon icon="camera" />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Txt variant="bodyMedium" size={13.5} numberOfLines={1}>
-                  AI photo reading
-                </Txt>
-                <Txt size={11.5} color={colors.textDim} numberOfLines={2} style={{ marginTop: 1 }}>
-                  Send stats photos to an AI model to fill in the match
-                </Txt>
-              </View>
-              {aiPhotos === null ? (
-                <Skeleton width={42} height={24} round={12} />
-              ) : (
-                <Toggle on={aiPhotos} />
-              )}
-            </Interactive>
+            {AI_FEATURES ? (
+              <Interactive
+                accessibilityRole="switch"
+                accessibilityLabel="AI photo reading"
+                accessibilityState={{ checked: aiPhotos === true, busy: aiBusy }}
+                disabled={aiPhotos === null || aiBusy}
+                onPress={toggleAiPhotos}
+                pressScale={0.99}
+                style={styles.row}
+                hoverStyle={styles.rowHover}
+              >
+                <RowIcon icon="camera" />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Txt variant="bodyMedium" size={13.5} numberOfLines={1}>
+                    AI photo reading
+                  </Txt>
+                  <Txt
+                    size={11.5}
+                    color={colors.textDim}
+                    numberOfLines={2}
+                    style={{ marginTop: 1 }}
+                  >
+                    Send stats photos to an AI model to fill in the match
+                  </Txt>
+                </View>
+                {aiPhotos === null ? (
+                  <Skeleton width={42} height={24} round={12} />
+                ) : (
+                  <Toggle on={aiPhotos} />
+                )}
+              </Interactive>
+            ) : null}
             <NavRow
               icon="eyeOff"
               label="Blocked players"

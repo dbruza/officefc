@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest an idea or improvement for OfficeFC.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Please search existing issues and [Discussions](https://github.com/dbruza/officefc/discussions) first.
+        For open-ended ideas, starting a discussion is often the best first step.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe what you or your league are trying to do and what gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: How you imagine it working, from a player's or admin's point of view.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+      description: Anything you've tried or considered instead.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Match logging and confirmation
+        - Ratings and standings
+        - Seasons, finals, and cups
+        - Admin and moderation
+        - AI photo reading
+        - Notifications
+        - Self-hosting and deployment
+        - Other
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd be willing to open a pull request for this.

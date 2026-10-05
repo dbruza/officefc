@@ -83,7 +83,7 @@ export async function callOpenRouter(opts) {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
           // Optional attribution headers per OpenRouter docs.
-          "HTTP-Referer": "https://officefc.app",
+          "HTTP-Referer": "https://github.com/dbruza/officefc",
           "X-Title": "OfficeFC",
         },
         body: JSON.stringify(request),

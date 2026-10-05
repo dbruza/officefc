@@ -1,66 +1,81 @@
-# Firebase Setup
+# Firebase backend reference
 
-OfficeFC uses Firebase Authentication, Firestore, Storage, Cloud Functions, Hosting, and
-the local Emulator Suite.
+OfficeFC uses Firebase Authentication, Firestore, Storage, Cloud Functions, Cloud
+Scheduler, Hosting, and the local Emulator Suite. This page explains how those pieces fit
+together and how to observe them. To create a project and deploy your own league, follow
+the [self-hosting guide](self-hosting.md) instead.
+
+## Services
+
+| Service              | Used for                                                                |
+| -------------------- | ----------------------------------------------------------------------- |
+| Authentication       | Email/password accounts and email verification                          |
+| Firestore            | The league, members, seasons, matches, ratings, and derived read models |
+| Storage              | Private match photos for AI photo logging                               |
+| Cloud Functions (v2) | Trusted writes, ELO, admin actions, notifications, AI extraction        |
+| Cloud Scheduler      | Reminders, auto-confirm, weekly snapshots, cleanup, retries, recovery   |
+| Hosting              | The static Expo web export, with single-page-app rewrites               |
+
+Firebase web configuration is public client metadata, not a secret. Authorization is
+enforced by `firestore.rules`, `storage.rules`, and the Cloud Functions. The league id is
+fixed to `office` (`LEAGUE_ID` in `functions/src/config.ts` and
+`mobile/src/lib/constants.ts`); one deployment runs one league.
 
 ## Requirements
 
 - Node.js 24
-- Java 21
-- A Firebase project on the Blaze plan for deployed Functions and Storage
+- Java 21 for the Emulator Suite
+- For deployments, a Firebase project on the Blaze plan (Functions and Storage need it)
 
 The Firebase CLI is pinned in the root development dependencies, so use it through `npx`
 or the repository scripts.
 
-## Create The Project
+## Project selection and configuration
 
-1. Create a Firebase project in the [Firebase Console](https://console.firebase.google.com).
-2. Enable email/password Authentication.
-3. Create Firestore and Storage in the same region.
-4. Register a Firebase web app.
-5. Copy `mobile/.env.example` to `mobile/.env`.
-6. Paste the web app configuration into the matching `EXPO_PUBLIC_FIREBASE_*` variables.
+Nothing deployment-specific is committed:
 
-Firebase web configuration is public client metadata, not a secret. Authorization is
-enforced by `firestore.rules`, `storage.rules`, and trusted Cloud Functions.
+- `npx firebase use --add` selects the project (written to the gitignored `.firebaserc`).
+  The deploy scripts target the active project.
+- Cloud Functions settings (`FUNCTIONS_REGION`, `ADMIN_EMAILS`, `AI_FEATURES`,
+  `SENTRY_DSN`) are Firebase parameters in `functions/.env.<projectId>`, defined in
+  `functions/src/config.ts`. `firebase deploy` prompts for missing values and saves them.
+- `OPENROUTER_API_KEY` lives in Secret Manager and is only bound when `AI_FEATURES=true`.
+- App settings are `EXPO_PUBLIC_*` variables in `mobile/.env` (or EAS environment
+  variables for native builds).
 
-### Storage Rules And Firestore
+The [configuration reference](self-hosting.md#configuration-reference) lists every value.
 
-`storage.rules` checks league membership with `firestore.exists()`. In deployed
-environments, the Firebase Storage service account
+### Storage rules and Firestore
+
+`storage.rules` checks league membership with `firestore.get()`. In deployed environments,
+the Firebase Storage service account
 `service-PROJECT_NUMBER@gcp-sa-firebasestorage.iam.gserviceaccount.com` must have the
 **Firebase Rules Firestore Service Agent**
 (`roles/firebaserules.firestoreServiceAgent`) role. Without it, valid member uploads fail
 with `storage/unauthorized` even though the same rules pass in the local emulators.
 
 The Firebase console or CLI normally offers to enable this permission when cross-service
-Storage Rules are first deployed. You can verify the grant in Google Cloud IAM by enabling
+Storage rules are first deployed. You can verify the grant in Google Cloud IAM by enabling
 **Include Google-provided role grants**.
 
-## Connect The CLI
+### Signed photo URLs
 
-From the repository root:
+Match photos are never read directly from Storage. `getMatchPhotoUrl` mints short-lived
+signed URLs, which needs the functions' runtime service account
+(`PROJECT_NUMBER-compute@developer.gserviceaccount.com`) to hold **Service Account Token
+Creator** on itself. Without it the function fails with
+`Permission 'iam.serviceAccounts.signBlob' denied`. The Functions emulator can't sign URLs
+at all, so photo viewing only works against a deployed backend.
 
-```bash
-npx firebase login
-npx firebase use --add
-```
+## Local development
 
-Choose the project and assign the `default` alias. The production deployment scripts
-explicitly target the `office-fc` project.
-
-## Local Development
-
-Set this value in `mobile/.env`:
-
-```dotenv
-EXPO_PUBLIC_USE_EMULATORS=1
-```
-
-Start the emulators:
+Local development uses the demo project id `demo-officefc`, so it never touches a real
+project. `mobile/.env.example` is already set up for it.
 
 ```bash
-npx firebase emulators:start
+cp mobile/.env.example mobile/.env
+npm --prefix functions run build
+npx firebase emulators:start --project demo-officefc
 ```
 
 In another terminal:
@@ -69,10 +84,12 @@ In another terminal:
 npm --prefix mobile run web
 ```
 
-The Emulator UI is available at <http://localhost:4000>. Default service ports are defined
-in `firebase.json`.
+The Emulator UI is available at <http://localhost:4000>. Service ports are defined in
+`firebase.json`. The Functions emulator reads its parameters from the committed
+`functions/.env.demo-officefc` (which makes `admin@office.test` an admin), overridden by a
+gitignored `functions/.env.local`.
 
-## Verify Security Rules
+## Verify security rules
 
 Install the rules-test workspace and run the emulator-backed suite:
 
@@ -82,7 +99,9 @@ npm run test:rules
 ```
 
 These tests cover league membership boundaries, trusted match fields, onboarding reads,
-team validation, and private match-photo access.
+team validation, and private match-photo access. The integration tests in
+`functions/integration/` run against the same emulator. `npm run test:rules` uses
+Firestore port 8080, so stop a running `emulators:start` first.
 
 ## Logging & Observability
 
@@ -111,55 +130,49 @@ UI shows the same entries locally).
 
 ### Sentry crash and fault reporting
 
-Sentry sits alongside Cloud Logging (added in v1.1.0.0):
+Sentry is optional and sits alongside Cloud Logging:
 
-- **Mobile** (`mobile/src/lib/sentry.ts`): captures native and fatal JS crashes, render
+- **App** (`mobile/src/lib/sentry.ts`): captures native and fatal JS crashes, render
   errors, and error-level log events; every log entry also becomes a breadcrumb. Configure
   with `EXPO_PUBLIC_SENTRY_DSN` and `EXPO_PUBLIC_SENTRY_ENV` (`mobile/.env` for local dev
-  and the web deploy, `mobile/eas.json` for native builds). Disabled in dev builds.
+  and the web deploy; EAS environment variables for native builds, where `eas.json` sets
+  the environment name per profile). Disabled in dev builds.
 - **Functions** (`functions/src/sentry.ts`): callables report unexpected server faults
   with function name, uid, and duration; scheduled jobs and Firestore triggers report with
   the function name (expected `HttpsError` rejections are never sent, and the one-off
-  `backfillSeasonCodes` migration endpoint is not instrumented). Configure with
-  `SENTRY_DSN` in `functions/.env` on the deploying machine (copy
-  `functions/.env.example`). Disabled in the emulator.
-- **Dormant by default:** DSNs are public identifiers, not secrets, but they ship empty.
-  With no DSN, captures no-op and a `sentry_disabled` warning is logged so the dormant
-  state stays visible.
+  `backfillSeasonCodes` migration endpoint is not instrumented). Configure with the
+  `SENTRY_DSN` parameter in `functions/.env.<projectId>`. Disabled in the emulator.
+- **Off by default:** DSNs are public identifiers, not secrets, but none ship with the
+  repository. With no DSN, captures do nothing and a `sentry_disabled` warning is logged so
+  the state stays visible.
 - **Source maps:** `mobile/metro.config.js` wraps the Expo Metro config so bundles carry
   debug IDs. Automatic source-map upload is off in every EAS profile
   (`SENTRY_DISABLE_AUTO_UPLOAD=true` in `mobile/eas.json`); symbolicated native releases
-  need a `SENTRY_AUTH_TOKEN` **and** that flag removed or set to `false`.
+  need `SENTRY_ORG`, `SENTRY_PROJECT`, a `SENTRY_AUTH_TOKEN`, **and** that flag removed or
+  set to `false`.
 
-Future hardening — App Check for the `ingestLog` sink — is documented in
-`docs/superpowers/specs/2026-06-15-firebase-logging-observability-design.md`. The other
-item from that spec, reliable fatal-crash capture, shipped via Sentry in v1.1.0.0.
+Future hardening (App Check for the `ingestLog` sink) is described in
+[the logging design spec](design/specs/2026-06-15-firebase-logging-observability-design.md).
 
-## Performance read models and regional rollout (1.13)
+## Read models and background processing
 
-The production Firestore database is in `australia-southeast1`. New clients default to
-that callable region; `EXPO_PUBLIC_FUNCTIONS_REGION` can select the legacy region during
-a staged rollout. Callables are intentionally exported in both Sydney and Iowa until
-older installed clients have migrated. New rebuild and notification workers run in Sydney.
-Do not remove the Iowa callable exports as part of this release.
-
-Deploy indexes and rules first and wait for the new composite indexes to finish building,
-then deploy the backend, and finally deploy the web/native clients. The existing extraction
-and the new optional analysis callable use the `OPENROUTER_API_KEY` secret. No API key
-belongs in the app bundle. Validate both callable regions before publishing clients.
+Leaderboards, profiles, and season summaries are served from read models that the backend
+rebuilds after each change, so screens read a handful of documents instead of every match.
 
 A confirmed match and its rebuild request commit atomically. `readModelQueue/office`
-tracks requested/completed generations; a leased worker combines work and publishes only
-changed documents. Every publication batch checks the lease, and a minute-level recovery
-job resumes pending work after a crash. Finalization and finals seeding reject pending or
-changed generations. An explicit admin maintenance rebuild can replay finalized ratings;
-automatic summary backfills preserve frozen ratings.
+tracks requested and completed generations; a leased worker combines work and publishes
+only changed documents. Every publication batch checks the lease, and a minute-level
+recovery job resumes pending work after a crash. Finalization and finals seeding reject
+pending or changed generations. An explicit admin maintenance rebuild can replay finalized
+ratings; automatic summary backfills preserve frozen ratings.
 
 `seasonSummaries` contains awards, analytical boards and counts. `playerStats.summary`
 contains complete achievements, team records, season counts and logging hints. Existing
 leagues generate missing summaries on demand through an authenticated callable. A missing
-summary never becomes a partial-history statistic. A server-maintained `sortDate` keeps legacy undated games in cursor pagination without inventing a displayed date. The application listens for completed
-generations and invalidates shared caches; a short banner explains the update interval.
+summary never becomes a partial-history statistic. A server-maintained `sortDate` keeps
+legacy undated games in cursor pagination without inventing a displayed date. The app
+listens for completed generations and invalidates shared caches; a short banner explains
+the update interval.
 
 Notifications are persisted in `notificationOutbox` before a mutation returns, then sent
 with bounded attempts and an HTTP deadline. Delivery is at least once: a process failure
@@ -173,8 +186,18 @@ per-run limits; backlog is processed by later runs. Monitor backlog age as well 
 
 Use `read_models_ready`, `season_models_rebuilt`, and `league_models_rebuilt` logs for
 generation latency and write counts. Client `performance_sample` events sample both fast
-and slow screen loads, reads, and cache outcomes at 10 percent when remote logging is enabled.
-Compare p50/p95 by platform and app version, separating warm navigation from cold startup.
+and slow screen loads, reads, and cache outcomes at 10 percent when remote logging is
+enabled. Compare p50/p95 by platform and app version, separating warm navigation from cold
+startup.
+
+### Deploy order
+
+When a release adds indexes, deploy the backend (`npm run deploy:backend` deploys rules,
+indexes, and functions together), wait for the new composite indexes to finish building
+(Firestore → Indexes), and only then deploy the web and native clients.
+
+The AI extraction and match-analysis callables use the `OPENROUTER_API_KEY` secret and are
+only deployed when `AI_FEATURES=true`. No API key belongs in the app bundle.
 
 Run `npm run check` before publishing. Rules tests also exercise the real Firestore emulator
 for concurrent workers, stale leases, partial publication, out-of-order results, and no-op
