@@ -39,7 +39,7 @@ EXPO_PUBLIC_USE_EMULATORS=1 npm run web      # or: npm run ios / npm run android
 
 ## Test the onboarding flow
 
-1. **Sign up** with `djbruza@gmail.com` (the admin allowlist) + any password.
+1. **Sign up** with an address from `ADMIN_EMAILS` (the admin allowlist) + any password, and verify it.
 2. **Verify email:** no real email is sent by the emulator — open the **Auth** tab in the
    Emulator UI (`:4000`), find the user, and use the verification link / mark verified. Back
    in the app, tap **"I've verified — continue."**
