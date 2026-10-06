@@ -19,21 +19,17 @@ import {
 } from "./matchLifecycle";
 import { canAutoConfirm, matchCreatedMillis } from "./matchRules";
 import { activeMemberIds } from "./members";
+import {
+  AUTO_CONFIRM_HOURS,
+  AUTO_CONFIRM_MAX_AGE_HOURS,
+  HOUR_MS,
+  REMINDER_HOURS,
+  autoConfirmDueMillis,
+} from "./models/matchPolicy";
 
 const db = getFirestore();
 const storage = getStorage();
 const DRAFT_RETENTION_HOURS = 24;
-/** Dispute window: an undisputed pending match auto-confirms once this much time has passed. */
-const AUTO_CONFIRM_HOURS = 1;
-/** Remind the opponent this long before the window closes, so a result never locks in on
- *  their behalf without warning. Must stay below AUTO_CONFIRM_HOURS to be reachable. */
-const REMINDER_MINUTES = 30;
-/**
- * Matches older than this are treated as abandoned rather than merely unanswered and are left
- * for an admin to resolve. Without a floor, the first run after deploy would sweep up every
- * pending match ever accumulated — including results whose season has since been finalized.
- */
-const AUTO_CONFIRM_MAX_AGE_HOURS = 72;
 /** Cap the work per invocation so one run can't exceed the function timeout. */
 const AUTO_CONFIRM_BATCH_LIMIT = 50;
 
@@ -126,14 +122,16 @@ export const weeklySnapshot = onSchedule(
 );
 
 /**
- * Warn opponents whose dispute window is about to close. Fires REMINDER_MINUTES after
+ * Warn opponents whose dispute window is about to close. Fires REMINDER_HOURS after
  * submission — before AUTO_CONFIRM_HOURS elapses — so nobody has a result locked in on their
- * behalf without having been told. Runs every 10 minutes alongside the auto-confirm sweep.
+ * behalf without having been told. Results that won't auto-confirm (finals, or an opponent who
+ * couldn't be notified at submission) get a plain nudge instead. Runs every 10 minutes
+ * alongside the auto-confirm sweep.
  */
 export const sendReminders = onSchedule(
   "*/10 * * * *",
   instrumentBackground("sendReminders", async () => {
-    const cutoff = Date.now() - REMINDER_MINUTES * 60 * 1000;
+    const cutoff = Date.now() - REMINDER_HOURS * HOUR_MS;
     const pending = await db
       .collection("matches")
       .where("status", "==", "pending_confirmation")
@@ -168,7 +166,9 @@ export const sendReminders = onSchedule(
           "Confirm before it locks in",
           data.finals === true
             ? "A finals result needs your confirmation or dispute."
-            : `A result needs your response — it confirms automatically ${AUTO_CONFIRM_HOURS}h after it was submitted.`,
+            : data.autoConfirmDueAt
+              ? `A result needs your response — it confirms automatically ${AUTO_CONFIRM_HOURS}h after it was submitted unless you dispute it.`
+              : "A result is still waiting for you to confirm or dispute it.",
           { type: "match_pending", matchId: doc.id },
         );
         await db.doc(`matches/${doc.id}`).update({
@@ -194,6 +194,8 @@ export const sendReminders = onSchedule(
  * the opponent responding. The opponent keeps the full window to dispute; only after it lapses
  * does the match confirm on their behalf, marked `confirmedBy: "auto"` with an `autoConfirmedAt`
  * timestamp. Runs every 10 minutes so confirmation lands within ~10min of the window closing.
+ * A match whose opponent can no longer be notified (no push device, or confirmations muted) is
+ * held for a manual confirmation instead — see autoConfirmMatch.
  *
  * Scope is deliberately narrow: only the active, non-finalized season, and only matches within
  * AUTO_CONFIRM_MAX_AGE_HOURS. A finalized season's standings have already been published as a
@@ -208,8 +210,8 @@ export const autoConfirmStaleMatches = onSchedule(
   instrumentBackground("autoConfirmStaleMatches", async () => {
     await migratePendingScheduling();
     const now = Date.now();
-    const cutoff = now - AUTO_CONFIRM_HOURS * 60 * 60 * 1000;
-    const floor = now - AUTO_CONFIRM_MAX_AGE_HOURS * 60 * 60 * 1000;
+    const cutoff = now - AUTO_CONFIRM_HOURS * HOUR_MS;
+    const floor = now - AUTO_CONFIRM_MAX_AGE_HOURS * HOUR_MS;
 
     // Seasons a previous run confirmed into but didn't finish rebuilding — fold them into this
     // run's recalc so a mid-rebuild crash can't leave the tables permanently out of date.
@@ -220,7 +222,7 @@ export const autoConfirmStaleMatches = onSchedule(
     // waiting a full window means they all get a real chance to dispute rather than being
     // swept up en masse within ten minutes of release.
     const armedAt = await armAutoConfirm(now);
-    if (now < armedAt + AUTO_CONFIRM_HOURS * 60 * 60 * 1000) {
+    if (now < armedAt + AUTO_CONFIRM_HOURS * HOUR_MS) {
       if (heal.length > 0) await finalizeAutoConfirmedBatch([], heal);
       logger.info("auto_confirm_skipped", { reason: "arming", armedAt, healed: heal.length });
       return;
@@ -243,7 +245,7 @@ export const autoConfirmStaleMatches = onSchedule(
       .collection("matches")
       .where("status", "==", "pending_confirmation")
       .where("seasonId", "==", seasonId)
-      .where("autoConfirmDueAt", ">=", Timestamp.fromMillis(floor + AUTO_CONFIRM_HOURS * 3600000))
+      .where("autoConfirmDueAt", ">=", Timestamp.fromMillis(autoConfirmDueMillis(floor)))
       .where("autoConfirmDueAt", "<=", Timestamp.fromMillis(now))
       .orderBy("autoConfirmDueAt")
       .limit(AUTO_CONFIRM_BATCH_LIMIT + 1)
@@ -253,11 +255,25 @@ export const autoConfirmStaleMatches = onSchedule(
     // the authority, this just avoids a write attempt per ineligible doc. Finals are rejected
     // by canAutoConfirm itself and fall into `ineligible`.
     const eligible: string[] = [];
+    const rescheduled = db.batch();
+    let rescheduledCount = 0;
     let ineligible = 0;
     let abandoned = 0;
     let truncated = false;
     for (const doc of pending.docs) {
       const data = doc.data();
+      // Stamped under a shorter window than today's (the 1-hour window before 1.16): move it to
+      // the date the current policy gives it, so it neither confirms early nor sits in this
+      // bounded query, crowding out matches that are actually due.
+      const created = matchCreatedMillis(data);
+      const due = (data.autoConfirmDueAt as Timestamp | undefined)?.toMillis?.();
+      if (created !== null && due !== undefined && due < autoConfirmDueMillis(created)) {
+        rescheduled.update(doc.ref, {
+          autoConfirmDueAt: Timestamp.fromMillis(autoConfirmDueMillis(created)),
+        });
+        rescheduledCount++;
+        continue;
+      }
       if (canAutoConfirm(data, cutoff, floor)) {
         if (eligible.length >= AUTO_CONFIRM_BATCH_LIMIT) {
           // More than one run's worth is waiting; the next run picks up the remainder.
@@ -269,18 +285,37 @@ export const autoConfirmStaleMatches = onSchedule(
       else ineligible++;
     }
 
+    // Re-dating is housekeeping: if it fails, the next run retries it, and the matches that are
+    // actually due still confirm now.
+    if (rescheduledCount > 0) {
+      try {
+        await rescheduled.commit();
+      } catch (error) {
+        rescheduledCount = 0;
+        logger.error("auto_confirm_reschedule_failed", {
+          seasonId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     // Mark the season before flipping anything. A flip and its rebuild can't share a
     // transaction, so without this marker a crash in between would leave a match confirmed but
     // missing from the tables, and invisible to the next run — it is no longer pending.
 
     const batch: AutoConfirmed[] = [];
+    let held = 0;
     let flipFailed = 0;
     for (const matchId of eligible) {
       // One contended or failed transaction must not abandon the matches behind it — those
       // would stay pending but lose this run's rebuild and notifications.
       try {
-        const result = await autoConfirmMatch(matchId, cutoff, floor);
-        if (result) batch.push({ matchId, result });
+        const outcome = await autoConfirmMatch(matchId, cutoff, floor);
+        if (outcome.status === "confirmed") batch.push({ matchId, result: outcome.result });
+        else if (outcome.status === "held") {
+          held++;
+          logger.info("auto_confirm_held", { matchId, reason: outcome.reason, at: "due" });
+        }
       } catch (error) {
         flipFailed++;
         logger.error("auto_confirm_flip_failed", {
@@ -296,13 +331,15 @@ export const autoConfirmStaleMatches = onSchedule(
     const outcome = await finalizeAutoConfirmedBatch(batch, heal);
     // `eligible` vs `confirmed` distinguishes a quiet run from one where every transaction is
     // failing — both would otherwise log `confirmed: 0`.
-    if (eligible.length > 0 && batch.length === 0) {
+    if (eligible.length > 0 && batch.length + held === 0) {
       logger.warn("auto_confirm_all_lost_race", { eligible: eligible.length, seasonId });
     }
     if (abandoned > 0) logger.warn("auto_confirm_abandoned", { abandoned, seasonId });
     logger.info("auto_confirm_done", {
       eligible: eligible.length,
       confirmed: batch.length,
+      held,
+      rescheduled: rescheduledCount,
       flipFailed,
       ineligible,
       abandoned,

@@ -15,6 +15,7 @@ import {
 import { fieldsEdited } from "./extractionAudit";
 import { checkScoreConsistency } from "./core/statsCheck.mjs";
 import { BLOCKED_MATCH_MESSAGE, isActiveMember, isBlockedBetween } from "../members";
+import { pendingLimitMessage } from "../matchLifecycle";
 
 const db = getFirestore();
 
@@ -106,6 +107,12 @@ export const submitAiAssistedMatch = loggedOnCall(
     if (!Number.isInteger(oppGoals) || oppGoals < 0 || oppGoals > 99)
       throw new HttpsError("invalid-argument", "Invalid goal count.");
     assertStatsInRange(submittedGoalsAndStats);
+
+    // Same pending-result limits notifyMatchSubmitted enforces, checked up front so the player
+    // gets a reason instead of a result that disappears. A retry of an already-written match is
+    // judged by its own place in the queue, so it still succeeds.
+    const overLimit = await pendingLimitMessage(uid, opponentId, draftId);
+    if (overLimit) throw new HttpsError("failed-precondition", overLimit);
 
     const draftRef = db.doc(`matchDrafts/${draftId}`);
     const matchRef = db.doc(`matches/${draftId}`);

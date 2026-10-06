@@ -52,6 +52,20 @@ export interface MatchActivityInput {
   newLeaderId: string | null;
 }
 
+/**
+ * Every id deriveMatchActivity can give one match's events, whichever it actually produced —
+ * so a result voided after confirmation can take its feed events down with it.
+ */
+export function matchActivityIds(matchId: string, aId: string, bId: string): string[] {
+  return [
+    `result_${matchId}`,
+    `upset_${matchId}`,
+    `streak_${matchId}_${aId}`,
+    `streak_${matchId}_${bId}`,
+    `numberone_${matchId}`,
+  ];
+}
+
 /** Derive every feed event produced by a single confirmed match. */
 export function deriveMatchActivity(input: MatchActivityInput): ActivityEvent[] {
   const events: ActivityEvent[] = [];

@@ -1,19 +1,37 @@
 import { getFirestore, FieldValue, Timestamp, FieldPath } from "firebase-admin/firestore";
-import { matchCreatedMillis, canAutoConfirm } from "./matchRules";
+import * as logger from "firebase-functions/logger";
+import { matchCreatedMillis, canAutoConfirm, opponentOf } from "./matchRules";
+import { readPushReach } from "./notify";
+import { AUTO_CONFIRM_HOLD, autoConfirmDueMillis, reminderDueMillis } from "./models/matchPolicy";
+
+/**
+ * Stamp a pending match's reminder and auto-confirm times, once. A match only gets an
+ * auto-confirm time when its opponent can be told about it right now: a web-only player has
+ * no push device, and one who muted confirmations gets no push, so a result must never lock
+ * in on their behalf unseen. Those wait for a manual confirmation (or an admin) instead.
+ */
 export async function schedulePendingMatch(
   ref: FirebaseFirestore.DocumentReference,
 ): Promise<void> {
   await getFirestore().runTransaction(async (tx) => {
     const snap = await tx.get(ref),
       data = snap.data();
-    if (!data || data.status !== "pending_confirmation" || data.autoConfirmDueAt) return;
+    if (!data || data.status !== "pending_confirmation" || "autoConfirmDueAt" in data) return;
     const created = matchCreatedMillis(data);
     if (created === null) return;
+    const opponentId = opponentOf(data);
+    // Finals never auto-confirm, so their opponent's reach doesn't matter.
+    const reach =
+      opponentId !== null && canAutoConfirm(data, created)
+        ? await readPushReach(opponentId, "match_pending", tx)
+        : null;
+    const held = reach !== null && reach !== "reachable";
+    if (held) logger.info("auto_confirm_held", { matchId: ref.id, reason: reach, at: "submit" });
     tx.update(ref, {
-      autoConfirmDueAt: canAutoConfirm(data, created)
-        ? Timestamp.fromMillis(created + 3600000)
-        : null,
-      reminderDueAt: Timestamp.fromMillis(created + 1800000),
+      autoConfirmDueAt:
+        reach === "reachable" ? Timestamp.fromMillis(autoConfirmDueMillis(created)) : null,
+      ...(held ? { autoConfirmHold: AUTO_CONFIRM_HOLD } : {}),
+      reminderDueAt: Timestamp.fromMillis(reminderDueMillis(created)),
       reminderSentAt: data.reminderSentAt ?? null,
     });
   });

@@ -4,16 +4,22 @@ import { HttpsError } from "firebase-functions/v2/https";
 import { loggedOnCall } from "./logging";
 import { instrumentBackground, captureServerFault } from "./sentry";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, FieldPath } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuth, assertAdmin, assertMember } from "./auth";
 import { requestRebuild, enqueueRebuild } from "./rebuildQueue";
 import { applyFinalsResult } from "./finals";
 import type { FinalsDecidedBy, FinalsSlotKey } from "./finalsRules";
 import { maybeConsumeCupResult } from "./cup";
-import { sendPush } from "./notify";
-import { canAutoConfirm, responderRejection } from "./matchRules";
+import { readPushReach, sendPush, type PushReach } from "./notify";
+import { canAutoConfirm, opponentOf, responderRejection } from "./matchRules";
 import { BLOCKED_MATCH_MESSAGE, isBlockedBetween } from "./members";
+import {
+  AUTO_CONFIRM_HOLD,
+  MAX_PENDING_PER_SUBMITTER,
+  PENDING_LIMIT_MESSAGES,
+  pendingLimitBreach,
+} from "./models/matchPolicy";
 
 /** `confirmedBy` marker for a result the dispute-window scheduler confirmed, not a player.
  *  Distinguishes auto-accepted matches from genuine confirmations in the audit trail. */
@@ -157,14 +163,24 @@ export interface AutoConfirmed {
   result: ConfirmResult;
 }
 
+/** What autoConfirmMatch did with one match. */
+export type AutoConfirmOutcome =
+  | { status: "confirmed"; result: ConfirmResult }
+  /** Its opponent can't be told any more; it now waits for a manual confirmation. */
+  | { status: "held"; reason: Exclude<PushReach, "reachable"> }
+  /** No longer eligible: answered, already handled, or its age can't be proven. */
+  | { status: "skipped" };
+
 /**
  * Flip one pending match to confirmed on the opponent's behalf, in a transaction that re-checks
  * eligibility against the same cutoff the caller filtered on. Marked with the `auto` system
  * marker plus an `autoConfirmedAt` timestamp for auditability. Deliberately not a public
  * callable — there is no unauthenticated way to confirm a match.
  *
- * Returns the confirmed match's fields, or null when it was no longer eligible — the opponent
- * confirmed or disputed it first, a previous run already handled it, or its age can't be proven.
+ * The opponent's push reach is re-read here too. Someone who has since muted confirmations or
+ * signed out of every device was never going to hear about this result, so instead of
+ * confirming it the match is taken off the schedule and left for a manual confirmation.
+ *
  * Performs NO read-model work: the caller batches that so one scheduled run rebuilds the tables
  * once, not once per match.
  */
@@ -172,21 +188,32 @@ export async function autoConfirmMatch(
   matchId: string,
   cutoffMillis: number,
   floorMillis?: number,
-): Promise<ConfirmResult | null> {
+): Promise<AutoConfirmOutcome> {
   const db = getFirestore();
   const ref = db.doc(`matches/${matchId}`);
-  return db.runTransaction(async (tx): Promise<ConfirmResult | null> => {
+  return db.runTransaction(async (tx): Promise<AutoConfirmOutcome> => {
     const snap = await tx.get(ref);
-    if (!snap.exists) return null;
+    if (!snap.exists) return { status: "skipped" };
     const data = snap.data()!;
     // Re-check inside the transaction: status may have changed since the query, and the age
     // rule is enforced here too so a match can never confirm without its full dispute window.
-    if (!canAutoConfirm(data, cutoffMillis, floorMillis)) return null;
+    if (!canAutoConfirm(data, cutoffMillis, floorMillis)) return { status: "skipped" };
+    const opponentId = opponentOf(data);
+    if (!opponentId) return { status: "skipped" };
     // Same finalized-season guard as confirmMatch: finalizeSeason may commit between the
     // scheduler's season query and this flip. Throwing here leaves the match pending for the
     // next run and lands in the caller's auto_confirm_flip_failed log — correct, because a
     // confirmed-but-unpublished result is exactly what the heal logic refuses to paper over.
     await assertSeasonAcceptsConfirmationsTx(tx, String(data.seasonId));
+    const reach = await readPushReach(opponentId, "match_pending", tx);
+    if (reach !== "reachable") {
+      tx.update(ref, {
+        autoConfirmDueAt: null,
+        autoConfirmHold: AUTO_CONFIRM_HOLD,
+        autoConfirmHeldAt: FieldValue.serverTimestamp(),
+      });
+      return { status: "held", reason: reach };
+    }
     tx.update(ref, {
       status: "confirmed",
       confirmedBy: AUTO_CONFIRMER,
@@ -198,7 +225,7 @@ export async function autoConfirmMatch(
       result: toConfirmResult(data),
       mode: "auto",
     });
-    return toConfirmResult(data);
+    return { status: "confirmed", result: toConfirmResult(data) };
   });
 }
 
@@ -387,38 +414,89 @@ export const disputeMatch = loggedOnCall("disputeMatch", { cors: true }, async (
 });
 
 /**
- * Notify the opponent when any valid client creates a pending match. A match between a
- * blocked pair is voided instead: the rules can't check blocks (they'd exceed the
- * per-request document-read budget), so this is where client-created matches are held to it.
+ * Why `submittedBy` can't have another pending result against `opponentId`, or null when it
+ * fits within MAX_PENDING_PER_SUBMITTER / MAX_PENDING_PER_OPPONENT. With `matchId`, judges that
+ * stored match by its place among the submitter's pending results (the trigger); without, judges
+ * a result about to be written (callables that create matches, so they can refuse up front).
+ */
+export async function pendingLimitMessage(
+  submittedBy: string,
+  opponentId: string,
+  matchId?: string,
+): Promise<string | null> {
+  const snap = await getFirestore()
+    .collection("matches")
+    .where("submittedBy", "==", submittedBy)
+    .where("status", "==", "pending_confirmation")
+    .orderBy("createdAt")
+    .orderBy(FieldPath.documentId())
+    .limit(MAX_PENDING_PER_SUBMITTER)
+    .get();
+  const pending = snap.docs.map((doc) => ({
+    id: doc.id,
+    opponentId: opponentOf(doc.data()) ?? "",
+  }));
+  const breach = pendingLimitBreach(pending, { id: matchId, opponentId });
+  return breach ? PENDING_LIMIT_MESSAGES[breach] : null;
+}
+
+/**
+ * Void a just-submitted match that broke a rule the security rules can't check. Only while it
+ * is still pending, so a retried trigger never voids a result that was answered meanwhile.
+ */
+async function voidSubmission(
+  ref: FirebaseFirestore.DocumentReference,
+  reason: string,
+): Promise<boolean> {
+  return getFirestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.get("status") !== "pending_confirmation") return false;
+    tx.update(ref, {
+      status: "voided",
+      resolution: "voided",
+      resolvedBy: "system",
+      resolvedAt: FieldValue.serverTimestamp(),
+      resolutionReason: reason,
+      previousStatus: "pending_confirmation",
+    });
+    return true;
+  });
+}
+
+/**
+ * Notify the opponent when any valid client creates a pending match. Two rules the security
+ * rules can't express are enforced here instead, by voiding the match before anyone is told
+ * about it: no matches between a blocked pair (checking blocks would exceed the rules'
+ * per-request read budget), and no more pending results than the submission limits allow
+ * (rules can't count). Limits keep the oldest pending results, so only the excess is voided.
  */
 export const notifyMatchSubmitted = onDocumentCreated(
   { document: "matches/{matchId}", retry: true },
   instrumentBackground("notifyMatchSubmitted", async (event) => {
     const created = event.data?.data();
-    if (
-      event.data &&
-      created?.status === "pending_confirmation" &&
-      (await isBlockedBetween(String(created.aId), String(created.bId)))
-    ) {
-      await event.data.ref.update({
-        status: "voided",
-        resolution: "voided",
-        resolvedBy: "system",
-        resolvedAt: FieldValue.serverTimestamp(),
-        resolutionReason: BLOCKED_MATCH_MESSAGE,
-        previousStatus: created.status,
-      });
+    if (!event.data || created?.status !== "pending_confirmation") return;
+    const opponentId = opponentOf(created);
+    const voidReason = (await isBlockedBetween(String(created.aId), String(created.bId)))
+      ? BLOCKED_MATCH_MESSAGE
+      : opponentId
+        ? await pendingLimitMessage(String(created.submittedBy), opponentId, event.data.id)
+        : null;
+    if (voidReason) {
+      if (await voidSubmission(event.data.ref, voidReason)) {
+        logger.info("match_submission_voided", {
+          matchId: event.data.id,
+          submittedBy: created.submittedBy,
+          reason: voidReason === BLOCKED_MATCH_MESSAGE ? "blocked" : "pending_limit",
+        });
+      }
       return;
     }
-    if (event.data) await schedulePendingMatch(event.data.ref);
-    const data = event.data?.data();
-    if (!data || data.status !== "pending_confirmation") return;
-    const opponentId = data.submittedBy === data.aId ? data.bId : data.aId;
-    if (typeof opponentId !== "string") return;
+    await schedulePendingMatch(event.data.ref);
+    if (!opponentId) return;
     await sendPush(
       opponentId,
       "Result needs your nod",
-      `Confirm or dispute the ${data.aGoals}-${data.bGoals} score.`,
+      `Confirm or dispute the ${created.aGoals}-${created.bGoals} score.`,
       { type: "match_pending", matchId: event.params.matchId },
     );
   }),

@@ -21,6 +21,16 @@ export function responderRejection(
   return null;
 }
 
+/** The named opponent — the participant who didn't submit — or null on a malformed doc. */
+export function opponentOf(data: {
+  aId?: unknown;
+  bId?: unknown;
+  submittedBy?: unknown;
+}): string | null {
+  const opponent = data.submittedBy === data.aId ? data.bId : data.aId;
+  return typeof opponent === "string" && opponent ? opponent : null;
+}
+
 /**
  * When a pending match was created, in epoch millis, or null if no field on the document can
  * be aged. This is the ONE resolution of "how old is this match?" — both the scheduler's

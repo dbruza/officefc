@@ -11,6 +11,7 @@ import { PUSH_CATEGORY_KEYS, isMuted, pushCategory } from "../functions/lib/noti
 
 test("every audited call-site type maps to its category", () => {
   assert.equal(pushCategory("match_confirmed"), "results");
+  assert.equal(pushCategory("match_voided"), "results");
   assert.equal(pushCategory("match_pending"), "confirmations");
   assert.equal(pushCategory("match_disputed"), "disputes");
   assert.equal(pushCategory("fixture_created"), "fixtures");

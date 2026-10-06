@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildPushMessages, deliverPushMessages } = require("../lib/notify.js");
+const { buildPushMessages, deliverPushMessages, pushReachOf } = require("../lib/notify.js");
 
 const sample = {
   to: "ExponentPushToken[abc]",
@@ -83,4 +83,20 @@ test("push responses are drained before returning the connection to the pool", a
     true,
   );
   assert.equal(drained, true);
+});
+
+test("pushReachOf: a confirmation reaches a player with a device who hasn't muted it", () => {
+  assert.equal(pushReachOf(undefined, ["ExponentPushToken[abc]"], "match_pending"), "reachable");
+  // Muting another category doesn't matter.
+  assert.equal(pushReachOf(["results"], ["ExpoPushToken[x]"], "match_pending"), "reachable");
+});
+
+test("pushReachOf: muted confirmations, or no usable device, means unreachable", () => {
+  assert.equal(
+    pushReachOf(["confirmations"], ["ExponentPushToken[abc]"], "match_pending"),
+    "muted",
+  );
+  // Web-only players never register a token; junk values don't count as one.
+  assert.equal(pushReachOf(undefined, [], "match_pending"), "no_device");
+  assert.equal(pushReachOf([], ["not-a-token", null], "match_pending"), "no_device");
 });
