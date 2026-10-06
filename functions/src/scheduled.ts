@@ -1,4 +1,4 @@
-import { migratePendingScheduling } from "./scheduling";
+import { migrateAutoConfirmWindow, migratePendingScheduling } from "./scheduling";
 import * as logger from "firebase-functions/logger";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
@@ -209,6 +209,7 @@ export const autoConfirmStaleMatches = onSchedule(
   { schedule: "*/10 * * * *", timeoutSeconds: 540, maxInstances: 1 },
   instrumentBackground("autoConfirmStaleMatches", async () => {
     await migratePendingScheduling();
+    await migrateAutoConfirmWindow();
     const now = Date.now();
     const cutoff = now - AUTO_CONFIRM_HOURS * HOUR_MS;
     const floor = now - AUTO_CONFIRM_MAX_AGE_HOURS * HOUR_MS;
@@ -255,25 +256,11 @@ export const autoConfirmStaleMatches = onSchedule(
     // the authority, this just avoids a write attempt per ineligible doc. Finals are rejected
     // by canAutoConfirm itself and fall into `ineligible`.
     const eligible: string[] = [];
-    const rescheduled = db.batch();
-    let rescheduledCount = 0;
     let ineligible = 0;
     let abandoned = 0;
     let truncated = false;
     for (const doc of pending.docs) {
       const data = doc.data();
-      // Stamped under a shorter window than today's (the 1-hour window before 1.16): move it to
-      // the date the current policy gives it, so it neither confirms early nor sits in this
-      // bounded query, crowding out matches that are actually due.
-      const created = matchCreatedMillis(data);
-      const due = (data.autoConfirmDueAt as Timestamp | undefined)?.toMillis?.();
-      if (created !== null && due !== undefined && due < autoConfirmDueMillis(created)) {
-        rescheduled.update(doc.ref, {
-          autoConfirmDueAt: Timestamp.fromMillis(autoConfirmDueMillis(created)),
-        });
-        rescheduledCount++;
-        continue;
-      }
       if (canAutoConfirm(data, cutoff, floor)) {
         if (eligible.length >= AUTO_CONFIRM_BATCH_LIMIT) {
           // More than one run's worth is waiting; the next run picks up the remainder.
@@ -283,20 +270,6 @@ export const autoConfirmStaleMatches = onSchedule(
         eligible.push(doc.id);
       } else if (canAutoConfirm(data, cutoff)) abandoned++;
       else ineligible++;
-    }
-
-    // Re-dating is housekeeping: if it fails, the next run retries it, and the matches that are
-    // actually due still confirm now.
-    if (rescheduledCount > 0) {
-      try {
-        await rescheduled.commit();
-      } catch (error) {
-        rescheduledCount = 0;
-        logger.error("auto_confirm_reschedule_failed", {
-          seasonId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
     }
 
     // Mark the season before flipping anything. A flip and its rebuild can't share a
@@ -339,7 +312,6 @@ export const autoConfirmStaleMatches = onSchedule(
       eligible: eligible.length,
       confirmed: batch.length,
       held,
-      rescheduled: rescheduledCount,
       flipFailed,
       ineligible,
       abandoned,

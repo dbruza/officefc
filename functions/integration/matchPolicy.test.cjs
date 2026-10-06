@@ -132,6 +132,9 @@ test("the scheduler confirms after 24 hours, holds for an opponent who went quie
   // Stamped under the old 1-hour window: due by that rule, not by today's.
   const legacy = await pendingMatch("legacy", { ageHours: 2 });
   await dueAfter(legacy, 1);
+  // Also 1-hour-stamped, but old enough that the stamp sits below the due query's age floor.
+  const oldLegacy = await pendingMatch("old-legacy", { ageHours: 60 });
+  await dueAfter(oldLegacy, 1);
   // Put on the clock while d could be notified; d has since muted confirmations.
   const quiet = await pendingMatch("quiet", { opponent: "d", ageHours: 25 });
   await dueAfter(quiet, 24);
@@ -149,6 +152,11 @@ test("the scheduler confirms after 24 hours, holds for an opponent who went quie
   const redated = (await legacy.get()).data();
   assert.equal(redated.status, "pending_confirmation");
   assert.equal(redated.autoConfirmDueAt.toMillis(), redated.createdAt.toMillis() + 24 * HOUR);
+  // Still inside the 72-hour age limit, so once re-dated it is due like any other.
+  assert.equal((await oldLegacy.get()).get("status"), "confirmed");
+  const migration = (await db.doc("systemState/autoConfirmWindow").get()).data();
+  assert.equal(migration.hours, policy.AUTO_CONFIRM_HOURS);
+  assert.equal(migration.complete, true);
 
   const held = (await quiet.get()).data();
   assert.equal(held.status, "pending_confirmation");
@@ -271,12 +279,15 @@ const voidRequest = (matchId, reason, uid = "admin") =>
   resolveMatch.run({ ...caller(uid), data: { matchId, action: "void", reason } });
 
 test("an admin can void a confirmed result: it leaves the tables and an audit record stays", async () => {
-  await confirmedMatch("genuine", 1, 1);
-  const forged = await confirmedMatch("forged", 99, 2);
+  const forged = await confirmedMatch("forged", 99, 1);
+  // A later draw, rated with the forged result already in the table.
+  const genuine = await confirmedMatch("genuine", 1, 2);
   assert.equal((await db.doc("playerStats/a").get()).get("games"), 2);
   assert.equal((await db.doc("seasons/s1/standings/a").get()).get("w"), 1);
   assert.ok((await db.doc("activity/result_forged").get()).exists);
   assert.equal(typeof (await forged.get()).get("aDelta"), "number");
+  const feedBefore = (await db.doc("activity/result_genuine").get()).data();
+  assert.equal(feedBefore.payload.aDelta, (await genuine.get()).get("aDelta"));
 
   await assert.rejects(voidRequest("forged", "Never played", "a"), /Admins only/);
   await assert.rejects(voidRequest("forged", "  "), /Give a reason/);
@@ -314,11 +325,17 @@ test("an admin can void a confirmed result: it leaves the tables and an audit re
     .sort();
   assert.deepEqual(told, ["a", "b"]);
 
-  // The normal rebuild takes it out of the ratings, table and stats.
+  // The normal rebuild takes it out of the ratings, table and stats...
   await drainRebuildQueue();
   assert.equal((await db.doc("playerStats/a").get()).get("games"), 1);
   assert.equal((await db.doc("seasons/s1/standings/a").get()).get("w"), 0);
-  assert.equal(typeof (await db.doc("matches/genuine").get()).get("aDelta"), "number");
+  assert.equal((await db.doc("readModelEvents/forged").get()).get("status"), "done");
+  // ...and the later result's feed entry is re-derived from its new rating move, in place.
+  const rerated = (await genuine.get()).get("aDelta");
+  assert.notEqual(rerated, feedBefore.payload.aDelta);
+  const feedAfter = (await db.doc("activity/result_genuine").get()).data();
+  assert.equal(feedAfter.payload.aDelta, rerated);
+  assert.equal(feedAfter.createdAt.toMillis(), feedBefore.createdAt.toMillis());
 
   await assert.rejects(voidRequest("forged", "again"), /Already voided/);
 });
@@ -370,4 +387,44 @@ test("voiding a result between a pair whose cup tie is decided flags the bracket
   assert.equal(response.cupTieMayNeedRepair, true);
   const audit = await db.collection("matchAudit").where("matchId", "==", "cup-decider").get();
   assert.equal(audit.docs[0].get("cupTieMayNeedRepair"), true);
+});
+
+test("the photo callable refuses a new result over the limit but still answers a retry", async () => {
+  const { submitAiAssistedMatch } = require("../lib/extract/submitAiAssistedMatch");
+  const opponents = ["b", "c", "d"];
+  for (let i = 0; i < policy.MAX_PENDING_PER_SUBMITTER; i++)
+    await pendingMatch(`m${i}`, { opponent: opponents[i % 3], ageHours: 2 - i / 100 });
+  // A photo result written earlier and confirmed since, so it's no longer among the pending.
+  await db.doc("matchDrafts/sent").set({
+    ownerUid: "a",
+    status: "done",
+    submitted: true,
+    submittedMatchId: "sent",
+  });
+  await db.doc("matches/sent").set({
+    ...matchFields("a", "b", Timestamp.now()),
+    source: "ai_assisted",
+    status: "confirmed",
+  });
+  await db.doc("matchDrafts/fresh").set({ ownerUid: "a", status: "done", submitted: false });
+  const submit = (draftId) =>
+    submitAiAssistedMatch.run({
+      ...caller("a"),
+      data: {
+        draftId,
+        seasonId: "s1",
+        opponentId: "b",
+        mySide: "home",
+        myTeamId: "t1",
+        opponentTeamId: "t2",
+        submittedGoalsAndStats: { myGoals: 2, opponentGoals: 1 },
+      },
+    });
+
+  assert.deepEqual(await submit("sent"), { ok: true, matchId: "sent" });
+  await assert.rejects(
+    submit("fresh"),
+    (error) => error.message === policy.PENDING_LIMIT_MESSAGES.submitter,
+  );
+  assert.equal((await db.doc("matches/fresh").get()).exists, false);
 });

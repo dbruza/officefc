@@ -10,6 +10,7 @@ import {
   deriveFinalsSetActivity,
   deriveMatchActivity,
   deriveSeasonActivity,
+  matchActivityIds,
   type ActivityEvent,
   type FinalsResultActivityInput,
   type FinalsSetActivityInput,
@@ -35,6 +36,17 @@ export async function topRankedLeaderId(db: Firestore, seasonId: string): Promis
  * means a re-run (or the backfill racing a live write) never duplicates or reorders an event.
  * `createdAt` defaults to the server clock (live emit); the backfill passes the match time.
  */
+function activityDoc(event: ActivityEvent, createdAt: Timestamp | FieldValue) {
+  return {
+    type: event.type,
+    leagueId: LEAGUE_ID,
+    seasonId: event.seasonId,
+    actorIds: event.actorIds,
+    payload: event.payload,
+    createdAt,
+  };
+}
+
 async function writeActivityEvents(
   db: Firestore,
   events: ActivityEvent[],
@@ -44,14 +56,7 @@ async function writeActivityEvents(
     events.map(async (event) => {
       const ref = db.doc(`activity/${event.id}`);
       try {
-        await ref.create({
-          type: event.type,
-          leagueId: LEAGUE_ID,
-          seasonId: event.seasonId,
-          actorIds: event.actorIds,
-          payload: event.payload,
-          createdAt,
-        });
+        await ref.create(activityDoc(event, createdAt));
       } catch (error) {
         if ((error as { code?: number }).code !== 6) throw error;
       }
@@ -125,6 +130,81 @@ export async function emitMatchActivity(args: {
     newLeaderId,
   });
   await writeActivityEvents(db, events);
+}
+
+/**
+ * Re-derive the feed events of every confirmed result in a season dated at or after a voided
+ * one, from the fields the rebuild just recalculated. Call AFTER recalcSeasonElo. Each of those
+ * results' rating moves, leader changes and streaks was computed with the voided result in
+ * the table, and feed events are written once, at confirmation, so without this the feed keeps
+ * the old numbers. Events a result no longer produces are removed; the rest keep their
+ * original time, so the feed's order doesn't change.
+ */
+export async function replayActivityAfterVoid(
+  db: Firestore,
+  seasonId: string,
+  voidedMatchId: string,
+): Promise<number> {
+  const voided = await db.doc(`matches/${voidedMatchId}`).get();
+  const voidedDate = voided.get("date");
+  const later = await db
+    .collection("matches")
+    .where("seasonId", "==", seasonId)
+    .where("status", "==", "confirmed")
+    .where("date", ">=", voidedDate instanceof Timestamp ? voidedDate : Timestamp.fromMillis(0))
+    .get();
+  // Finals have their own bracket events and never move ratings.
+  const rows = later.docs.filter((row) => row.get("finals") !== true);
+  if (rows.length === 0) return 0;
+
+  const refsByMatch = rows.map((row) =>
+    matchActivityIds(row.id, String(row.get("aId")), String(row.get("bId"))).map((id) =>
+      db.doc(`activity/${id}`),
+    ),
+  );
+  const flat = refsByMatch.flat();
+  const existing = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+  for (let i = 0; i < flat.length; i += 300) {
+    for (const snap of await db.getAll(...flat.slice(i, i + 300))) existing.set(snap.id, snap);
+  }
+
+  const writer = db.bulkWriter();
+  rows.forEach((row, index) => {
+    const data = row.data();
+    const aGoals = Number(data.aGoals);
+    const bGoals = Number(data.bGoals);
+    const decided = aGoals !== bGoals && typeof data.winnerStreakAfter === "number";
+    const events = deriveMatchActivity({
+      matchId: row.id,
+      seasonId,
+      aId: String(data.aId),
+      bId: String(data.bId),
+      aGoals,
+      bGoals,
+      aEloBefore: Number(data.aEloBefore ?? 0),
+      bEloBefore: Number(data.bEloBefore ?? 0),
+      aDelta: Number(data.aDelta ?? 0),
+      bDelta: Number(data.bDelta ?? 0),
+      winnerStreak: decided ? data.winnerStreakAfter : null,
+      winnerStreakType: decided ? "W" : null,
+      previousLeaderId: typeof data.leaderBeforeId === "string" ? data.leaderBeforeId : null,
+      newLeaderId: typeof data.leaderAfterId === "string" ? data.leaderAfterId : null,
+    });
+    const derived = new Set(events.map((event) => event.id));
+    // An event the result didn't have before slots in at the time its result was announced.
+    const announcedAt =
+      existing.get(`result_${row.id}`)?.get("createdAt") ??
+      (data.date instanceof Timestamp ? data.date : FieldValue.serverTimestamp());
+    for (const event of events) {
+      const createdAt = existing.get(event.id)?.get("createdAt") ?? announcedAt;
+      writer.set(db.doc(`activity/${event.id}`), activityDoc(event, createdAt));
+    }
+    for (const ref of refsByMatch[index]) {
+      if (!derived.has(ref.id) && existing.get(ref.id)?.exists) writer.delete(ref);
+    }
+  });
+  await writer.close();
+  return rows.length;
 }
 
 /** Emit champion + premier + per-month POTM events when a season is finalized. */

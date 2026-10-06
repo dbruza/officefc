@@ -62,7 +62,7 @@ export interface ConfirmResult {
 }
 
 /** Read a confirmed match's fields into the shape the post-confirmation work needs. */
-function toConfirmResult(data: FirebaseFirestore.DocumentData): ConfirmResult {
+export function toConfirmResult(data: FirebaseFirestore.DocumentData): ConfirmResult {
   return {
     seasonId: String(data.seasonId),
     submittedBy: String(data.submittedBy),

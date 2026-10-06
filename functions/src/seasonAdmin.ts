@@ -13,9 +13,9 @@ import {
   seasonMatchInputsWithTeams,
   writeSeasonJoinCode,
 } from "./utils";
-import { sendPush } from "./notify";
+import { enqueuePushesTx, sendPush } from "./notify";
 import { rebuildTeamCatalogueSnapshot } from "./teams";
-import { assertSeasonAcceptsConfirmationsTx } from "./matchLifecycle";
+import { assertSeasonAcceptsConfirmationsTx, toConfirmResult } from "./matchLifecycle";
 import { captureServerFault } from "./sentry";
 import { deriveRecap } from "./seasonRecap";
 import { bracketComplete, bracketRunnerUpId, type FinalsBracket } from "./finalsRules";
@@ -344,20 +344,14 @@ const RATING_FIELDS = [
   "winnerStreakAfter",
 ] as const;
 
-interface VoidedConfirmed {
-  aId: string;
-  bId: string;
-  aGoals: number;
-  bGoals: number;
-  cupTieMayNeedRepair: boolean;
-}
-
 /**
  * Void a result that was already confirmed — by its opponent, an admin, or the auto-confirm
  * scheduler — and take it out of the tables: ratings, standings, stats and the activity feed
- * are rebuilt without it. For results that should never have counted, such as a forged score
- * that locked in unanswered. Needs a reason, and leaves a `matchAudit` record of what was
- * removed, when it had been confirmed and by whom.
+ * are rebuilt without it, including later results' feed events (see replayActivityAfterVoid).
+ * For results that should never have counted, such as a forged score that locked in
+ * unanswered. Needs a reason, and leaves a `matchAudit` record of what was removed, when it
+ * had been confirmed and by whom. Both players' pushes are queued in the same transaction, so
+ * a failure can't leave the void done but unannounced.
  *
  * Refused for finals (the result already advanced the bracket, and finals never confirm
  * unanswered) and for finalized seasons (their champion and premier are published). A cup tie
@@ -368,7 +362,7 @@ async function voidConfirmedMatch(
   ref: FirebaseFirestore.DocumentReference,
   adminUid: string,
   reason: string,
-): Promise<VoidedConfirmed> {
+): Promise<{ cupTieMayNeedRepair: boolean }> {
   if (!reason) {
     throw new HttpsError(
       "invalid-argument",
@@ -406,6 +400,18 @@ async function voidConfirmedMatch(
     const aGoals = Number(data.aGoals);
     const bGoals = Number(data.bGoals);
     const cupTieMayNeedRepair = bracket !== null && hasDecidedTieBetween(bracket, aId, bId);
+    const body = `An admin voided the ${aGoals}-${bGoals} result. It no longer counts.`;
+    await enqueuePushesTx(
+      tx,
+      [...new Set([aId, bId])]
+        .filter((player) => player !== adminUid)
+        .map((player) => ({
+          uid: player,
+          title: "Result voided",
+          body,
+          data: { type: "match_voided", matchId: ref.id },
+        })),
+    );
 
     tx.update(ref, {
       status: "voided",
@@ -437,8 +443,8 @@ async function voidConfirmedMatch(
       cupTieMayNeedRepair,
     });
     for (const id of matchActivityIds(ref.id, aId, bId)) tx.delete(db.doc(`activity/${id}`));
-    requestRebuild(tx, seasonId);
-    return { aId, bId, aGoals, bGoals, cupTieMayNeedRepair };
+    requestRebuild(tx, seasonId, { matchId: ref.id, result: toConfirmResult(data), mode: "void" });
+    return { cupTieMayNeedRepair };
   });
 }
 
@@ -458,19 +464,9 @@ export const resolveMatch = loggedOnCall("resolveMatch", { cors: true }, async (
 
   const ref = db.doc(`matches/${matchId}`);
   if (action === "void" && (await ref.get()).get("status") === "confirmed") {
-    const voided = await voidConfirmedMatch(ref, uid, reason);
-    logger.info("confirmed_match_voided", {
-      matchId,
-      by: uid,
-      cupTieMayNeedRepair: voided.cupTieMayNeedRepair,
-    });
-    const body = `An admin voided the ${voided.aGoals}-${voided.bGoals} result. It no longer counts.`;
-    for (const player of new Set([voided.aId, voided.bId])) {
-      if (player !== uid) {
-        await sendPush(player, "Result voided", body, { type: "match_voided", matchId });
-      }
-    }
-    return { ok: true, matchId, cupTieMayNeedRepair: voided.cupTieMayNeedRepair };
+    const { cupTieMayNeedRepair } = await voidConfirmedMatch(ref, uid, reason);
+    logger.info("confirmed_match_voided", { matchId, by: uid, cupTieMayNeedRepair });
+    return { ok: true, matchId, cupTieMayNeedRepair };
   }
 
   const previous = await db.runTransaction(async (tx) => {

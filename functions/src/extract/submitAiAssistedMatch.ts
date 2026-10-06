@@ -108,12 +108,6 @@ export const submitAiAssistedMatch = loggedOnCall(
       throw new HttpsError("invalid-argument", "Invalid goal count.");
     assertStatsInRange(submittedGoalsAndStats);
 
-    // Same pending-result limits notifyMatchSubmitted enforces, checked up front so the player
-    // gets a reason instead of a result that disappears. A retry of an already-written match is
-    // judged by its own place in the queue, so it still succeeds.
-    const overLimit = await pendingLimitMessage(uid, opponentId, draftId);
-    if (overLimit) throw new HttpsError("failed-precondition", overLimit);
-
     const draftRef = db.doc(`matchDrafts/${draftId}`);
     const matchRef = db.doc(`matches/${draftId}`);
     const seasonRef = db.doc(`seasons/${seasonId}`);
@@ -143,6 +137,11 @@ export const submitAiAssistedMatch = loggedOnCall(
         throw error;
       }
       if (action === "existing") return;
+      // Same pending-result limits notifyMatchSubmitted enforces, checked here so the player gets
+      // a reason instead of a result that disappears. Only for a new match: a retry of one
+      // already written returned above, whatever has happened to it since.
+      const overLimit = await pendingLimitMessage(uid, opponentId);
+      if (overLimit) throw new HttpsError("failed-precondition", overLimit);
 
       if (!seasonSnap.exists || !seasonSnap.get("active"))
         throw new HttpsError("failed-precondition", "No active season.");
