@@ -29,3 +29,13 @@ export function playedAt(date: Date | null | undefined, now = new Date()): strin
   }
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
+
+/** A deadline: "today 14:05", "tomorrow 09:30", or "Tue 18:10" further out (or overdue). */
+export function dueAt(date: Date, now = new Date()): string {
+  const time = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const t = date.getTime();
+  if (t >= startOfToday && t < startOfToday + DAY) return `today ${time}`;
+  if (t >= startOfToday + DAY && t < startOfToday + 2 * DAY) return `tomorrow ${time}`;
+  return `${date.toLocaleDateString("en-GB", { weekday: "short" })} ${time}`;
+}

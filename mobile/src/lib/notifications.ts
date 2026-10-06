@@ -73,6 +73,7 @@ export function resolveNotificationRoute(data: Record<string, string>): Href | n
     case "match_pending":
       return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
     case "match_confirmed":
+    case "match_voided":
       return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";
     case "match_disputed":
       return matchId ? `/(app)/match/${matchId}` : "/(app)/(tabs)";

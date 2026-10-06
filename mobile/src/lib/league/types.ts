@@ -161,6 +161,12 @@ export interface LeagueMatch {
   aStats?: MatchSideStats;
   bStats?: MatchSideStats;
   eloExplain?: EloExplain;
+  /** When this pending result counts on its own if the opponent doesn't respond. Null when it
+   *  waits for them: finals, or an opponent the app couldn't notify. */
+  autoConfirmAt?: Date | null;
+  /** Who voided or resolved it: "system" for a submission rule, otherwise an admin's uid. */
+  resolvedBy?: string | null;
+  resolutionReason?: string | null;
 }
 
 export interface MatchSideStats {

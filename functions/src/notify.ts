@@ -81,6 +81,7 @@ export type PushCategory = (typeof PUSH_CATEGORY_KEYS)[number];
 /** Every audited data.type → its mute category; anything else falls back to "general". */
 const TYPE_TO_CATEGORY: Readonly<Record<string, PushCategory>> = {
   match_confirmed: "results",
+  match_voided: "results",
   match_pending: "confirmations",
   match_disputed: "disputes",
   fixture_created: "fixtures",
@@ -106,6 +107,37 @@ export function isMuted(muted: unknown, type: string | undefined): boolean {
   if (!Array.isArray(muted)) return false;
   const category = pushCategory(type);
   return muted.some((entry) => typeof entry === "string" && entry === category);
+}
+
+/**
+ * Whether a push of `type` can reach a user: `muted` when they silenced its category,
+ * `no_device` when they have no usable Expo token (web-only players never register one),
+ * otherwise `reachable`. Same checks as delivery, so "reachable" means sendPush would send.
+ */
+export type PushReach = "reachable" | "muted" | "no_device";
+
+export function pushReachOf(muted: unknown, tokenValues: unknown[], type: string): PushReach {
+  if (isMuted(muted, type)) return "muted";
+  return tokenValues.some(isExpoPushToken) ? "reachable" : "no_device";
+}
+
+/** Read a user's push prefs and tokens, inside `tx` when given, and classify their reach. */
+export async function readPushReach(
+  uid: string,
+  type: string,
+  tx?: Transaction,
+): Promise<PushReach> {
+  const db = getFirestore();
+  const prefsRef = db.doc(`pushPrefs/${uid}`);
+  const tokensQuery = db.collection(`deviceTokens/${uid}/tokens`);
+  const [prefs, tokens] = tx
+    ? await Promise.all([tx.get(prefsRef), tx.get(tokensQuery)])
+    : await Promise.all([prefsRef.get(), tokensQuery.get()]);
+  return pushReachOf(
+    prefs.get("muted"),
+    tokens.docs.map((snap) => snap.get("expoPushToken")),
+    type,
+  );
 }
 
 async function sendPushNow(

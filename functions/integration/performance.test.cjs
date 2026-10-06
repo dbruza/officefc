@@ -268,7 +268,9 @@ test("ineligible finals cannot occupy the bounded auto-confirm query window", as
   const { schedulePendingMatch } = require("../lib/scheduling");
   const regular = db.doc("matches/regular-pending"),
     finals = db.doc("matches/finals-pending");
-  const createdAt = Timestamp.fromMillis(Date.now() - 7200000);
+  const createdAt = Timestamp.fromMillis(Date.now() - 25 * 3600000);
+  // The opponent can be notified, so only the finals flag keeps a match off the schedule.
+  await db.doc("deviceTokens/b/tokens/t1").set({ expoPushToken: "ExponentPushToken[b]" });
   await regular.set({ ...result, status: "pending_confirmation", createdAt });
   await finals.set({ ...result, finals: true, status: "pending_confirmation", createdAt });
   await schedulePendingMatch(regular);

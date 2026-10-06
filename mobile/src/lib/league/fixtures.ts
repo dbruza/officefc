@@ -2,6 +2,7 @@ import { mutate } from "../dataCache";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
+import { assertWithinPendingLimit } from "./matches";
 import type { Fixture, SubmitFixtureMatchInput } from "./types";
 
 interface FixturePayload {
@@ -60,6 +61,10 @@ export async function createFixture(opponentId: string, reroll = false): Promise
  *  pending-confirmation lifecycle takes over from there. */
 export async function submitFixtureMatch(input: SubmitFixtureMatchInput): Promise<string> {
   const { fixture } = input;
+  await assertWithinPendingLimit(
+    input.submittedBy,
+    fixture.aId === input.submittedBy ? fixture.bId : fixture.aId,
+  );
   const ref = await addDoc(collection(db, "matches"), {
     seasonId: fixture.seasonId,
     submittedBy: input.submittedBy,
