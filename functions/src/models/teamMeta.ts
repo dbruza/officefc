@@ -41,7 +41,7 @@ function present(value: string): boolean {
   return !!value && value !== "undefined" && value !== "null";
 }
 
-interface SideRef {
+export interface SideRef {
   key: string;
   name: string;
   overall: number | null;
@@ -50,7 +50,7 @@ interface SideRef {
 /** Resolve one side's team identity: catalogue id when present, else the recorded name.
  *  Mirrors computeTeamRecords so legacy docs without team ids still aggregate under a
  *  stable key, and the live catalogue supplies the canonical name + OVR. */
-function sideOf(teamId: string, teamName: string, teamsById?: Map<string, Team>): SideRef {
+export function sideOf(teamId: string, teamName: string, teamsById?: Map<string, Team>): SideRef {
   const id = present(teamId) ? teamId : "";
   const name = present(teamName) ? teamName : "";
   const catalogue = id ? teamsById?.get(id) : undefined;

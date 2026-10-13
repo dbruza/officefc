@@ -1,6 +1,7 @@
 import { summarizeHistory } from "./matchHistory";
 import type { LeagueMatch, Team } from "./types";
 import { computeSeasonAwards } from "./awards";
+import { seasonCallouts } from "./callouts";
 import { aggregateSeasonStats } from "./seasonStats";
 import { streakRows } from "./streakBoard";
 import { biggestResults, fairnessBySource, mostPickedTeams, winRateByBand } from "./teamMeta";
@@ -87,6 +88,7 @@ export function seasonSummary(matches: SummaryMatch[], teams: Map<string, Team>)
     bands: winRateByBand(meta, teams),
     fairness: fairnessBySource(meta, teams),
     bigResults: biggestResults(meta).map((m) => ({ ...m, date: m.date?.toISOString() ?? null })),
+    callouts: seasonCallouts(matches, teams),
   };
 }
 export type SeasonSummary = ReturnType<typeof seasonSummary>;
