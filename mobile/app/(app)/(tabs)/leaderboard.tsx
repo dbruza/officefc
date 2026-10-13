@@ -1,28 +1,19 @@
 /**
  * League table tab. A season selector, a Table/Stats switch and player search sit in one
  * compact toolbar; the Table view leads with the podium, then the standings — card rows
- * on phones, a sortable data table on desktop. Stats swaps in the AI-extracted boards.
+ * on phones, a sortable data table on desktop. Stats swaps in the season's callouts
+ * (headlines, a yearbook title per player, feuds) with the AI-extracted boards below.
  */
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { Platform, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { type Href, useRouter } from "expo-router";
 
 import {
-  Avatar,
   Card,
   Columns,
   CountUp,
   EmptyState,
   ErrorCard,
-  Grid,
   Icon,
   Interactive,
   Page,
@@ -42,7 +33,6 @@ import {
 import { GrowBar } from "@/components/GrowBar";
 import { LeagueTable, type LeagueTableGroup, type LeagueTableRow } from "@/components/LeagueTable";
 import { useAuth } from "@/lib/auth";
-import { fmtXg } from "@/lib/format";
 import {
   MIN_RANKED_GAMES,
   getLeaguePlayers,
@@ -53,9 +43,7 @@ import {
   type Season,
   type Standing,
 } from "@/lib/league";
-import { type SeasonLeaderboardStats } from "@/lib/stats/seasonStats";
-import type { StreakRow } from "../../../../functions/src/models/streakBoard";
-import { getSeasonSummary } from "@/lib/league/summaries";
+import { SeasonStatsBoard, StatsSkeleton } from "@/screens/SeasonStats";
 import { useFocusData } from "@/lib/useFocusData";
 import { useTabRetap } from "@/lib/tabRetap";
 import { useBreakpoint } from "@/lib/responsive";
@@ -229,7 +217,11 @@ export default function Leaderboard() {
     body = requestedId ? (
       <SeasonStatsBoard
         seasonId={requestedId}
+        live={!!requestedSeason?.active}
+        // The title race reads the table, which may still belong to the previous season.
+        standings={data?.selectedId === requestedId ? standings : []}
         players={players}
+        youId={user?.uid}
         onOpen={openPlayer}
         reloadRef={statsReload}
       />
@@ -651,306 +643,6 @@ function TableSkeleton({ desktop }: { desktop: boolean }) {
   );
 }
 
-// --- Stats boards -------------------------------------------------------------
-
-/**
- * One side's AI-extracted stats off a match doc: the nested `{a,b}Stats` object wins,
- * otherwise the flat columns — mirroring how league/matches.ts reads them. Every value
- * stays null when the screenshot didn't capture it.
- */
-const signed = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : `${value}`);
-
-/** Lazy-loaded stats view: mounts only while the Stats segment is active, caches after that. */
-function SeasonStatsBoard({
-  seasonId,
-  players,
-  onOpen,
-  reloadRef,
-}: {
-  seasonId: string;
-  players: Map<string, LeaguePlayer>;
-  onOpen: (uid: string) => void;
-  /** Lets the screen's refresh button reload these boards too. */
-  reloadRef: MutableRefObject<(() => Promise<void>) | null>;
-}) {
-  const { data, refreshing, error, stale, reload } = useFocusData<{
-    stats: SeasonLeaderboardStats;
-    streaks: StreakRow[];
-  }>(
-    `leaderboard-stats:${seasonId}`,
-    useCallback(async () => {
-      const summary = await getSeasonSummary(seasonId);
-      return { stats: summary.stats, streaks: summary.streaks };
-    }, [seasonId]),
-  );
-  useEffect(() => {
-    reloadRef.current = reload;
-    return () => {
-      reloadRef.current = null;
-    };
-  }, [reload, reloadRef]);
-
-  if (!data) {
-    // Nothing cached yet: skeleton on first load, but never a silent blank on a failed
-    // first fetch — the failure card must stay reachable.
-    return error ? (
-      <ErrorCard
-        message="Couldn't load the season stats. Check the connection and retry."
-        onRetry={reload}
-        retrying={refreshing}
-      />
-    ) : (
-      <StatsSkeleton />
-    );
-  }
-
-  const { stats, streaks } = data;
-  // Empty means the whole Stats view has nothing to say — including streaks, which
-  // exist even for manual-only seasons where no screenshot stats were ever captured.
-  const empty =
-    stats.clinical.length === 0 &&
-    stats.shotVolume.length === 0 &&
-    stats.possession.length === 0 &&
-    streaks.length === 0;
-
-  const name = (uid: string) => players.get(uid)?.name ?? "Unknown player";
-  const boards: ReactNode[] = [];
-
-  if (streaks.length > 0) {
-    boards.push(
-      <StatBoard key="streaks" title="Streaks" caption="right now" icon="flame">
-        {streaks.map((row) => {
-          // Rows are built as either hot (current win streak) or cold (winless run).
-          const hot = row.winStreak >= 2;
-          return (
-            <BoardRow
-              key={row.playerId}
-              player={players.get(row.playerId)}
-              name={name(row.playerId)}
-              lead={
-                <Icon
-                  name={hot ? "flame" : "bolt"}
-                  size={16}
-                  color={hot ? colors.win : colors.loss}
-                />
-              }
-              detail={hot ? "Current win streak" : "Games without a win"}
-              value={hot ? `W${row.winStreak}` : `${row.winlessRun}`}
-              valueColor={hot ? colors.win : colors.loss}
-              onPress={() => onOpen(row.playerId)}
-            />
-          );
-        })}
-      </StatBoard>,
-    );
-  }
-  if (stats.clinical.length > 0) {
-    boards.push(
-      <StatBoard
-        key="clinical"
-        title="Clinical finishers"
-        caption="goals − xG"
-        icon="target"
-        footnote={
-          stats.playersWithoutXg.length > 0
-            ? `No xG data yet: ${stats.playersWithoutXg.map(name).join(", ")}`
-            : undefined
-        }
-      >
-        {stats.clinical.map((row, index) => (
-          <BoardRow
-            key={row.playerId}
-            rank={index + 1}
-            player={players.get(row.playerId)}
-            name={name(row.playerId)}
-            detail={`${row.goals} goal${row.goals === 1 ? "" : "s"} · ${fmtXg(row.xg)} xG · ${row.games} game${row.games === 1 ? "" : "s"}`}
-            value={signed(row.delta)}
-            valueColor={row.delta >= 0 ? colors.win : colors.loss}
-            onPress={() => onOpen(row.playerId)}
-          />
-        ))}
-      </StatBoard>,
-    );
-  }
-  if (stats.shotVolume.length > 0) {
-    boards.push(
-      <StatBoard key="shots" title="Shot volume" caption="on target %" icon="crosshair">
-        {stats.shotVolume.map((row, index) => (
-          <BoardRow
-            key={row.playerId}
-            rank={index + 1}
-            player={players.get(row.playerId)}
-            name={name(row.playerId)}
-            detail={`${row.shotsOnTarget}/${row.shots} on target · ${row.games} game${row.games === 1 ? "" : "s"}`}
-            value={row.accuracyPct == null ? "—" : `${row.accuracyPct}%`}
-            valueColor={colors.accent}
-            bar={row.accuracyPct ?? 0}
-            barDelay={index * 60}
-            onPress={() => onOpen(row.playerId)}
-          />
-        ))}
-      </StatBoard>,
-    );
-  }
-  if (stats.possession.length > 0) {
-    boards.push(
-      <StatBoard key="possession" title="Possession kings" caption="avg %" icon="ball">
-        {stats.possession.map((row, index) => (
-          <BoardRow
-            key={row.playerId}
-            rank={index + 1}
-            player={players.get(row.playerId)}
-            name={name(row.playerId)}
-            detail={`across ${row.games} game${row.games === 1 ? "" : "s"}`}
-            value={`${row.averagePct}%`}
-            valueColor={colors.accent}
-            bar={Math.min(row.averagePct, 100)}
-            barDelay={index * 60}
-            onPress={() => onOpen(row.playerId)}
-          />
-        ))}
-      </StatBoard>,
-    );
-  }
-
-  return (
-    <View style={stale && styles.stale}>
-      {error ? (
-        <ErrorCard
-          message="Couldn't refresh the season stats. Showing the last copy."
-          onRetry={reload}
-          retrying={refreshing}
-          style={{ marginBottom: spacing.lg }}
-        />
-      ) : null}
-      {empty ? (
-        <EmptyState
-          icon="target"
-          title="No stats captured yet"
-          body="Log a match with a screenshot and the shot, possession and xG boards fill in here."
-        />
-      ) : (
-        <>
-          <Grid min={380} maxColumns={2} gap={spacing.lg}>
-            {boards.map((board, index) => (
-              <Reveal key={index} index={index} style={{ flex: 1 }}>
-                {board}
-              </Reveal>
-            ))}
-          </Grid>
-          <Txt size={12} color={colors.textFaint} style={styles.statsCaption}>
-            These numbers come from AI-extracted match screenshots and are optional, so coverage
-            varies between players and games.
-          </Txt>
-        </>
-      )}
-    </View>
-  );
-}
-
-function StatBoard({
-  title,
-  caption,
-  icon,
-  footnote,
-  children,
-}: {
-  title: string;
-  caption: string;
-  icon: IconName;
-  footnote?: string;
-  children: ReactNode;
-}) {
-  return (
-    <Card padded={false} style={styles.board}>
-      <View style={styles.boardHead}>
-        <Icon name={icon} size={16} color={colors.accent} />
-        <Txt variant="head" size={14.5} style={{ flex: 1 }}>
-          {title}
-        </Txt>
-        <Txt variant="monoBold" size={11} color={colors.textFaint}>
-          {caption}
-        </Txt>
-      </View>
-      <View style={styles.boardRows}>{children}</View>
-      {footnote ? (
-        <Txt size={11.5} color={colors.textFaint} style={styles.boardFootnote}>
-          {footnote}
-        </Txt>
-      ) : null}
-    </Card>
-  );
-}
-
-function BoardRow({
-  rank,
-  lead,
-  player,
-  name,
-  detail,
-  value,
-  valueColor,
-  bar,
-  barDelay = 0,
-  onPress,
-}: {
-  rank?: number;
-  lead?: ReactNode;
-  player: LeaguePlayer | undefined;
-  name: string;
-  detail: string;
-  value: string;
-  valueColor: string;
-  /** 0–100 meter under the detail line. */
-  bar?: number;
-  barDelay?: number;
-  onPress: () => void;
-}) {
-  return (
-    <Interactive
-      onPress={onPress}
-      accessibilityRole="link"
-      accessibilityLabel={`${name}, ${value}. ${detail}`}
-      pressScale={0.99}
-      style={styles.boardRow}
-      hoverStyle={{ backgroundColor: colors.surface2 }}
-    >
-      <View style={styles.boardLead}>
-        {lead ?? (
-          <Txt variant="monoBold" size={12} color={colors.textFaint}>
-            {rank}
-          </Txt>
-        )}
-      </View>
-      <Avatar player={player} size={28} />
-      <View style={styles.boardMain}>
-        <Txt variant="bodyMedium" size={14} numberOfLines={1}>
-          {name}
-        </Txt>
-        <Txt size={11.5} color={colors.textDim} numberOfLines={1}>
-          {detail}
-        </Txt>
-        {bar !== undefined ? (
-          <GrowBar value={bar / 100} height={4} delay={240 + barDelay} style={{ marginTop: 5 }} />
-        ) : null}
-      </View>
-      <Txt variant="monoBold" size={15} color={valueColor} style={styles.boardValue}>
-        {value}
-      </Txt>
-    </Interactive>
-  );
-}
-
-function StatsSkeleton() {
-  return (
-    <Grid min={380} maxColumns={2} gap={spacing.lg}>
-      {[0, 1, 2, 3].map((i) => (
-        <SkeletonCard key={i} height={248} />
-      ))}
-    </Grid>
-  );
-}
-
 /** Web: ease the search box's border into its focus colour. */
 const searchTransition = webStyle({
   transitionProperty: "border-color",
@@ -1047,32 +739,4 @@ const styles = StyleSheet.create({
   },
   snapshotTile: { width: "50%", gap: 2 },
   progressLabel: { flexDirection: "row", justifyContent: "space-between" },
-  board: { flex: 1, overflow: "hidden" },
-  boardHead: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingTop: 14,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
-  boardRows: { paddingVertical: 4 },
-  boardRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: 9,
-    paddingHorizontal: spacing.lg,
-  },
-  boardLead: { width: 18, alignItems: "center" },
-  boardMain: { flex: 1, minWidth: 0, gap: 1 },
-  boardValue: { minWidth: 48, textAlign: "right" },
-  boardFootnote: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    paddingTop: spacing.xs,
-  },
-  statsCaption: { marginTop: spacing.lg, marginHorizontal: 2, lineHeight: 17 },
 });

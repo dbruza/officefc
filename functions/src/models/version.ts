@@ -1,1 +1,1 @@
-export const SUMMARY_VERSION = 1;
+export const SUMMARY_VERSION = 2;
