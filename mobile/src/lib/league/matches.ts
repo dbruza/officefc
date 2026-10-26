@@ -22,6 +22,7 @@ import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
 import { timed } from "../logger";
 import { asNullableDate, nullableNumber } from "./firestoreMap";
+import { PENDING_LIMIT_MESSAGES, pendingLimitBreach } from "../matchPolicy";
 import type {
   AdminPendingMatch,
   AiAssistedSubmitInput,
@@ -102,6 +103,9 @@ function mapMatch(id: string, data: Record<string, unknown>): LeagueMatch {
     aStats: sideStats(data, "a"),
     bStats: sideStats(data, "b"),
     eloExplain: mapEloExplain(data),
+    autoConfirmAt: asNullableDate(data.autoConfirmDueAt),
+    resolvedBy: typeof data.resolvedBy === "string" ? data.resolvedBy : null,
+    resolutionReason: typeof data.resolutionReason === "string" ? data.resolutionReason : null,
   };
 }
 
@@ -253,7 +257,36 @@ export function subscribePendingConfirmations(
   };
 }
 
+/**
+ * Refuse a result the server would void for going over the pending-result limits
+ * (functions/src/models/matchPolicy.ts), so the player hears why now instead of seeing the
+ * result vanish. The notifyMatchSubmitted trigger stays the authority.
+ */
+export async function assertWithinPendingLimit(
+  submittedBy: string,
+  opponentId: string,
+): Promise<void> {
+  const snap = await getDocs(
+    query(
+      collection(db, "matches"),
+      where("submittedBy", "==", submittedBy),
+      where("status", "==", "pending_confirmation"),
+    ),
+  );
+  const pending = snap.docs.map((row) => {
+    const data = row.data();
+    return { id: row.id, opponentId: String(data.aId === submittedBy ? data.bId : data.aId) };
+  });
+  const breach = pendingLimitBreach(pending, { opponentId });
+  if (breach) {
+    throw Object.assign(new Error(PENDING_LIMIT_MESSAGES[breach]), {
+      code: "failed-precondition",
+    });
+  }
+}
+
 export async function submitManualMatch(input: SubmitMatchInput): Promise<string> {
+  await assertWithinPendingLimit(input.submittedBy, input.opponentId);
   const ref = await addDoc(collection(db, "matches"), {
     seasonId: input.seasonId,
     submittedBy: input.submittedBy,
@@ -338,16 +371,18 @@ export async function abandonMatchDraft(draftId: string): Promise<{ ok: true }> 
   return result.data;
 }
 
+/** Admin resolve. Voiding a confirmed result needs a reason; the server then reports whether
+ *  a cup tie between the pair may need fixing by hand. */
 export async function resolveMatch(
   matchId: string,
   action: "confirm" | "correct_confirm" | "void",
   correctedScore?: { aGoals: number; bGoals: number },
   reason?: string,
-): Promise<{ matchId: string }> {
-  const callable = httpsCallable<Record<string, unknown>, { ok: boolean; matchId: string }>(
-    functions,
-    "resolveMatch",
-  );
+): Promise<{ matchId: string; cupTieMayNeedRepair?: boolean }> {
+  const callable = httpsCallable<
+    Record<string, unknown>,
+    { ok: boolean; matchId: string; cupTieMayNeedRepair?: boolean }
+  >(functions, "resolveMatch");
   const data: Record<string, unknown> = { matchId, action };
   if (reason) data.reason = reason;
   if (correctedScore) data.correctedScore = correctedScore;

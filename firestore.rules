@@ -361,6 +361,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Audit trail of admin overrides on confirmed results (resolveMatch voiding one).
+    // Admins read it; only functions write it, and nobody can edit or remove an entry.
+    match /matchAudit/{auditId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Default deny.
     match /{document=**} {
       allow read, write: if false;

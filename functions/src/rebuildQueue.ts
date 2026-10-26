@@ -6,7 +6,7 @@ import { HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { QUEUE_PATH } from "./modelWriter";
 import { recalcSeasonElo, recalcLeagueStats, rebuildFrozenSeasonSummary } from "./recalc";
-import { emitMatchActivity, topRankedLeaderId } from "./activityFeed";
+import { emitMatchActivity, replayActivityAfterVoid, topRankedLeaderId } from "./activityFeed";
 import { sendPush } from "./notify";
 import type { ConfirmResult } from "./matchLifecycle";
 import { instrumentBackground } from "./sentry";
@@ -14,7 +14,9 @@ import { instrumentBackground } from "./sentry";
 interface ConfirmationWork {
   matchId: string;
   result: ConfirmResult;
-  mode: "manual" | "auto" | "admin";
+  /** "void": an admin voided this confirmed result; nothing is announced, but later results'
+   *  feed events are re-derived once the season is rebuilt without it. */
+  mode: "manual" | "auto" | "admin" | "void";
 }
 export function requestRebuild(
   tx: Transaction,
@@ -92,6 +94,18 @@ export async function drainRebuildQueue(): Promise<boolean> {
   });
   if (!work) return false;
   const start = Date.now();
+  // Only acknowledge an event after every durable side effect was enqueued.
+  const acknowledge = (eventRef: FirebaseFirestore.DocumentReference) =>
+    db.runTransaction(async (tx) => {
+      const state = await tx.get(ref);
+      if (state.get("leaseToken") !== token || Number(state.get("leaseUntil")) <= Date.now())
+        throw new Error("Rebuild lease lost");
+      tx.update(eventRef, {
+        status: "done",
+        completedAt: FieldValue.serverTimestamp(),
+        expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
+      });
+    });
   try {
     const seasons = work.seasons.length
       ? await db.getAll(...work.seasons.map((id) => db.doc(`seasons/${id}`)))
@@ -128,6 +142,11 @@ export async function drainRebuildQueue(): Promise<boolean> {
           status: "discarded",
           expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
         });
+        continue;
+      }
+      if (mode === "void") {
+        await replayActivityAfterVoid(db, result.seasonId, matchId);
+        await acknowledge(event.ref);
         continue;
       }
       await finalizeConfirmation(
@@ -168,17 +187,7 @@ export async function drainRebuildQueue(): Promise<boolean> {
           { type: "match_confirmed", matchId },
         );
       }
-      // Only acknowledge after every durable side effect was enqueued.
-      await db.runTransaction(async (tx) => {
-        const state = await tx.get(ref);
-        if (state.get("leaseToken") !== token || Number(state.get("leaseUntil")) <= Date.now())
-          throw new Error("Rebuild lease lost");
-        tx.update(event.ref, {
-          status: "done",
-          completedAt: FieldValue.serverTimestamp(),
-          expiresAt: Timestamp.fromMillis(Date.now() + 7 * 86400000),
-        });
-      });
+      await acknowledge(event.ref);
     }
     await db.runTransaction(async (tx) => {
       const state = await tx.get(ref);

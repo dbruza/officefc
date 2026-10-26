@@ -127,6 +127,7 @@ Use two separate browser profiles or an incognito window.
 - Manual match submission appears immediately in the opponent's confirmation inbox.
 - Confirming updates ELO, standings, profiles, head-to-head, and match detail.
 - A dispute keeps the match out of ELO; admin resolution works.
+- An admin can void a confirmed result from its match page, and the tables update.
 - Refresh Home, confirmations, match detail, player, head-to-head, seasons, and archive
   URLs directly.
 - `/privacy`, `/terms`, and `/support` load signed out and show your operator name and

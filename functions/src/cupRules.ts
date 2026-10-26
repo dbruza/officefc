@@ -122,6 +122,21 @@ function findOpenTie(
 }
 
 /**
+ * True when some decided tie paired exactly these two players. Ties don't record which match
+ * decided them, so after a result between the pair is voided this is the most anyone can say:
+ * that tie MAY have been decided by it, and an admin should check the bracket.
+ */
+export function hasDecidedTieBetween(bracket: CupBracket, aId: string, bId: string): boolean {
+  return bracket.some((round) =>
+    round.some(
+      (tie) =>
+        tie.winnerId !== null &&
+        ((tie.aId === aId && tie.bId === bId) || (tie.aId === bId && tie.bId === aId)),
+    ),
+  );
+}
+
+/**
  * Place a winner into their participant slot of the following round. Slots pair
  * consecutively into ties; a trailing odd slot is a bye, whose holder skips that whole
  * round (e.g. 6 entrants → three opening ties, but only ONE semi — the third tie's

@@ -15,6 +15,7 @@ import {
 import { fieldsEdited } from "./extractionAudit";
 import { checkScoreConsistency } from "./core/statsCheck.mjs";
 import { BLOCKED_MATCH_MESSAGE, isActiveMember, isBlockedBetween } from "../members";
+import { pendingLimitMessage } from "../matchLifecycle";
 
 const db = getFirestore();
 
@@ -136,6 +137,11 @@ export const submitAiAssistedMatch = loggedOnCall(
         throw error;
       }
       if (action === "existing") return;
+      // Same pending-result limits notifyMatchSubmitted enforces, checked here so the player gets
+      // a reason instead of a result that disappears. Only for a new match: a retry of one
+      // already written returned above, whatever has happened to it since.
+      const overLimit = await pendingLimitMessage(uid, opponentId);
+      if (overLimit) throw new HttpsError("failed-precondition", overLimit);
 
       if (!seasonSnap.exists || !seasonSnap.get("active"))
         throw new HttpsError("failed-precondition", "No active season.");

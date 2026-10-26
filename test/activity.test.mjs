@@ -5,7 +5,11 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deriveMatchActivity, deriveSeasonActivity } from "../functions/lib/activity.js";
+import {
+  deriveMatchActivity,
+  deriveSeasonActivity,
+  matchActivityIds,
+} from "../functions/lib/activity.js";
 
 /** A confirmed 3–1 home win, both players mid-table, no streak/leader change. */
 function baseMatch(overrides = {}) {
@@ -193,4 +197,28 @@ test("season derivation with no champion emits nothing", () => {
     potm: [],
   });
   assert.deepEqual(events, []);
+});
+
+test("matchActivityIds lists every event a match can produce, so a void can retract them", () => {
+  // Upset + streak milestone + new #1, for either side winning.
+  for (const [aGoals, bGoals, winnerElo] of [
+    [3, 1, "aEloBefore"],
+    [0, 2, "bEloBefore"],
+  ]) {
+    const events = deriveMatchActivity(
+      baseMatch({
+        aGoals,
+        bGoals,
+        aEloBefore: 1600,
+        bEloBefore: 1600,
+        [winnerElo]: 1400,
+        winnerStreak: 3,
+        previousLeaderId: "carol",
+        newLeaderId: aGoals > bGoals ? "alice" : "bob",
+      }),
+    );
+    assert.equal(events.length, 4);
+    const ids = matchActivityIds("m1", "alice", "bob");
+    for (const event of events) assert.ok(ids.includes(event.id), event.id);
+  }
 });

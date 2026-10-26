@@ -1,6 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { responderRejection, canAutoConfirm, matchCreatedMillis } = require("../lib/matchRules.js");
+const {
+  responderRejection,
+  canAutoConfirm,
+  matchCreatedMillis,
+  opponentOf,
+} = require("../lib/matchRules.js");
 
 // alice submitted a pending match between alice and bob.
 const pending = { aId: "alice", bId: "bob", submittedBy: "alice", status: "pending_confirmation" };
@@ -27,12 +32,19 @@ test("the opponent check takes precedence over status for a non-participant", ()
   assert.equal(responderRejection({ ...pending, status: "confirmed" }, "carol"), "not_opponent");
 });
 
-// --- canAutoConfirm: eligibility for the after-1-hour automated confirmation ---
+test("opponentOf names the participant who didn't submit", () => {
+  assert.equal(opponentOf(pending), "bob");
+  assert.equal(opponentOf({ ...pending, submittedBy: "bob" }), "alice");
+  assert.equal(opponentOf({ aId: "alice", submittedBy: "alice" }), null);
+  assert.equal(opponentOf({ aId: "alice", bId: 7, submittedBy: "alice" }), null);
+});
 
-// A one-hour window ending "now" at t=10_000_000, with a 72h abandonment floor.
-const NOW = 10_000_000;
+// --- canAutoConfirm: eligibility for the after-the-window automated confirmation ---
+
+// A 24-hour window ending "now" at t=1_000_000_000, with a 72h abandonment floor.
+const NOW = 1_000_000_000;
 const HOUR = 60 * 60 * 1000;
-const CUTOFF = NOW - HOUR; // created at or before this → window lapsed
+const CUTOFF = NOW - 24 * HOUR; // created at or before this → window lapsed
 const FLOOR = NOW - 72 * HOUR; // created before this → abandoned, leave for an admin
 
 const stampedAt = (ms) => ({ status: "pending_confirmation", createdAt: { toMillis: () => ms } });

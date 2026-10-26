@@ -486,6 +486,37 @@ test("a member cannot smuggle trusted ELO fields into a pending match", async ()
   );
 });
 
+test("a member cannot put their own result on the auto-confirm clock", async () => {
+  // notifyMatchSubmitted stamps these once, and only when the opponent can be notified; a
+  // preset value would skip that check.
+  const base = {
+    seasonId: "s1",
+    submittedBy: "alice",
+    aId: "alice",
+    bId: "dave",
+    aTeamId: "team-a",
+    bTeamId: "team-b",
+    aTeam: "Crimson Albion",
+    bTeam: "Royal Vega",
+    aGoals: 1,
+    bGoals: 0,
+    status: "pending_confirmation",
+    source: "manual",
+    date: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  };
+  for (const [field, value] of [
+    ["autoConfirmDueAt", new Date()],
+    ["autoConfirmHold", null],
+    ["reminderSentAt", new Date()],
+  ]) {
+    await assertFails(
+      setDoc(doc(member(), `matches/preset-${field}`), { ...base, [field]: value }),
+    );
+  }
+  await assertSucceeds(setDoc(doc(member(), "matches/preset-none"), base));
+});
+
 test("a member must submit a real active team", async () => {
   await assertFails(
     setDoc(doc(member(), "matches/new6"), {
@@ -864,4 +895,12 @@ test("privacy settings are owner-only with a fixed shape", async () => {
   await assertSucceeds(
     setDoc(doc(outsider(), "privacySettings/nora"), { termsAcceptedAt: serverTimestamp() }),
   );
+});
+
+test("the match audit trail is admin-readable and nobody can write it", async () => {
+  await seed("matchAudit/a1", { action: "void_confirmed", matchId: "m1", adminId: "dave" });
+  await assertSucceeds(getDoc(doc(admin(), "matchAudit/a1")));
+  await assertFails(getDoc(doc(member(), "matchAudit/a1")));
+  await assertFails(updateDoc(doc(admin(), "matchAudit/a1"), { reason: "rewritten" }));
+  await assertFails(setDoc(doc(admin(), "matchAudit/a2"), { action: "void_confirmed" }));
 });

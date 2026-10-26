@@ -304,6 +304,18 @@ they have to sign up first.
   already joined, set `role` to `admin` on their `leagues/office/members/{uid}` document in
   the Firestore console.
 
+### Match confirmations
+
+A logged result counts once the opponent confirms it. If they don't respond, it counts
+automatically after 24 hours, but only when they could be told about it: they use the
+native app and haven't muted confirmations. Push notifications only reach the native apps,
+so in a web-only league every result waits for a manual confirmation. Results nobody
+answers for 72 hours are left for an admin (**Admin → Results**).
+
+A player can have at most 20 results waiting for confirmation, and 8 against the same
+opponent. Admins can void a confirmed result from its match page; each void is recorded in
+the admin-only `matchAudit` collection, which you can read in the Firestore console.
+
 ### Email verification
 
 Every player must verify their email before they can join. Verification and password-reset

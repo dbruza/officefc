@@ -4,6 +4,33 @@ import type { ChangelogEntry } from "./changelog";
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.16.0.0",
+    date: "2026-10-06",
+    sections: [
+      {
+        kind: "Added",
+        items: [
+          "Admins can void a result that was already confirmed, from its match page. They give a reason, both players are told, and the result comes out of the ratings, table, stats and activity feed. Every void is kept in an admin-only `matchAudit` record: who voided it, why, and how it had been confirmed. Finals results and finalized seasons can't be voided. If the two players' cup tie is already decided, the admin is told to check the bracket, because the cup isn't rewound automatically.",
+        ],
+      },
+      {
+        kind: "Changed",
+        items: [
+          "An undisputed result now counts automatically after 24 hours instead of 1, with a reminder at 20 hours. The match page shows when it will count.",
+          "A result only counts automatically if its opponent can be told about it: they use the phone app and haven't muted confirmations. Results against web-only players, or players who muted confirmations, wait for them to confirm or for an admin. The same applies if the opponent mutes confirmations or signs out of every device before the 24 hours are up.",
+          "Results already waiting under the 1-hour window move to the 24-hour one.",
+          "A new Firestore index backs the limits below; `npm run deploy:backend` creates it.",
+        ],
+      },
+      {
+        kind: "Fixed",
+        items: [
+          "A player can have at most 20 results waiting for confirmation, and at most 8 against the same opponent. Before, any member could log unlimited results against anyone, up to 99-0, and each one counted if it went unanswered for an hour. The app refuses results over the limits, and the server voids any that get through; the oldest results keep their place.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.15.0.0",
     date: "2026-10-06",
     sections: [

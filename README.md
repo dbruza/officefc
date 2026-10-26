@@ -34,7 +34,8 @@ your own Apple and Google developer accounts and an Expo (EAS) account.
 ## Highlights
 
 - Invite-only league with email verification, per-season join codes, and invite links
-- Opponent-confirmed match logging; undisputed results auto-confirm after an hour
+- Opponent-confirmed match logging; undisputed results auto-confirm after 24 hours when
+  the opponent was notified, with limits on unconfirmed results and audited admin voids
 - Stats-aware seasonal ELO with form, streaks, rankings, and a "why the rating moved"
   breakdown
 - Head-to-head records, match detail, season archives, awards, and player of the month

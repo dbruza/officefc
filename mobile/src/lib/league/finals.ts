@@ -2,6 +2,7 @@ import { mutate, invalidateData } from "../dataCache";
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
+import { assertWithinPendingLimit } from "./matches";
 import type { FinalsBracket, FinalsDecidedBy, FinalsSlot, FinalsSlotKey } from "./types";
 
 const SLOT_ORDER: FinalsSlotKey[] = ["e1", "e2", "s1", "s2", "gf"];
@@ -110,6 +111,8 @@ export interface SubmitFinalsMatchInput {
  *  pending-confirmation lifecycle applies; the bracket advances on confirmation. */
 export async function submitFinalsMatch(input: SubmitFinalsMatchInput): Promise<string> {
   const { slot } = input;
+  const opponentId = slot.homeId === input.submittedBy ? slot.awayId : slot.homeId;
+  if (opponentId) await assertWithinPendingLimit(input.submittedBy, opponentId);
   const ref = await addDoc(collection(db, "matches"), {
     seasonId: input.seasonId,
     submittedBy: input.submittedBy,

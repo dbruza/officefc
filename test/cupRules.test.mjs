@@ -12,6 +12,7 @@ import {
   cupChampion,
   toStoredRounds,
   fromStoredRounds,
+  hasDecidedTieBetween,
 } from "../functions/lib/cupRules.js";
 
 function ids(n) {
@@ -199,4 +200,19 @@ test("storage: corrupt values read safely", () => {
     [],
     [{ aId: null, bId: "p2", winnerId: null }],
   ]);
+});
+
+test("hasDecidedTieBetween finds a decided tie for the pair, in either order", () => {
+  const bracket = [
+    [
+      { aId: "p1", bId: "p2", winnerId: "p1" },
+      { aId: "p3", bId: "p4", winnerId: null },
+    ],
+    [{ aId: "p1", bId: null, winnerId: null }],
+  ];
+  assert.equal(hasDecidedTieBetween(bracket, "p1", "p2"), true);
+  assert.equal(hasDecidedTieBetween(bracket, "p2", "p1"), true);
+  // An open tie, or players who never met, isn't something a void could have decided.
+  assert.equal(hasDecidedTieBetween(bracket, "p3", "p4"), false);
+  assert.equal(hasDecidedTieBetween(bracket, "p1", "p3"), false);
 });

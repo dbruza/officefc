@@ -8,7 +8,7 @@ import { getCachedAnalysis, requestAnalysis } from "@/lib/league/matchAnalysis";
  * click to zoom) and the MVP vote. Desktop splits into two columns under the hero.
  */
 import { useCallback, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import {
   Avatar,
@@ -39,6 +39,7 @@ import {
   getMatchPhotoUrl,
   getSeason,
   reportPlayer,
+  resolveMatch,
   type LeagueMatch,
   type LeaguePlayer,
   type Season,
@@ -50,13 +51,14 @@ import { useAuth } from "@/lib/auth";
 import { useFocusData } from "@/lib/useFocusData";
 import { colors, radius, spacing } from "@/theme";
 import { mix, withAlpha } from "@/lib/color";
-import { confirmAction } from "@/lib/dialogs";
+import { confirmAction, showAlert } from "@/lib/dialogs";
 import { friendlyError } from "@/lib/friendlyError";
 import { toast } from "@/lib/toast";
 import { AI_FEATURES } from "@/lib/constants";
 import { useBreakpoint } from "@/lib/responsive";
 import { firstName, fmtXg } from "@/lib/format";
-import { timeAgo } from "@/lib/when";
+import { dueAt, timeAgo } from "@/lib/when";
+import { formStyles } from "@/screens/admin/common";
 
 interface MatchData {
   match: LeagueMatch | null;
@@ -157,8 +159,9 @@ export default function MatchDetailRoute() {
   const viewerIsParticipant = !!match && (viewerId === match.aId || viewerId === match.bId);
   const awaitingViewer = pending && viewerIsParticipant && match?.submittedBy !== viewerId;
   const viewerSubmitted = !!match && match.submittedBy === viewerId;
+  const viewerIsAdmin = membership?.role === "admin";
   // Admins can take down any photo when moderating a report.
-  const canDeletePhoto = viewerSubmitted || membership?.role === "admin";
+  const canDeletePhoto = viewerSubmitted || viewerIsAdmin;
   const submitter = match ? players.get(match.submittedBy) : null;
   const opponentOfViewer = match
     ? players.get(viewerId === match.aId ? match.bId : match.aId)
@@ -408,6 +411,7 @@ export default function MatchDetailRoute() {
 
       <StatusBanner
         match={match}
+        viewerIsParticipant={viewerIsParticipant}
         viewerSubmitted={viewerSubmitted}
         awaitingViewer={awaitingViewer}
         opponentName={opponentOfViewer ? firstName(opponentOfViewer.name) : "your opponent"}
@@ -429,6 +433,9 @@ export default function MatchDetailRoute() {
             </Button>
           )}
         </View>
+      ) : null}
+      {viewerIsAdmin && match.status === "confirmed" && !match.finals ? (
+        <AdminVoidCard matchId={match.id} onVoided={() => void reload()} />
       ) : null}
     </Page>
   );
@@ -459,29 +466,47 @@ function StatusTag({ match }: { match: LeagueMatch }) {
 /** One line under the hero explaining where a non-final result stands. */
 function StatusBanner({
   match,
+  viewerIsParticipant,
   viewerSubmitted,
   awaitingViewer,
   opponentName,
 }: {
   match: LeagueMatch;
+  viewerIsParticipant: boolean;
   viewerSubmitted: boolean;
   awaitingViewer: boolean;
   opponentName: string;
 }) {
   let icon: "clock" | "info" | "flame" = "clock";
   let text: string | null = null;
+  // Set only while the opponent can be notified; otherwise the result waits for them.
+  const autoAt = match.autoConfirmAt ? dueAt(match.autoConfirmAt) : null;
   if (match.status === "pending_confirmation") {
     text = awaitingViewer
-      ? "This result needs your verdict — it doesn't count until you confirm it."
+      ? autoAt
+        ? `This result needs your verdict. If you don't respond, it counts automatically ${autoAt}.`
+        : "This result needs your verdict — it doesn't count until you confirm it."
       : viewerSubmitted
-        ? `Sent ${timeAgo(match.date)} — waiting for ${opponentName} to confirm. Nothing counts until they do.`
+        ? autoAt
+          ? `Sent ${timeAgo(match.date)} — waiting for ${opponentName} to confirm. If they don't respond, it counts automatically ${autoAt}.`
+          : `Sent ${timeAgo(match.date)} — waiting for ${opponentName} to confirm. Nothing counts until they do.`
         : "Awaiting confirmation from the opponent.";
   } else if (match.status === "disputed") {
     icon = "flame";
     text = "Disputed — an admin will review it and settle the score. Ratings are unaffected.";
   } else if (match.status === "voided") {
     icon = "info";
-    text = "Voided by an admin — this result doesn't count.";
+    // System voids carry a reason written to the submitter ("You already have…").
+    text =
+      match.resolvedBy === "system"
+        ? viewerSubmitted && match.resolutionReason
+          ? `Not recorded. ${match.resolutionReason}`
+          : "Not recorded — this result doesn't count."
+        : `Voided by an admin — this result doesn't count.${
+            viewerIsParticipant && match.resolutionReason
+              ? ` Reason: ${match.resolutionReason}`
+              : ""
+          }`;
   }
   if (!text) return null;
   const warn = match.status !== "pending_confirmation";
@@ -503,6 +528,78 @@ function StatusBanner({
         </Txt>
       </View>
     </Reveal>
+  );
+}
+
+/**
+ * Admin-only: void a confirmed result that should never have counted, such as a forged score
+ * that locked in unanswered. Needs a reason, shown to both players. The server keeps an audit
+ * record and rebuilds ratings, the table and stats without the result.
+ */
+function AdminVoidCard({ matchId, onVoided }: { matchId: string; onVoided: () => void }) {
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const trimmed = reason.trim();
+
+  const voidResult = () => {
+    if (!trimmed || busy) return;
+    confirmAction({
+      title: "Void this result?",
+      message:
+        "It comes out of the ratings, table and stats, and both players are told why. The void is recorded and can't be undone.",
+      confirmLabel: "Void result",
+      destructive: true,
+      onConfirm: async () => {
+        setBusy(true);
+        try {
+          const { cupTieMayNeedRepair } = await resolveMatch(matchId, "void", undefined, trimmed);
+          if (cupTieMayNeedRepair) {
+            showAlert(
+              "Result voided — check the cup",
+              "These two players have a decided cup tie, and the cup bracket isn't rewound automatically. If this result decided it, correct the bracket in the Firebase console.",
+            );
+          } else {
+            toast.success("Result voided. The table is updating.");
+          }
+          onVoided();
+        } catch (err) {
+          toast.error(friendlyError(err, "Couldn't void the result. Try again in a moment."));
+        } finally {
+          setBusy(false);
+        }
+      },
+    });
+  };
+
+  return (
+    <Card style={{ marginTop: spacing.lg }}>
+      <SectionLabel>Admin</SectionLabel>
+      <Txt size={12.5} color={colors.textDim} style={{ lineHeight: 18, marginBottom: spacing.md }}>
+        Void this result if it should never have counted. Ratings, the table and stats are rebuilt
+        without it.
+      </Txt>
+      <TextInput
+        value={reason}
+        onChangeText={setReason}
+        placeholder="Reason (both players see this)"
+        placeholderTextColor={colors.textFaint}
+        accessibilityLabel="Reason for voiding this result"
+        maxLength={500}
+        returnKeyType="done"
+        onSubmitEditing={voidResult}
+        style={formStyles.input}
+      />
+      <Button
+        variant="danger"
+        size="sm"
+        icon="x"
+        onPress={voidResult}
+        loading={busy}
+        disabled={!trimmed || busy}
+      >
+        Void result
+      </Button>
+    </Card>
   );
 }
 
