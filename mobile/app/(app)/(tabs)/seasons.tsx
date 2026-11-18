@@ -90,13 +90,18 @@ export default function SeasonsRoute() {
     useCallback(async () => {
       const [seasonRows, roster] = await Promise.all([getSeasons(), getLeaguePlayers()]);
       const activeSeason = seasonRows.find((season) => season.active) ?? null;
-      const summary = activeSeason ? await getSeasonSummary(activeSeason.id) : null;
+      const [summary, matches] = activeSeason
+        ? await Promise.all([
+            getSeasonSummary(activeSeason.id),
+            getRecentSeasonMatches(activeSeason.id),
+          ])
+        : [null, []];
       return {
         awards: summary?.awards ?? [],
         matchCount: summary?.matchCount ?? 0,
         seasons: seasonRows,
         players: new Map(roster.map((player) => [player.id, player])),
-        matches: activeSeason ? await getRecentSeasonMatches(activeSeason.id) : [],
+        matches,
       };
     }, []),
   );

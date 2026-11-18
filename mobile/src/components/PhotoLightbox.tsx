@@ -1,11 +1,19 @@
 /**
  * Full-screen photo viewer for stats screenshots: tap/click the thumbnail to open, tap
  * the backdrop, the close button or press Escape (RN-web maps it to onRequestClose) to
- * dismiss. `PhotoThumb` is the matching inline preview — capped height, real aspect
- * ratio (screenshots are landscape, phone photos portrait), zoom affordance on hover.
+ * dismiss. `PhotoThumb` is the matching inline preview — full width, height from the real
+ * aspect ratio up to a cap (screenshots are landscape, phone photos often portrait), zoom
+ * affordance on hover.
  */
 import { useEffect, useState } from "react";
-import { Image, Modal, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Image,
+  Modal,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+} from "react-native";
 import { IconButton } from "./Button";
 import { Icon } from "./Icon";
 import { Interactive } from "./Interactive";
@@ -109,22 +117,24 @@ export function PhotoThumb({
   style?: object;
 }) {
   const [open, setOpen] = useState(false);
+  const [boxWidth, setBoxWidth] = useState(0);
   const aspect = useImageAspect(uri);
+  // Always full width; only the height follows the photo, capped at maxHeight. A tall
+  // photo letterboxes inside the box instead of shrinking it into a narrow strip (a
+  // portrait shot under a 200pt cap used to render ~150pt wide on phones).
+  const height =
+    aspect && boxWidth > 0
+      ? Math.min(maxHeight, boxWidth / aspect)
+      : // Ratio or width not known yet: a neutral box at the cap so layout doesn't jump much.
+        Math.min(maxHeight, 220);
   return (
     <>
       <Interactive
         onPress={() => setOpen(true)}
+        onLayout={(event: LayoutChangeEvent) => setBoxWidth(event.nativeEvent.layout.width)}
         accessibilityLabel={`Open ${label.toLowerCase()} full size`}
         pressScale={0.99}
-        style={[
-          styles.thumb,
-          // Unknown ratio yet: a neutral box at the cap so layout doesn't jump much.
-          // Known ratio: full width, but a portrait shot narrows so its height stays at the cap.
-          aspect
-            ? { aspectRatio: aspect, maxWidth: maxHeight * aspect }
-            : { height: Math.min(maxHeight, 220) },
-          style,
-        ]}
+        style={[styles.thumb, { height }, style]}
         hoverStyle={{ borderColor: colors.lineStrong }}
       >
         {({ hovered }) => (

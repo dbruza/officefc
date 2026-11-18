@@ -111,8 +111,8 @@ export default function GamesRoute() {
           summary: null,
           seasonNames: new Map<string, string>(),
         };
-      const summary = await getProfileSummary(uid);
-      const [roster, page, seasons] = await Promise.all([
+      const [summary, roster, page, seasons] = await Promise.all([
+        getProfileSummary(uid),
         getLeaguePlayers(),
         getPlayerMatchPage(uid),
         getSeasons(),
