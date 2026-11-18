@@ -2,7 +2,7 @@ import { getPlayerStats } from "./standings";
 import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
-import { dataCache } from "../dataCache";
+import { dataCache, invalidateData } from "../dataCache";
 import type {
   SeasonSummary as StoredSeasonSummary,
   PlayerSummary,
@@ -26,20 +26,24 @@ export function isCurrentSummary(version: unknown): boolean {
 /**
  * Bootstrap a missing or outdated summary on the server and use what it returns.
  *
- * This deliberately does not invalidate the data cache: it runs inside a screen's fetch,
- * and invalidating there throws that fetch's result away and starts it again. Whenever
- * the server's summary version differed from this build's, every retry asked again,
- * so screens built on summaries (profile, games, seasons, stats) never finished loading.
- * Other cached reads expire within seconds on their own.
+ * A bootstrap rebuilds the league's projections (player stats, standings, ELO history),
+ * and the screen asking for it may have read those in parallel from before the rebuild.
+ * Invalidating makes the screen drop that fetch and run it once more against the rebuilt
+ * data. That only happens when the server returned a summary this build accepts: the
+ * retry then reads it straight from Firestore without calling back here. When it doesn't
+ * (a server older than this build), invalidating would retry forever. That loop is what
+ * kept profile, games, seasons and stats screens loading forever on build 20.
  */
 async function ensure(input: { seasonId?: string; playerId?: string }) {
-  return (
+  const result = (
     await httpsCallable<typeof input, Record<string, unknown>>(
       functions,
       "ensurePerformanceSummary",
       { timeout: 550000 },
     )(input)
   ).data;
+  if (isCurrentSummary(result?.version)) invalidateData();
+  return result;
 }
 export async function getSeasonSummary(seasonId: string): Promise<SeasonSummary> {
   return dataCache.read(
