@@ -63,10 +63,17 @@ async function pickNative(source: "camera" | "library"): Promise<SelectedMatchPh
   }
 
   const size = targetSize(asset.width, asset.height);
+  // Resize by the long edge only so the manipulator keeps the decoded image's own ratio.
+  // Passing both edges forces that exact box, which stretches the photo whenever the
+  // picker's reported size and the decoded orientation disagree (EXIF-rotated photos).
   const actions =
     size.width === asset.width && size.height === asset.height
       ? []
-      : [{ resize: { width: size.width, height: size.height } }];
+      : [
+          {
+            resize: asset.width >= asset.height ? { width: size.width } : { height: size.height },
+          },
+        ];
   const normalized = await ImageManipulator.manipulateAsync(asset.uri, actions, {
     compress: JPEG_QUALITY,
     format: ImageManipulator.SaveFormat.JPEG,

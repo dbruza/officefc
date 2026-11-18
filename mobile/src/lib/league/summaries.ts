@@ -2,7 +2,7 @@ import { getPlayerStats } from "./standings";
 import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../firebase";
-import { dataCache, invalidateData } from "../dataCache";
+import { dataCache } from "../dataCache";
 import type {
   SeasonSummary as StoredSeasonSummary,
   PlayerSummary,
@@ -13,16 +13,33 @@ import type { TeamRecordSummary } from "../teamRecord";
 
 export type SeasonSummary = Omit<StoredSeasonSummary, "bigResults"> & { bigResults: BigResult[] };
 export type ProfileSummary = PlayerSummary & { teamRecords: TeamRecordSummary };
+
+/**
+ * A stored summary is usable when it is at least as new as this build. Summary versions
+ * only add fields, and the server is deployed ahead of store builds, so an older app must
+ * accept a newer summary instead of asking the server to "upgrade" it.
+ */
+export function isCurrentSummary(version: unknown): boolean {
+  return typeof version === "number" && version >= SUMMARY_VERSION;
+}
+
+/**
+ * Bootstrap a missing or outdated summary on the server and use what it returns.
+ *
+ * This deliberately does not invalidate the data cache: it runs inside a screen's fetch,
+ * and invalidating there throws that fetch's result away and starts it again. Whenever
+ * the server's summary version differed from this build's, every retry asked again,
+ * so screens built on summaries (profile, games, seasons, stats) never finished loading.
+ * Other cached reads expire within seconds on their own.
+ */
 async function ensure(input: { seasonId?: string; playerId?: string }) {
-  const result = (
+  return (
     await httpsCallable<typeof input, Record<string, unknown>>(
       functions,
       "ensurePerformanceSummary",
       { timeout: 550000 },
     )(input)
   ).data;
-  invalidateData();
-  return result;
 }
 export async function getSeasonSummary(seasonId: string): Promise<SeasonSummary> {
   return dataCache.read(
@@ -30,7 +47,7 @@ export async function getSeasonSummary(seasonId: string): Promise<SeasonSummary>
     async () => {
       const snap = await getDoc(doc(db, "seasonSummaries", seasonId));
       const raw = (
-        snap.get("version") === SUMMARY_VERSION ? snap.data() : await ensure({ seasonId })
+        isCurrentSummary(snap.get("version")) ? snap.data() : await ensure({ seasonId })
       ) as StoredSeasonSummary;
       return {
         ...raw,
@@ -46,7 +63,7 @@ export async function getProfileSummary(uid: string): Promise<ProfileSummary> {
     async () => {
       const snap = await getDoc(doc(db, "playerStats", uid));
       const raw = (
-        snap.get("summary.version") === SUMMARY_VERSION
+        isCurrentSummary(snap.get("summary.version"))
           ? snap.get("summary")
           : await ensure({ playerId: uid })
       ) as PlayerSummary;

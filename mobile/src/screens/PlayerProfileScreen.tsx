@@ -59,6 +59,7 @@ import {
   getStandings,
   getTeams,
   canPlayAgainst,
+  type EloHistoryPoint,
   type HeadToHead,
   type LeagueMatch,
   type LeaguePlayer,
@@ -159,21 +160,37 @@ export function PlayerProfileScreen({ uid, root = false }: PlayerProfileScreenPr
           teamsById: new Map(),
         };
       }
-      const summary = await getProfileSummary(uid);
-      const [seasonRows, roster, allTime, pairs, playedPage, results, teamsById] =
-        await Promise.all([
-          getSeasons(),
-          getLeaguePlayers(),
-          getPlayerStats(uid),
-          getHeadToHeadsForPlayer(uid),
-          getPlayerMatchPage(uid, null, RECENT_PREVIEW),
-          getSeasonResults(),
-          loadTeamCatalogue(),
-        ]);
+      // One round of parallel reads; the season table and ELO chart chain off the season
+      // list on their own so they don't wait for the slowest of the other reads.
+      const seasonsRead = getSeasons();
+      const seasonReads = seasonsRead.then((rows): Promise<[Standing[], EloHistoryPoint[]]> => {
+        const active = rows.find((item) => item.active) ?? null;
+        return active
+          ? Promise.all([getStandings(active.id), getEloHistory(active.id, uid)])
+          : Promise.resolve([[], []]);
+      });
+      const [
+        summary,
+        seasonRows,
+        roster,
+        allTime,
+        pairs,
+        playedPage,
+        results,
+        teamsById,
+        [table, eloPoints],
+      ] = await Promise.all([
+        getProfileSummary(uid),
+        seasonsRead,
+        getLeaguePlayers(),
+        getPlayerStats(uid),
+        getHeadToHeadsForPlayer(uid),
+        getPlayerMatchPage(uid, null, RECENT_PREVIEW),
+        getSeasonResults(),
+        loadTeamCatalogue(),
+        seasonReads,
+      ]);
       const activeSeason = seasonRows.find((item) => item.active) ?? null;
-      const [table, eloPoints] = activeSeason
-        ? await Promise.all([getStandings(activeSeason.id), getEloHistory(activeSeason.id, uid)])
-        : [[], []];
       return {
         player: roster.find((item) => item.id === uid) ?? null,
         players: new Map(roster.map((item) => [item.id, item])),
